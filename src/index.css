@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy-950: #081B33;
+  --color-navy-900: #0C2748;
+  --color-navy-800: #123863;
+  --color-blue-600: #1B4F9C;
+  --color-blue-500: #2A63B8;
+  --color-blue-tint: #EBF1FB;
+  --color-coral: #D9482E;
+  --color-coral-tint: #FCEAE5;
+  --color-green: #137A5E;
+  --color-green-tint: #E4F4EF;
+  --color-amber: #B9791F;
+  --color-amber-tint: #FBF0DE;
+  --color-violet: #5C4A9E;
+  --color-violet-tint: #EEEBF8;
+  --color-teal: #116E82;
+  --color-teal-tint: #E2F2F5;
+  --color-ink: #101B2D;
+  --color-ink-soft: #5B6576;
+  --color-line: #E4E7EE;
+  --color-paper: #F5F6FA;
+
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --radius-sm: 9px;
+  --radius-xs: 6px;
+
+  --font-display: 'Fraunces', serif;
+  --font-body: 'IBM Plex Sans', 'Noto Sans Thai', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
+@layer base {
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection { background: var(--color-coral); color: #fff; }
+
+  a { color: inherit; }
+  button { font-family: inherit; cursor: pointer; }
+}
+
+/* Dynamic-DOM highlight: App.jsx adds/removes this class via classList,
+   not via a React prop, so it stays as a plain CSS keyframe rather than a
+   Tailwind utility. */
+@keyframes sectionPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(217, 72, 46, .5); }
+  70%  { box-shadow: 0 0 0 8px rgba(217, 72, 46, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(217, 72, 46, 0); }
+}
+.section-focus {
+  border-radius: var(--radius-lg);
+  animation: sectionPulse 1s ease-out 2;
+}
