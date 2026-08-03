@@ -47,6 +47,11 @@ export const DEFAULT_CONTENT = {
     { id: 'sec-upload', label: 'Upload เอกสาร', icon: 'ti-upload', color: 'var(--color-ink-soft)' },
   ],
 
+  CONTACT_LINKS: [
+  { label: 'Extension No.', icon: 'ti-phone-call', href: '' },
+  { label: 'Hotline', icon: 'ti-stethoscope', href: '' },
+],
+
   ANN_NEWS: [
     { icon: 'ti-building-bank', title: 'เปิดสิทธิ์ใช้งานระบบ My B+ สำหรับบุคลากร', sub: 'ลงทะเบียนรับสิทธิประโยชน์และส่วนลดพิเศษสำหรับพนักงานทุกท่าน เริ่มวันนี้' },
     { icon: 'ti-building-bank', title: 'สิทธิข้าราชการกรมบัญชีกลาง', sub: 'ข้อมูลและแนวทางการใช้สิทธิเบิกจ่ายตรง' },

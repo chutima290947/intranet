@@ -45,6 +45,19 @@ export const ADMIN_SCHEMAS = [
           { key: 'href', label: 'ลิงก์ (URL)', type: 'url' },
         ],
       },
+
+          {
+      key: 'CONTACT_LINKS',
+      label: 'ติดต่อภายใน (Contact Tools)',
+      type: 'list',
+      itemLabel: (i) => i.label,
+      fields: [
+        { key: 'label', label: 'ข้อความปุ่ม', type: 'text' },
+        { key: 'icon', label: 'ไอคอน', type: 'icon' },
+        { key: 'href', label: 'ลิงก์ (URL หรือ tel:เบอร์โทร)', type: 'url' },
+      ],
+    },
+
       {
         key: 'ONCALL',
         label: 'ตารางเวรผู้บริหาร / พยาบาล',
