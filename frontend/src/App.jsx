@@ -1,0 +1,221 @@
+import { useState, useEffect, useRef } from 'react'
+import './index.css'
+
+import { ContentProvider, useContent } from './context/ContentContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
+
+import { TopBar } from './components/TopBar'
+import { NavBar } from './components/NavBar'
+import { BackToTop } from './components/BackToTop'
+import { Footer } from './components/Footer'
+
+import { Hero } from './components/Home/Hero'
+import { StatsBar } from './components/Home/StatsBar'
+import { QuickNav } from './components/Home/QuickNav'
+import { Announcement } from './components/Home/Announcement'
+import { DigitalServices } from './components/Home/DigitalServices'
+import { NSystem } from './components/Home/NSystem'
+import { OnCall } from './components/Home/OnCall'
+import { Promo } from './components/Home/Promo'
+import { ContactCard } from './components/Home/ContactCard'
+import { QualityCenter } from './components/Home/QualityCenter'
+import { PartnerList } from './components/Home/PartnerList'
+import { UploadBox } from './components/Home/UploadBox'
+import { ExpandableCards } from './components/Home/ExpandableCards'
+import { DivisionGrid } from './components/Division/DivisionGrid'
+import { ReportGrid } from './components/Report/Reportgrid'
+import { DoctorSchedulePage } from './components/Home/DoctorSchedulePage'
+import { RequestGrid } from './components/Online/Requestgrid'
+import { AdminLayout } from './components/Admin/AdminLayout'
+
+const STORAGE_KEY = 'intranet:last-page'
+
+function loadStoredPage() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY)
+    if (!raw) return { page: 'home', selectedDivisionId: null, selectedReportId: null }
+    const parsed = JSON.parse(raw)
+    return {
+      page: parsed.page || 'home',
+      selectedDivisionId: parsed.selectedDivisionId ?? null,
+      selectedReportId: parsed.selectedReportId ?? null,
+    }
+  } catch {
+    return { page: 'home', selectedDivisionId: null, selectedReportId: null }
+  }
+}
+
+function AppInner() {
+  const { content } = useContent()
+  const { isAuthenticated } = useAuth()
+
+  const initial = loadStoredPage()
+  const [page, setPage] = useState(initial.page) // 'home' | 'division' | 'report' | 'doctor' | 'online' | 'admin'
+  const [activeSection, setActiveSection] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedDivisionId, setSelectedDivisionId] = useState(initial.selectedDivisionId)
+  const [selectedReportId, setSelectedReportId] = useState(initial.selectedReportId)
+  const quicknavRef = useRef(null)
+
+  // จำหน้าล่าสุดไว้ใน sessionStorage เผื่อรีเฟรชหน้า (ยกเว้นหน้า admin จะไม่จำไว้
+  // เพื่อไม่ให้ค้างอยู่หน้า admin ถ้า session การ login หมดอายุไปแล้วตอนรีเฟรช)
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          page: page === 'admin' ? 'home' : page,
+          selectedDivisionId,
+          selectedReportId,
+        })
+      )
+    } catch {
+      // ignore storage errors (e.g. private browsing quota)
+    }
+  }, [page, selectedDivisionId, selectedReportId])
+
+  // กันไม่ให้เข้าหน้า admin ได้ถ้ายังไม่ login (กันไว้เผื่อ state หลุด เช่น logout จากแท็บอื่น)
+  useEffect(() => {
+    if (page === 'admin' && !isAuthenticated) {
+      setPage('home')
+    }
+  }, [page, isAuthenticated])
+
+  useEffect(() => {
+    if (page !== 'home') return
+    const onScroll = () => {
+      const offset = (quicknavRef.current?.offsetHeight || 0) + 20
+      let current = ''
+      for (const s of content.SECTIONS) {
+        const el = document.getElementById(s.id)
+        if (el && el.getBoundingClientRect().top <= offset) current = s.id
+      }
+      setActiveSection(current)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [page, content.SECTIONS])
+
+  const handleQuickNavClick = (e) => {
+    const link = e.target.closest('.qn-btn') || e.target.closest('a[href^="#"]')
+    if (!link) return
+    const id = link.getAttribute('href').slice(1)
+    const target = document.getElementById(id)
+    if (!target) return
+    e.preventDefault()
+    const offset = (quicknavRef.current?.offsetHeight || 0) + 8
+    const top = target.getBoundingClientRect().top + window.scrollY - offset
+    window.scrollTo({ top, behavior: 'smooth' })
+    const focusEl = target.closest('[data-card]') || target
+    focusEl.classList.add('section-focus')
+    setTimeout(() => focusEl.classList.remove('section-focus'), 2000)
+  }
+
+  // target: 'home' | 'division' | 'report' | 'doctor' | 'online' | 'admin'
+  // payload: id ของ division/report ที่ถูกเลือกจาก dropdown (optional)
+  const goTo = (target, payload) => {
+    setPage(target)
+    if (target === 'division') {
+      setSelectedDivisionId(payload || null)
+    }
+    if (target === 'report') {
+      setSelectedReportId(payload || null)
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const scrollToSection = (id) => {
+    const target = document.getElementById(id)
+    if (!target) return
+    const offset = (quicknavRef.current?.offsetHeight || 0) + 8
+    const top = target.getBoundingClientRect().top + window.scrollY - offset
+    window.scrollTo({ top, behavior: 'smooth' })
+    const focusEl = target.closest('[data-card]') || target
+    focusEl.classList.add('section-focus')
+    setTimeout(() => focusEl.classList.remove('section-focus'), 2000)
+  }
+
+  const handleSearch = (query) => {
+    setSearchQuery(query)
+    if (!query) return
+
+    if (page === 'home') {
+      const match = content.SECTIONS.find((s) =>
+        (s.label || '').toLowerCase().includes(query.toLowerCase())
+      )
+      if (match) scrollToSection(match.id)
+    }
+  }
+
+  if (page === 'admin' && isAuthenticated) {
+    return <AdminLayout onExit={() => goTo('home')} />
+  }
+
+  return (
+    <>
+      <TopBar />
+      <NavBar page={page} onNavigate={goTo} onSearch={handleSearch} />
+      <Hero onLoginSuccess={() => goTo('admin')} />
+      <StatsBar />
+
+      {page === 'home' && (
+        <>
+          <QuickNav ref={quicknavRef} active={activeSection} onNavClick={handleQuickNavClick} />
+
+          <div className="mx-auto max-w-[1680px] px-8 pt-[22px] pb-[60px]">
+            <div className="grid grid-cols-[1.65fr_1fr] gap-[18px] max-[1100px]:grid-cols-1">
+              <div className="flex flex-col gap-4">
+                <Announcement />
+                <NSystem />
+                <OnCall />
+                <Promo />
+                <UploadBox />
+              </div>
+              <div className="flex flex-col gap-3.5">
+                <DigitalServices />
+                <ContactCard />
+                <button
+                  id="sec-doctor"
+                  data-card
+                  onClick={() => goTo('doctor')}
+                  className="flex w-full items-center justify-center gap-[9px] rounded-lg border-none bg-navy-900 p-4 text-[13.5px] font-bold text-white"
+                >
+                  <i className="ti ti-stethoscope text-[17px]" />ตารางแพทย์
+                </button>
+                <QualityCenter />
+                <PartnerList />
+                <ExpandableCards />
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {page === 'division' && (
+        <DivisionGrid searchQuery={searchQuery} initialActiveId={selectedDivisionId} />
+      )}
+
+      {page === 'doctor' && <DoctorSchedulePage onBack={() => goTo('home')} />}
+
+      {page === 'report' && (
+        <ReportGrid searchQuery={searchQuery} initialActiveId={selectedReportId} />
+      )}
+
+      {page === 'online' && <RequestGrid searchQuery={searchQuery} />}
+
+      <Footer />
+
+      <BackToTop />
+    </>
+  )
+}
+
+export default function App() {
+  return (
+    <ContentProvider>
+      <AuthProvider>
+        <AppInner />
+      </AuthProvider>
+    </ContentProvider>
+  )
+}

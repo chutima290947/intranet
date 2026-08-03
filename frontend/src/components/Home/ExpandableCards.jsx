@@ -1,0 +1,63 @@
+import { useState } from 'react'
+import { useContent } from '../../context/ContentContext'
+
+export function ExpandableCards() {
+  const { content } = useContent()
+  const { FINANCE_DOCS, TEMPLATE_OPTIONS } = content
+  const [open, setOpen] = useState(null)
+  const toggle = (key) => setOpen(open === key ? null : key)
+
+  return (
+    <div className="flex flex-col gap-3.5">
+      <div
+        className="cursor-pointer rounded-lg border border-line bg-white p-[17px]"
+        id="sec-finance"
+        data-card
+        onClick={() => toggle('a')}
+      >
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="mb-[11px] flex h-[38px] w-[38px] items-center justify-center rounded-[10px] bg-blue-tint">
+              <i className="ti ti-cash text-lg text-blue-600" />
+            </div>
+            <h3 className="text-[13px] font-bold text-navy-900">การมอบหมายอำนาจการเงิน</h3>
+            <p className="mt-px text-[11px] text-ink-soft">กลุ่ม 6</p>
+          </div>
+          <i className={`ti ti-chevron-down text-[15px] text-ink-soft transition-transform duration-200 ${open === 'a' ? 'rotate-180' : ''}`} />
+        </div>
+        <div className={`mt-2.5 border-t border-line pt-2.5 ${open === 'a' ? 'block' : 'hidden'}`}>
+          {FINANCE_DOCS.map((doc, i) => (
+            <div key={i} className="flex items-center gap-2 border-b border-line py-2 text-[11px] last:border-b-0">
+              <i className={`ti ${doc.icon} text-[13px] text-blue-600`} />{doc.text}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div
+        className="cursor-pointer rounded-lg border border-line bg-white p-[17px]"
+        id="sec-template"
+        data-card
+        onClick={() => toggle('b')}
+      >
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="mb-[11px] flex h-[38px] w-[38px] items-center justify-center rounded-[10px] bg-blue-tint">
+              <i className="ti ti-presentation text-lg text-blue-600" />
+            </div>
+            <h3 className="text-[13px] font-bold text-navy-900">Template Powerpoint</h3>
+            <p className="mt-px text-[11px] text-ink-soft">Re-branding template</p>
+          </div>
+          <i className={`ti ti-chevron-down text-[15px] text-ink-soft transition-transform duration-200 ${open === 'b' ? 'rotate-180' : ''}`} />
+        </div>
+        <div className={`mt-2.5 border-t border-line pt-2.5 ${open === 'b' ? 'block' : 'hidden'}`}>
+          <select onClick={(e) => e.stopPropagation()} className="w-full rounded-xs border border-line px-[9px] py-2 text-xs">
+            <option>เลือกดูรายการ...</option>
+            {TEMPLATE_OPTIONS.map((t, i) => (
+              <option key={i}>{t.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </div>
+  )
+}
