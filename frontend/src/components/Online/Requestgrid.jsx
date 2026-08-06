@@ -6,8 +6,15 @@ import { useContent } from '../../context/ContentContext'
  * ข้อมูลหมวดหมู่และรายการทั้งหมดดึงมาจาก content.REQUEST_CATEGORIES
  * (แก้ไขได้ผ่านแผงควบคุมเนื้อหา หมวด "ระบบ Online")
  *
- * โลโก้: ใช้ไฟล์รูปจาก src/assets/logos/ ถ้ามีไฟล์ชื่อตรงกับชื่อระบบ (slugify แล้ว)
- * ถ้าไม่มีไฟล์ จะ fallback ไปใช้ไอคอน Tabler (ตั้งค่าได้ในแผงควบคุม)
+ * โลโก้: ลำดับความสำคัญ
+ *   1) item.img — รูปที่อัปโหลดผ่านแผงควบคุมเนื้อหาโดยตรง (base64)
+ *   2) ไฟล์ใน src/assets/logos/ ที่ชื่อไฟล์ตรงกับชื่อระบบ (slugify แล้ว)
+ *   3) ถ้าไม่มีทั้งคู่ → แสดงตัวอักษรย่อ (initials) จากชื่อระบบโดยอัตโนมัติ
+ *      เช่น "Patient List" → "PL", "iMed" → "IM"
+ *
+ * ทุกโลโก้ (ไม่ว่าไฟล์ต้นฉบับจะมีสัดส่วน/ระยะขอบเท่าไหร่) จะถูกบังคับให้อยู่ใน
+ * กรอบขนาดคงที่เดียวกัน (ICON_BOX_SIZE) พร้อม padding เท่ากันเสมอ เพื่อไม่ให้
+ * บางโลโก้ดูใหญ่/เล็กกว่ากันเวลาเทียบในกริดเดียวกัน
  */
 
 const logoModules = import.meta.glob('../../assets/logos/*.{png,jpg,jpeg,svg,webp}', {
@@ -22,6 +29,9 @@ const LOGOS = Object.fromEntries(
   })
 )
 
+// กรอบไอคอน/โลโก้ทุกใบในหน้านี้ใช้ขนาดเดียวกันหมด แก้ตรงนี้ที่เดียวถ้าอยากปรับทั้งหน้า
+const ICON_BOX = 'h-16 w-16 rounded-2xl'
+
 function slugify(name) {
   return name
     .toLowerCase()
@@ -29,26 +39,46 @@ function slugify(name) {
     .replace(/(^-|-$)/g, '')
 }
 
+// สร้างตัวอักษรย่อจากชื่อระบบ: คำแรก+คำสุดท้าย เอาตัวแรกของแต่ละคำ
+// ถ้ามีคำเดียว ใช้ 2 ตัวอักษรแรกของคำนั้นแทน
+function getInitials(name) {
+  const words = (name || '').trim().split(/\s+/).filter(Boolean)
+  if (words.length === 0) return '?'
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase()
+}
+
 function AppCard({ item, accent }) {
-  const logoUrl = LOGOS[slugify(item.name)]
+  // ลำดับความสำคัญ: รูปที่อัปโหลดผ่านแอดมิน > ไฟล์ในโฟลเดอร์ assets/logos > ตัวอักษรย่อ
+  const logoUrl = item.img || LOGOS[slugify(item.name)]
 
   return (
     <button
       data-card
       className="group flex aspect-square flex-col items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white p-5 text-center transition-colors hover:border-gray-300 hover:bg-gray-50"
     >
-      {logoUrl ? (
-        <span className="flex w-full flex-1 items-center justify-center">
+      {/* กรอบเดียวกันทุกแบบ: รูปโลโก้ / ไอคอน / ตัวอักษรย่อ ใช้ w-full flex-1 + p-3 เท่ากันหมด
+          เพื่อให้ "พื้นที่มองเห็น" เท่ากันเป๊ะ ไม่ว่าเนื้อหาข้างในจะเป็นรูปที่มีขอบขาวเยอะ-น้อยแค่ไหน
+          หรือเป็นไอคอน/ตัวอักษรที่ไม่มีขอบขาวเลยก็ตาม */}
+      <span className="flex w-full flex-1 items-center justify-center p-3">
+        {logoUrl ? (
           <img src={logoUrl} alt={item.name} className="h-full w-full object-contain" />
-        </span>
-      ) : (
-        <span
-          className="flex h-16 w-16 items-center justify-center rounded-2xl text-white"
-          style={{ background: `linear-gradient(135deg, ${accent.from}, ${accent.to})` }}
-        >
-          <i className={`ti ${item.icon} text-2xl`} />
-        </span>
-      )}
+        ) : item.icon ? (
+          <span
+            className="flex h-full w-full items-center justify-center rounded-2xl text-white"
+            style={{ background: `linear-gradient(135deg, ${accent.from}, ${accent.to})` }}
+          >
+            <i className={`ti ${item.icon} text-3xl`} />
+          </span>
+        ) : (
+          <span
+            className="flex h-full w-full items-center justify-center rounded-2xl text-xl font-bold tracking-wide text-white"
+            style={{ background: `linear-gradient(135deg, ${accent.from}, ${accent.to})` }}
+          >
+            {getInitials(item.name)}
+          </span>
+        )}
+      </span>
       <span className="line-clamp-2 text-[12.5px] font-medium leading-snug text-gray-800">
         {item.name}
       </span>

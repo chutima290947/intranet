@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useContent } from '../../context/ContentContext'
+import { guessIcon } from '../../utils/guessIcon'
 
 export function ExpandableCards() {
   const { content } = useContent()
@@ -28,7 +29,7 @@ export function ExpandableCards() {
         <div className={`mt-2.5 border-t border-line pt-2.5 ${open === 'a' ? 'block' : 'hidden'}`}>
           {FINANCE_DOCS.map((doc, i) => (
             <div key={i} className="flex items-center gap-2 border-b border-line py-2 text-[11px] last:border-b-0">
-              <i className={`ti ${doc.icon} text-[13px] text-blue-600`} />{doc.text}
+              <i className={`ti ${doc.icon || guessIcon(doc.text)} text-[13px] text-blue-600`} />{doc.text}
             </div>
           ))}
         </div>

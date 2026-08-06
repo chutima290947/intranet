@@ -1,4 +1,5 @@
 import { useContent } from '../../context/ContentContext'
+import { guessIcon } from '../../utils/guessIcon'
 
 export function QualityCenter() {
   const { content } = useContent()
@@ -17,7 +18,7 @@ export function QualityCenter() {
           {QUALITY.map(q => (
             <div className="flex flex-col items-center gap-[7px] rounded-md border border-line px-2 py-3 text-center" key={q.label}>
               <div className={`flex h-[38px] w-[38px] items-center justify-center rounded-[10px] ${q.warn ? 'bg-coral-tint' : 'bg-teal-tint'}`}>
-                <i className={`ti ${q.icon} text-lg ${q.warn ? 'text-coral' : 'text-teal'}`} />
+                <i className={`ti ${q.icon || guessIcon(q.label)} text-lg ${q.warn ? 'text-coral' : 'text-teal'}`} />
               </div>
               <span className="text-[10px] leading-[1.3] font-semibold">{q.label}</span>
             </div>

@@ -22,12 +22,15 @@ export const ADMIN_SCHEMAS = [
       {
         key: 'ANN_NEWS',
         label: 'ข่าวประชาสัมพันธ์ (รายการทั้งหมด)',
-        description: 'รายการข่าวที่แสดงเมื่อกด "ดูประกาศทั้งหมด" ในการ์ดข่าวประชาสัมพันธ์',
+        description: 'รายการข่าวที่แสดงในลิสต์ด้านล่าง "ดูประกาศทั้งหมด" — ติ๊ก "ปักหมุดเป็น Banner" ที่ข่าวใดข่าวหนึ่ง เพื่อให้ข่าวนั้นแสดงเป็น Banner ใหญ่ด้านบนแทน',
         type: 'list',
         itemLabel: (i) => i.title,
         fields: [
           { key: 'title', label: 'หัวข้อข่าว', type: 'text' },
           { key: 'sub', label: 'คำอธิบายย่อ', type: 'textarea' },
+          { key: 'img', label: 'รูปภาพ Banner (ใช้เมื่อปักหมุดข่าวนี้)', type: 'image' },
+          { key: 'badge', label: 'ป้ายข้อความมุมซ้ายบน (เช่น New) — เว้นว่างได้ถ้าไม่ต้องการ', type: 'text' },
+          { key: 'pinned', label: 'ปักหมุดเป็น Banner ใหญ่ด้านบน', type: 'boolean' },
           { key: 'href', label: 'ลิงก์ (URL ภายนอก)', type: 'url' },
           { key: 'file', label: 'หรือแนบไฟล์ PDF', type: 'file' },
         ],
@@ -274,6 +277,7 @@ export const ADMIN_SCHEMAS = [
             fields: [
               { key: 'name', label: 'ชื่อระบบ', type: 'text' },
               { key: 'href', label: 'ลิงก์ (URL)', type: 'url' },
+              { key: 'img', label: 'โลโก้ (แนะนำ: ภาพสี่เหลี่ยมจัตุรัส 1:1 ขนาด 500×500px ขึ้นไป, PNG พื้นหลังโปร่งใส, เว้นขอบรอบโลโก้ ~10-15% — ถ้าไม่ใส่ จะแสดงตัวอักษรย่อชื่อระบบอัตโนมัติ)', type: 'image' },
             ],
           },
         ],

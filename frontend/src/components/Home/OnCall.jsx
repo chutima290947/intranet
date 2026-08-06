@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useContent } from '../../context/ContentContext'
+import { guessIcon } from '../../utils/guessIcon'
 
 export function OnCall() {
   const { content } = useContent()
@@ -23,7 +24,7 @@ export function OnCall() {
           {ONCALL.map(o => (
             <div className="flex items-center gap-2.5 rounded-md border border-line bg-white px-[13px] py-[11px] text-xs font-bold" key={o.label}>
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-tint">
-                <i className={"ti " + o.icon + " text-blue-600"} />
+                <i className={"ti " + (o.icon || guessIcon(o.label)) + " text-blue-600"} />
               </div>
               {o.label}
             </div>
@@ -45,7 +46,7 @@ export function OnCall() {
                   className={"flex w-full items-start gap-2.5 text-left" + (hasSub ? " cursor-pointer" : " cursor-default")}
                 >
                   <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-teal-tint">
-                    <i className={"ti " + n.icon + " text-sm text-teal"} />
+                    <i className={"ti " + (n.icon || guessIcon(n.title)) + " text-sm text-teal"} />
                   </div>
                   <div className="flex-1">
                     <div className="text-xs font-bold text-navy-900">{n.title}</div>

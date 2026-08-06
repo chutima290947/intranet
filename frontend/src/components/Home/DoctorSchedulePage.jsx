@@ -1,4 +1,5 @@
 import { useContent } from '../../context/ContentContext'
+import { guessIcon } from '../../utils/guessIcon'
 
 export function DoctorSchedulePage({ onBack }) {
   const { content } = useContent()
@@ -26,7 +27,7 @@ export function DoctorSchedulePage({ onBack }) {
             className="flex items-center gap-3 rounded-lg border border-line bg-white px-4 py-3.5 no-underline transition-colors hover:border-blue-500/40 hover:bg-blue-tint"
           >
             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-blue-tint">
-              <i className={`ti ${item.icon} text-base text-blue-600`} />
+              <i className={`ti ${item.icon || guessIcon(item.label)} text-base text-blue-600`} />
             </div>
             <span className="flex-1 text-[13px] leading-tight text-ink">{item.label}</span>
             <i className="ti ti-chevron-right flex-shrink-0 text-sm text-ink-soft/60" />

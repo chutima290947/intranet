@@ -4,7 +4,9 @@ import { useContent } from '../../../context/ContentContext'
 function emptyFromFields(fields) {
   const obj = {}
   fields.forEach((f) => {
-    obj[f.key] = f.type === 'sublist' || f.type === 'tree' ? [] : ''
+    if (f.type === 'sublist' || f.type === 'tree') obj[f.key] = []
+    else if (f.type === 'boolean') obj[f.key] = false
+    else obj[f.key] = ''
   })
   return obj
 }
@@ -176,6 +178,20 @@ function FieldInput({ field, value, onChange }) {
           className="w-full rounded-lg border border-line px-3 py-2.5 text-[12.5px] outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
         />
       </div>
+    )
+  }
+
+  if (field.type === 'boolean') {
+    return (
+      <label className="flex cursor-pointer items-center gap-2">
+        <input
+          type="checkbox"
+          checked={!!value}
+          onChange={(e) => onChange(e.target.checked)}
+          className="h-4 w-4 cursor-pointer accent-navy-900"
+        />
+        <span className="text-[12px] text-ink-soft">{value ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}</span>
+      </label>
     )
   }
 

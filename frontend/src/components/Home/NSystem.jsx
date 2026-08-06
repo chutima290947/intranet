@@ -1,4 +1,5 @@
 import { useContent } from '../../context/ContentContext'
+import { guessIcon } from '../../utils/guessIcon'
 
 export function NSystem() {
   const { content } = useContent()
@@ -17,7 +18,7 @@ export function NSystem() {
           {N_SYSTEMS.map(s => (
             <div className="flex flex-col items-center gap-1.5 rounded-md border border-line px-[9px] py-3.5 text-center" key={s.name}>
               <div className="flex h-11 w-11 items-center justify-center rounded-[11px] bg-teal">
-                <i className={`ti ${s.icon} text-xl text-white`} />
+                <i className={`ti ${s.icon || guessIcon(s.name)} text-xl text-white`} />
               </div>
               <h4 className="text-xs font-bold text-navy-900">{s.name}</h4>
               <p className="text-[9.5px] leading-[1.3] text-ink-soft">{s.desc}</p>

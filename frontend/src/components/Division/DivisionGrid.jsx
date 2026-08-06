@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useContent } from '../../context/ContentContext'
+import { guessIcon } from '../../utils/guessIcon'
+
+const DEFAULT_GRADIENT = ['#1B4F9C', '#2A63B8']
 
 export function DivisionGrid({ initialActiveId }) {
   const { content } = useContent()
@@ -33,10 +36,10 @@ export function DivisionGrid({ initialActiveId }) {
             style={
               d.img
                 ? { backgroundImage: `url(${d.img})` }
-                : { background: `linear-gradient(135deg, ${d.gradient[0]}, ${d.gradient[1]})` }
+                : { background: `linear-gradient(135deg, ${(d.gradient || DEFAULT_GRADIENT)[0]}, ${(d.gradient || DEFAULT_GRADIENT)[1]})` }
             }
           >
-            {!d.img && <i className={`ti ${d.icon} text-[28px] text-white`} />}
+            {!d.img && <i className={`ti ${d.icon || guessIcon(d.name)} text-[28px] text-white`} />}
           </div>
             <div className="p-[18px]">
               <h3 className="mb-1.5 text-[14.5px] font-bold text-ink">{d.name}</h3>
@@ -63,9 +66,9 @@ export function DivisionGrid({ initialActiveId }) {
             </button>
             <div
               className="flex h-16 items-center justify-center"
-              style={{ background: `linear-gradient(135deg, ${active.gradient[0]}, ${active.gradient[1]})` }}
+              style={{ background: `linear-gradient(135deg, ${(active.gradient || DEFAULT_GRADIENT)[0]}, ${(active.gradient || DEFAULT_GRADIENT)[1]})` }}
             >
-              <i className={`ti ${active.icon} text-2xl text-white`} />
+              <i className={`ti ${active.icon || guessIcon(active.name)} text-2xl text-white`} />
             </div>
             <div className="p-[18px]">
               <h3 className="mb-1.5 text-[15px] font-bold text-ink">{active.name}</h3>
