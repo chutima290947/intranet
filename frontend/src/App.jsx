@@ -14,12 +14,14 @@ import { StatsBar } from './components/Home/StatsBar'
 import { QuickNav } from './components/Home/QuickNav'
 import { Announcement } from './components/Home/Announcement'
 import { DigitalServices } from './components/Home/DigitalServices'
+import { DigitalServicePage } from './components/Home/DigitalServicePage'
 import { NSystem } from './components/Home/NSystem'
 import { OnCall } from './components/Home/OnCall'
 import { Promo } from './components/Home/Promo'
 import { ContactCard } from './components/Home/ContactCard'
 import { QualityCenter } from './components/Home/QualityCenter'
 import { PartnerList } from './components/Home/PartnerList'
+import { PartnerDetailPage } from './components/Home/PartnerDetailPage'
 import { UploadBox } from './components/Home/UploadBox'
 import { ExpandableCards } from './components/Home/ExpandableCards'
 import { DivisionGrid } from './components/Division/DivisionGrid'
@@ -33,15 +35,18 @@ const STORAGE_KEY = 'intranet:last-page'
 function loadStoredPage() {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY)
-    if (!raw) return { page: 'home', selectedDivisionId: null, selectedReportId: null }
+    if (!raw) {
+      return { page: 'home', selectedDivisionId: null, selectedReportId: null, selectedPartnerName: null }
+    }
     const parsed = JSON.parse(raw)
     return {
       page: parsed.page || 'home',
       selectedDivisionId: parsed.selectedDivisionId ?? null,
       selectedReportId: parsed.selectedReportId ?? null,
+      selectedPartnerName: parsed.selectedPartnerName ?? null,
     }
   } catch {
-    return { page: 'home', selectedDivisionId: null, selectedReportId: null }
+    return { page: 'home', selectedDivisionId: null, selectedReportId: null, selectedPartnerName: null }
   }
 }
 
@@ -50,11 +55,13 @@ function AppInner() {
   const { isAuthenticated } = useAuth()
 
   const initial = loadStoredPage()
-  const [page, setPage] = useState(initial.page) // 'home' | 'division' | 'report' | 'doctor' | 'online' | 'admin'
+  const [page, setPage] = useState(initial.page) // 'home' | 'division' | 'report' | 'doctor' | 'online' | 'partner' | 'admin'
   const [activeSection, setActiveSection] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDivisionId, setSelectedDivisionId] = useState(initial.selectedDivisionId)
   const [selectedReportId, setSelectedReportId] = useState(initial.selectedReportId)
+  const [selectedPartnerName, setSelectedPartnerName] = useState(initial.selectedPartnerName)
+  const [selectedServiceLabel, setSelectedServiceLabel] = useState(null)
   const quicknavRef = useRef(null)
 
   // จำหน้าล่าสุดไว้ใน sessionStorage เผื่อรีเฟรชหน้า (ยกเว้นหน้า admin จะไม่จำไว้
@@ -67,12 +74,13 @@ function AppInner() {
           page: page === 'admin' ? 'home' : page,
           selectedDivisionId,
           selectedReportId,
+          selectedPartnerName,
         })
       )
     } catch {
       // ignore storage errors (e.g. private browsing quota)
     }
-  }, [page, selectedDivisionId, selectedReportId])
+  }, [page, selectedDivisionId, selectedReportId, selectedPartnerName])
 
   // กันไม่ให้เข้าหน้า admin ได้ถ้ายังไม่ login (กันไว้เผื่อ state หลุด เช่น logout จากแท็บอื่น)
   useEffect(() => {
@@ -111,8 +119,8 @@ function AppInner() {
     setTimeout(() => focusEl.classList.remove('section-focus'), 2000)
   }
 
-  // target: 'home' | 'division' | 'report' | 'doctor' | 'online' | 'admin'
-  // payload: id ของ division/report ที่ถูกเลือกจาก dropdown (optional)
+  // target: 'home' | 'division' | 'report' | 'doctor' | 'online' | 'partner' | 'admin'
+  // payload: id/name ของ division/report/partner ที่ถูกเลือก (optional)
   const goTo = (target, payload) => {
     setPage(target)
     if (target === 'division') {
@@ -121,8 +129,15 @@ function AppInner() {
     if (target === 'report') {
       setSelectedReportId(payload || null)
     }
+    if (target === 'partner') {
+      setSelectedPartnerName(payload || null)
+    }
+    if (target === 'service') {
+      setSelectedServiceLabel(payload || null)
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
+    
 
   const scrollToSection = (id) => {
     const target = document.getElementById(id)
@@ -172,7 +187,7 @@ function AppInner() {
                 <UploadBox />
               </div>
               <div className="flex flex-col gap-3.5">
-                <DigitalServices />
+                <DigitalServices onOpenService={(s) => goTo('service', s.label)} />
                 <ContactCard />
                 <button
                   id="sec-doctor"
@@ -183,7 +198,7 @@ function AppInner() {
                   <i className="ti ti-stethoscope text-[17px]" />ตารางแพทย์
                 </button>
                 <QualityCenter />
-                <PartnerList />
+                <PartnerList onOpenPartner={(p) => goTo('partner', p.name)} />
                 <ExpandableCards />
               </div>
             </div>
@@ -202,6 +217,20 @@ function AppInner() {
       )}
 
       {page === 'online' && <RequestGrid searchQuery={searchQuery} />}
+
+      {page === 'partner' && (
+        <PartnerDetailPage
+          partner={content.PARTNERS.find((p) => p.name === selectedPartnerName)}
+          onBack={() => goTo('home')}
+        />
+      )}
+
+      {page === 'service' && (
+        <DigitalServicePage
+          service={content.DIGITAL_SERVICES.find((s) => s.label === selectedServiceLabel)}
+          onBack={() => goTo('home')}
+        />
+      )}
 
       <Footer />
 

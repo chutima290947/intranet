@@ -4,10 +4,22 @@ import promoPed from '../assets/promo-ped.jpg'
 import promoGyn from '../assets/promo-gyn.webp'
 import promoMed from '../assets/promo-med.jpg'
 
+import hrPeopleConnect from '../assets/digital-services/hr-people-connect.png'
+import hrForms from '../assets/digital-services/hr-forms.png'
+import hrPolicy from '../assets/digital-services/hr-policy.png'
+import hrTrainingHours from '../assets/digital-services/hr-training-hours.png'
+
 import divisionTpp from '../assets/division-tpp.jpg'
 import divisionMedical from '../assets/division-medical.jpg'
 import divisionFinance from '../assets/division-finance.jpg'
 import divisionIt from '../assets/division-it.jpg'
+import { HEALTHCARE_PARTNERS } from './partnerHealthcareList'
+import { CLINIC_NURSE_PARTNERS } from './clinicNursePartners'
+import { PRE_EMPLOYMENT_HEALTH_CHECK_PARTNERS } from './preEmploymentHealthCheckPartners'
+import { ANNUAL_HEALTH_CHECK_PARTNERS } from './annualHealthCheckPartners'
+import { PRE_INSURANCE_HEALTH_CHECK_PARTNERS } from './preInsuranceHealthCheckPartners'
+import { SCHOOL_GROUP_INSURANCE_PARTNERS } from './schoolpartners'
+import { OPD_PED_PACKAGE_ITEMS, OPD_GYN_PACKAGE_ITEMS } from './promoPackageItems'
 
 /* ------------------------------------------------------------------
    DEFAULT_CONTENT
@@ -30,7 +42,6 @@ export const DEFAULT_CONTENT = {
   },
 
   // ---------------- หน้า Home ----------------
-
   SECTIONS: [
     { id: 'sec-ann', label: 'ข่าวประชาสัมพันธ์', icon: 'ti-speakerphone', color: 'var(--color-coral)' },
     { id: 'sec-digital', label: 'Digital Services', icon: 'ti-device-desktop', color: 'var(--color-blue-600)' },
@@ -63,7 +74,7 @@ export const DEFAULT_CONTENT = {
     { icon: 'ti-device-mobile', title: 'หมายเลขโทรศัพท์มือถือของแผนกต่างๆ', sub: 'เบอร์ติดต่อมือถือประจำแผนกในโรงพยาบาล' },
   ],
 
-  DIGITAL_SERVICES: [
+DIGITAL_SERVICES: [
     { icon: 'ti-world', label: 'Office 365', color: 'var(--color-blue-600)' },
     {
       icon: 'ti-users', label: 'HR System', color: 'var(--color-blue-600)',
@@ -71,6 +82,7 @@ export const DEFAULT_CONTENT = {
         {
           title: 'การใช้งานระบบ People Connect',
           icon: 'ti-user-cog',
+          img: hrPeopleConnect,
           items: [
             { label: 'Time Off', icon: 'ti-calendar-off' },
             { label: 'People Connect Staff New', icon: 'ti-user-plus' },
@@ -82,6 +94,7 @@ export const DEFAULT_CONTENT = {
         {
           title: 'แบบฟอร์ม',
           icon: 'ti-file-description',
+          img: hrForms,
           items: [
             { label: 'แบบขอรับเงินคืน กรณีใช้สิทธิ์ประกันส่วนตัว', icon: 'ti-cash-banknote' },
             { label: 'แบบฟอร์มใบส่งตัวใช้สิทธิ์สวัสดิการ การรักษาพยาบาล', icon: 'ti-file-certificate' },
@@ -95,6 +108,7 @@ export const DEFAULT_CONTENT = {
         {
           title: 'Policy',
           icon: 'ti-shield-check',
+          img: hrPolicy,
           items: [
             { label: '023-2565 นโยบายการบริหารสวัสดิการค่ารักษาพยาบาล', icon: 'ti-file-text' },
             { label: 'สนบ.028-2560 ข้อปฏิบัติในการใช้โทรศัพท์มือถือและการใช้ Social Media', icon: 'ti-device-mobile' },
@@ -104,6 +118,14 @@ export const DEFAULT_CONTENT = {
             { label: 'ประกาศการบริหารชั่วโมงสะสม OT/RLV/ADM ในหน้า Intranet', icon: 'ti-clock-hour-4' },
             { label: 'สรุปการลาทุกประเภทของพนักงาน', icon: 'ti-report' },
             { label: 'หลักเกณฑ์ค่าเบี้ยเลี้ยงเดินทาง', icon: 'ti-car' },
+          ],
+        },
+        {
+          title: 'BSI Training Hours',
+          icon: 'ti-clock-hour-4',
+          img: hrTrainingHours,
+          items: [
+            { label: 'ชั่วโมงอบรมสะสมของพนักงาน', icon: 'ti-clock-check' },
           ],
         },
       ],
@@ -300,63 +322,31 @@ export const DEFAULT_CONTENT = {
     },
   ],
 
-  PROMOS: [
-    {
-      name: 'Dental', tag: 'หมวด A', color: 'var(--color-navy-900)', icon: 'ti-tooth', img: promoDental,
-      items: [{ label: 'ทำฟันใช้สิทธิ์ประกัน', icon: 'ti-tooth' }],
-    },
-    {
-      name: 'Health Check Up Package', tag: 'หมวด B', color: 'var(--color-navy-900)', icon: 'ti-eye', img: promoCheckup,
-      items: [
-        { label: 'Additional ปี 2026-2027', icon: 'ti-clipboard-plus' },
-        { label: 'Health Promotion ปี 2026-2027', icon: 'ti-heartbeat' },
-      ],
-    },
-    {
-      name: 'OPD PED Package', tag: 'หมวด B', color: 'var(--color-navy-900)', icon: 'ti-heart', img: promoPed,
-      items: [
-        { label: 'Vaccine Package ปี69', icon: 'ti-syringe' },
-        { label: 'Allergy Test ปี 69', icon: 'ti-flask' },
-        { label: 'Blood Test ปี69', icon: 'ti-droplet' },
-        { label: 'Vaccine ไข้หวัดใหญ่เด็ก ปี 69', icon: 'ti-syringe' },
-        { label: 'HPV Vaccine Package ปี 69', icon: 'ti-syringe' },
-        { label: 'แพ็กเกจตรวจภาวะซีดในเด็ก ปี 69', icon: 'ti-droplet' },
-        { label: 'วัคซีนโรคมือ เท้า ปาก ปี69', icon: 'ti-syringe' },
-        { label: 'แพ็กเกจวัคซีนไข้เลือดออกในเด็ก ปี69', icon: 'ti-syringe' },
-        { label: 'แพ็กเกจการตรวจคัดกรองการสัมผัสวัณโรคในเด็ก ปี69', icon: 'ti-lungs' },
-        { label: 'แพ็กเกจวัคซีนปอดอักเสบ ปี 69', icon: 'ti-lungs' },
-        { label: 'แพ็กเกจตรวจสุขภาพเด็กน้ำหนักเกินเกณฑ์ ปี69', icon: 'ti-scale' },
-        { label: 'แพ็กเกจโรคทางเดินอาหารเรื้อรังในเด็ก ปี69', icon: 'ti-medical-cross' },
-        { label: 'แพ็กเกจวัคซีนป้องกันโรคไข้กาฬหลังแอ่นสายพันธุ์ B ปี69', icon: 'ti-syringe' },
-        { label: 'แพ็กเกจ Hormone child PK BSI ปี69', icon: 'ti-flask' },
-        { label: 'แพ็กเกจ Endocrine child BSI ปี69', icon: 'ti-flask' },
-        { label: 'แพ็กเกจวัคซีน อายุ 1-2 ขวบครึ่ง BSI ปี69', icon: 'ti-syringe' },
-        { label: 'แพ็กเกจ Circumcision Package for child BSI 2026', icon: 'ti-medical-cross' },
-        { label: 'แพ็กเกจตรวจคัดกรองการเจริญเติบโตและอายุกระดูกเด็กอายุ 6-14 2026', icon: 'ti-ruler' },
-      ],
-    },
-    {
-      name: 'OPD GYN Package', tag: 'หมวด C', color: 'var(--color-coral)', icon: 'ti-stethoscope', img: promoGyn,
-      items: [
-        { label: 'แพ็กเกจคลอด(ไทย)2026-2027', icon: 'ti-baby-carriage' },
-        { label: 'Delivery Packages OBG BSI 2026-2027', icon: 'ti-baby-carriage' },
-        { label: 'Cervical Cancer ning 2026', icon: 'ti-microscope' },
-        { label: 'แพ็กเกจสำหรับลูกค้าคลินิกสูตินรีเวช 2026', icon: 'ti-stethoscope' },
-        { label: 'แพ็กเกจฝากครรภ์ครั้งแรก 2026', icon: 'ti-heart' },
-        { label: 'แพ็กเกจฝากครรภ์ครั้งที่ 2 2026', icon: 'ti-heart' },
-        { label: 'HPV Gardasil Vaccine 2026', icon: 'ti-syringe' },
-        { label: 'RSV Vaccine for pregnant OBG BSI 2026', icon: 'ti-syringe' },
-        { label: 'แพ็กเกจตรวจสุขภาพก่อนมีบุตร 2026', icon: 'ti-heartbeat' },
-        { label: 'แพ็กเกจตรวจคัดกรองภาวะ PMOS 2026', icon: 'ti-microscope' },
-        { label: 'แพ็กเกจตรวจอัลตร้าซาวด์ MFM 2026', icon: 'ti-activity' },
-        { label: 'แพ็กเกจคลอด+สิทธิ์ข้าราชการ', icon: 'ti-baby-carriage' },
-      ],
-    },
-    {
-      name: 'OPD Med Package', tag: 'หมวด D', color: 'var(--color-navy-900)', icon: 'ti-pill', img: promoMed,
-      items: [{ label: 'แพ็กเกจวัคซีนสำหรับผู้ใหญ่และผู้สูงอายุ', icon: 'ti-syringe' }],
-    },
-  ],
+PROMOS: [
+  {
+    name: 'Dental', tag: 'หมวด A', color: 'var(--color-navy-900)', icon: 'ti-tooth', img: promoDental,
+    items: [{ label: 'ทำฟันใช้สิทธิ์ประกัน', icon: 'ti-tooth' }],
+  },
+  {
+    name: 'Health Check Up Package', tag: 'หมวด B', color: 'var(--color-navy-900)', icon: 'ti-eye', img: promoCheckup,
+    items: [
+      { label: 'Additional ปี 2026-2027', icon: 'ti-clipboard-plus' },
+      { label: 'Health Promotion ปี 2026-2027', icon: 'ti-heartbeat' },
+    ],
+  },
+  {
+    name: 'OPD PED Package', tag: 'หมวด B', color: 'var(--color-navy-900)', icon: 'ti-heart', img: promoPed,
+    items: OPD_PED_PACKAGE_ITEMS,
+  },
+  {
+    name: 'OPD GYN Package', tag: 'หมวด C', color: 'var(--color-coral)', icon: 'ti-stethoscope', img: promoGyn,
+    items: OPD_GYN_PACKAGE_ITEMS,
+  },
+  {
+    name: 'OPD Med Package', tag: 'หมวด D', color: 'var(--color-navy-900)', icon: 'ti-pill', img: promoMed,
+    items: [{ label: 'แพ็กเกจวัคซีนสำหรับผู้ใหญ่และผู้สูงอายุ', icon: 'ti-syringe' }],
+  },
+],
 
   QUALITY: [
     { icon: 'ti-file-text', label: 'Document Mangement', warn: false },
@@ -368,16 +358,68 @@ export const DEFAULT_CONTENT = {
   ],
 
   PARTNERS: [
-    { name: 'บัญชีรายชื่อบริษัทคู่สัญญา' },
-    { name: 'รายชื่อรักษาพยาบาล' },
-    { name: 'รายชื่อคลินิคพยาบาล' },
-    { name: 'รายชื่อตรวจสุขภาพก่อนเข้าทำงาน' },
-    { name: 'รายชื่อผู้ตรวจสุขภาพประจำปี' },
-    { name: 'โปรแกรมบริหารจัดการคะแนนตัวแทนประกัน' },
-    { name: 'รายชื่อบริษัทประกัน' },
-    { name: 'รายชื่อตรวจสุขภาพก่อนทำประกัน' },
-    { name: 'รายชื่อประกันกลุ่มโรงเรียน' },
-    { name: 'Foreign Insurance companies' },
+    {
+      name: 'บัญชีรายชื่อบริษัทคู่สัญญา',
+      icon: 'ti-list-details',
+      href: '', file: null,
+      subItems: [],
+    },
+    {
+      name: 'รายชื่อรักษาพยาบาล',
+      icon: 'ti-building-hospital',
+      href: '', file: null,
+      subItems: HEALTHCARE_PARTNERS,
+    },
+    {
+      name: 'รายชื่อคลินิคพยาบาล',
+      icon: 'ti-first-aid-kit',
+      href: '', file: null,
+      subItems: CLINIC_NURSE_PARTNERS,
+    },
+
+    {
+      name: 'รายชื่อตรวจสุขภาพก่อนเข้าทำงาน',
+      icon: 'ti-clipboard-check',
+      href: '', file: null,
+      subItems: PRE_EMPLOYMENT_HEALTH_CHECK_PARTNERS,
+    },
+    
+    {
+  name: 'รายชื่อผู้ตรวจสุขภาพประจำปี',
+  icon: 'ti-report-medical',
+  href: '', file: null,
+  subItems: ANNUAL_HEALTH_CHECK_PARTNERS,
+},
+    {
+      name: 'โปรแกรมบริหารจัดการคะแนนตัวแทนประกัน',
+      icon: 'ti-award',
+      href: '', file: null,
+      subItems: [],
+    },
+    {
+      name: 'รายชื่อบริษัทประกัน',
+      icon: 'ti-shield-check',
+      href: '', file: null,
+      subItems: [],
+    },
+    {
+      name: 'รายชื่อตรวจสุขภาพก่อนทำประกัน',
+      icon: 'ti-heartbeat',
+      href: '', file: null,
+      subItems: PRE_INSURANCE_HEALTH_CHECK_PARTNERS,
+    },
+    {
+  name: 'รายชื่อประกันกลุ่มโรงเรียน',
+  icon: 'ti-school',
+  href: '', file: null,
+  subItems: SCHOOL_GROUP_INSURANCE_PARTNERS,
+},
+{
+  name: 'Foreign Insurance companies',
+  icon: 'ti-world',
+  href: '', file: null,
+  subItems: [],
+},
   ],
 
   FINANCE_DOCS: [

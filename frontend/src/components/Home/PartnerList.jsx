@@ -1,12 +1,38 @@
 import { useState } from 'react'
 import { useContent } from '../../context/ContentContext'
 
-export function PartnerList() {
+export function buildDocs(item) {
+  const candidates = [
+    { key: 'detail', label: 'รายละเอียด', href: item.detailHref, file: item.detailFile },
+    { key: 'contract', label: 'เอกสารสัญญา', href: item.contractHref, file: item.contractFile },
+    { key: 'attachment', label: 'เอกสารแนบท้ายสัญญา', href: item.attachmentHref, file: item.attachmentFile },
+    { key: 'signature', label: 'ลายเซ็นผู้มีอำนาจส่งตัว', href: item.signatureHref, file: item.signatureFile },
+  ]
+  const docs = candidates
+    .map((d) => ({ label: d.label, link: d.href || d.file }))
+    .filter((d) => d.link)
+
+  // รองรับข้อมูลเก่าที่มีแค่ href/file เดี่ยวๆ (ไม่มี 4 ประเภทเอกสารแยก)
+  if (docs.length === 0 && (item.href || item.file)) {
+    docs.push({ label: 'ลิงก์', link: item.href || item.file })
+  }
+
+  // รองรับ item.docs = [{ label, href, file }] แบบจำนวนไม่คงที่
+  // (ใช้กับรายการที่แต่ละบริษัทมีเอกสารไม่เท่ากัน เช่น รายชื่อตรวจสุขภาพก่อนเข้าทำงาน)
+  if (Array.isArray(item.docs)) {
+    item.docs.forEach((d) => {
+      const link = d.href || d.file
+      if (link) docs.push({ label: d.label, link })
+    })
+  }
+
+  return docs
+}
+
+export function PartnerList({ onOpenPartner }) {
   const { content } = useContent()
   const PARTNERS = content.PARTNERS
-  const [tab, setTab] = useState('ทั้งหมด')
   const [expanded, setExpanded] = useState(false)
-  const tabs = ['ทั้งหมด']
   const visible = expanded ? PARTNERS : PARTNERS.slice(0, 4)
 
   return (
@@ -18,28 +44,41 @@ export function PartnerList() {
           <span className="rounded-[20px] bg-blue-600 px-2.5 py-0.5 font-mono text-[10px] font-bold text-white">{PARTNERS.length}</span>
         </div>
       </div>
-      <div className="flex flex-wrap gap-1.5 overflow-x-auto border-b border-line px-[15px] py-[11px]">
-        {tabs.map(t => (
-          <div
-            key={t}
-            className={`flex-shrink-0 rounded-[20px] border px-3 py-[5px] text-[11px] font-semibold ${
-              tab === t ? 'border-blue-600 bg-blue-600 text-white' : 'border-line bg-white text-ink-soft'
-            }`}
-            onClick={() => setTab(t)}
-          >
-            {t}
-          </div>
-        ))}
-      </div>
+
       <div className="py-1">
-        {visible.map(p => (
-          <div className="flex items-center justify-between border-b border-line px-[18px] py-2.5 last:border-b-0" key={p.name}>
-            <div className="flex items-center gap-[9px] text-xs font-semibold">
-              <i className="ti ti-building text-sm text-ink-soft" />{p.name}
+        {visible.map((p) => {
+          const subItems = p.subItems || []
+          const hasSub = subItems.length > 0
+          const directLink = !hasSub && (p.href || p.file)
+
+          const handleClick = () => {
+            if (hasSub) onOpenPartner?.(p)
+            else if (directLink) window.open(p.href || p.file, '_blank')
+          }
+
+          return (
+            <div
+              key={p.name}
+              className="flex items-center justify-between border-b border-line px-[18px] py-2.5 last:border-b-0"
+              onClick={handleClick}
+              style={{ cursor: hasSub || directLink ? 'pointer' : 'default' }}
+            >
+              <div className="flex items-center gap-[9px] text-xs font-semibold text-navy-900">
+                <i className={`ti ${p.icon || 'ti-building'} text-sm text-ink-soft`} />
+                {p.name}
+                {hasSub && (
+                  <span className="rounded-[20px] bg-blue-50 px-2 py-[1px] font-mono text-[10px] font-bold text-blue-600">
+                    {subItems.length}
+                  </span>
+                )}
+              </div>
+              {hasSub && <i className="ti ti-chevron-right text-ink-soft" />}
+              {directLink && <i className="ti ti-external-link text-ink-soft" />}
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
+
       <div className="px-[18px] py-[11px] text-center">
         <a
           href="#"

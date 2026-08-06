@@ -30,6 +30,6 @@ app.use((err, req, res, next) => {
 })
 
 const port = process.env.PORT || 3001
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`intranet-backend กำลังทำงานที่ port ${port}`)
 })

@@ -1,20 +1,12 @@
-import { useState } from 'react'
 import { useContent } from '../../context/ContentContext'
-import { DigitalServiceModal } from './DigitalServiceModal'
-import { DrillDownModal } from './DrillDownModal'
 
-export function DigitalServices() {
+export function DigitalServices({ onOpenService }) {
   const { content } = useContent()
   const DIGITAL_SERVICES = content.DIGITAL_SERVICES
 
-  const [tabService, setTabService] = useState(null)
-  const [treeService, setTreeService] = useState(null)
-
   const handleClick = (s) => {
-    if (s.groups && s.groups.length > 0) {
-      setTabService(s)
-    } else if (s.tree && s.tree.length > 0) {
-      setTreeService(s)
+    if ((s.groups && s.groups.length > 0) || (s.tree && s.tree.length > 0)) {
+      onOpenService(s)
     }
   }
 
@@ -40,9 +32,6 @@ export function DigitalServices() {
           </button>
         ))}
       </div>
-
-      <DigitalServiceModal service={tabService} onClose={() => setTabService(null)} />
-      <DrillDownModal service={treeService} onClose={() => setTreeService(null)} />
     </div>
   )
 }
