@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useContent } from '../../../context/ContentContext'
 
 function emptyFromFields(fields) {
@@ -44,15 +44,15 @@ function ImageFieldInput({ value, onChange }) {
 
   return (
     <div>
-      <div className="flex items-center gap-3 rounded-lg border border-line bg-paper/50 p-2.5">
+      <div className="flex items-center gap-3">
         {value ? (
           <img src={value} alt="" className="h-16 w-24 flex-shrink-0 rounded-md border border-line object-cover" />
         ) : (
-          <div className="flex h-16 w-24 flex-shrink-0 items-center justify-center rounded-md border border-dashed border-line bg-white">
+          <div className="flex h-16 w-24 flex-shrink-0 items-center justify-center rounded-md border border-dashed border-line bg-paper">
             <i className="ti ti-photo text-lg text-ink-soft" />
           </div>
         )}
-        <div className="flex flex-1 flex-col gap-1.5">
+        <div className="flex flex-1 flex-col gap-1">
           <input
             type="file"
             accept="image/*"
@@ -97,25 +97,19 @@ function FileFieldInput({ value, onChange }) {
 
   return (
     <div>
-      <div className="rounded-lg border border-line bg-paper/50 p-2.5">
+      <div className="flex items-center gap-3">
         {fileInfo ? (
-          <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-coral-tint">
-              <i className="ti ti-file-type-pdf text-[15px] text-coral" />
-            </span>
+          <div className="flex flex-1 items-center gap-2 rounded-md border border-line bg-paper px-3 py-2">
+            <i className="ti ti-file-type-pdf text-lg text-coral" />
             <span className="flex-1 truncate text-[11.5px] font-semibold text-ink">{fileInfo.name}</span>
-            
+            <a
               href={fileInfo.dataUrl}
               download={fileInfo.name}
-              className="rounded-md border border-line bg-white px-2 py-1 text-[10.5px] font-semibold text-blue-600"
-            <a>
+              className="text-[11px] font-semibold text-blue-600"
+            >
               เปิดดู
             </a>
-            <button
-              type="button"
-              onClick={() => onChange('')}
-              className="rounded-md border-none bg-coral-tint px-2 py-1 text-[10.5px] font-semibold text-coral"
-            >
+            <button type="button" onClick={() => onChange('')} className="text-[11px] font-semibold text-coral">
               ลบ
             </button>
           </div>
@@ -140,44 +134,8 @@ function FieldInput({ field, value, onChange }) {
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         rows={3}
-        className="w-full rounded-lg border border-line px-3 py-2.5 text-[12.5px] outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        className="w-full rounded-md border border-line px-3 py-2 text-[12.5px] outline-none focus:border-blue-500"
       />
-    )
-  }
-
-  if (field.type === 'icon') {
-    return (
-      <div className="flex items-center gap-2">
-        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-paper">
-          <i className={`ti ${value || 'ti-help-circle'} text-navy-900`} />
-        </span>
-        <input
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="เช่น ti-home (ดูชื่อไอคอนทั้งหมดที่ tabler.io/icons)"
-          className="w-full rounded-lg border border-line px-3 py-2.5 text-[12.5px] outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-        />
-      </div>
-    )
-  }
-
-  if (field.type === 'color') {
-    const isHex = /^#/.test(value || '')
-    return (
-      <div className="flex items-center gap-2">
-        <input
-          type="color"
-          value={isHex ? value : '#1B3A6B'}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-9 w-11 flex-shrink-0 cursor-pointer rounded-lg border border-line"
-        />
-        <input
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="เช่น #1B3A6B หรือ var(--color-blue-600)"
-          className="w-full rounded-lg border border-line px-3 py-2.5 text-[12.5px] outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-        />
-      </div>
     )
   }
 
@@ -195,6 +153,42 @@ function FieldInput({ field, value, onChange }) {
     )
   }
 
+  if (field.type === 'icon') {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-paper">
+          <i className={`ti ${value || 'ti-help-circle'} text-navy-900`} />
+        </span>
+        <input
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="เช่น ti-home (ดูชื่อไอคอนทั้งหมดที่ tabler.io/icons)"
+          className="w-full rounded-md border border-line px-3 py-2 text-[12.5px] outline-none focus:border-blue-500"
+        />
+      </div>
+    )
+  }
+
+  if (field.type === 'color') {
+    const isHex = /^#/.test(value || '')
+    return (
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={isHex ? value : '#1B3A6B'}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-9 w-11 flex-shrink-0 cursor-pointer rounded-md border border-line"
+        />
+        <input
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="เช่น #1B3A6B หรือ var(--color-blue-600)"
+          className="w-full rounded-md border border-line px-3 py-2 text-[12.5px] outline-none focus:border-blue-500"
+        />
+      </div>
+    )
+  }
+
   if (field.type === 'image') {
     return <ImageFieldInput value={value} onChange={onChange} />
   }
@@ -208,49 +202,11 @@ function FieldInput({ field, value, onChange }) {
       value={value || ''}
       onChange={(e) => onChange(e.target.value)}
       placeholder={field.type === 'url' ? 'https://...' : ''}
-      className="w-full rounded-lg border border-line px-3 py-2.5 text-[12.5px] outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+      className="w-full rounded-md border border-line px-3 py-2 text-[12.5px] outline-none focus:border-blue-500"
     />
   )
 }
 
-// ปุ่มชุด ขึ้น/ลง/ลบ แบบกลุ่มเดียว มีเส้นแบ่งให้ดูเป็นก้อนเดียวกัน
-function RowActions({ onUp, onDown, onDelete, size = 'sm' }) {
-  const btnSize = size === 'xs' ? 'h-6 w-6' : size === 'sm' ? 'h-7 w-7' : 'h-6 w-6'
-  const iconSize = size === 'xs' ? 'text-[11px]' : size === 'sm' ? 'text-[13px]' : 'text-[11px]'
-  return (
-    <div className="flex flex-shrink-0 items-center gap-0.5 rounded-lg border border-line bg-paper/70 p-0.5">
-      <button
-        type="button"
-        onClick={onUp}
-        className={`flex ${btnSize} items-center justify-center rounded-md border-none bg-transparent text-ink-soft hover:bg-white`}
-        aria-label="เลื่อนขึ้น"
-      >
-        <i className={`ti ti-arrow-up ${iconSize}`} />
-      </button>
-      <button
-        type="button"
-        onClick={onDown}
-        className={`flex ${btnSize} items-center justify-center rounded-md border-none bg-transparent text-ink-soft hover:bg-white`}
-        aria-label="เลื่อนลง"
-      >
-        <i className={`ti ti-arrow-down ${iconSize}`} />
-      </button>
-      <div className="mx-0.5 h-4 w-px bg-line" />
-      <button
-        type="button"
-        onClick={onDelete}
-        className={`flex ${btnSize} items-center justify-center rounded-md border-none bg-transparent text-coral hover:bg-coral-tint`}
-        aria-label="ลบรายการนี้"
-      >
-        <i className={`ti ti-trash ${iconSize}`} />
-      </button>
-    </div>
-  )
-}
-
-// รองรับ sublist ซ้อน sublist ได้ไม่จำกัดชั้น (เช่น groups -> items)
-// แต่ละรายการพับ/กางได้ (accordion) แสดงแค่ field หลักตอนพับ
-// เพื่อให้ลิสต์ยาวๆ (10-20 รายการ) ดูกระชับ ไม่ต้องเลื่อนจอเยอะ
 function SubListEditor({ field, items, onChange }) {
   const list = Array.isArray(items) ? items : []
   const [primaryField, ...restFields] = field.fields
@@ -331,7 +287,6 @@ function SubListEditor({ field, items, onChange }) {
                 />
               </div>
 
-              {/* field หลักแก้ไขได้เสมอตอนกาง ส่วน field รองซ่อนไว้ตอนพับ */}
               {isOpen && (
                 <div className="border-t border-line bg-paper/30 px-2.5 py-2.5">
                   {primaryField && (
@@ -465,38 +420,92 @@ function TreeNodeEditor({ nodes, onChange, depth = 0 }) {
   )
 }
 
+// ปุ่มชุด ขึ้น/ลง/ลบ แบบกลุ่มเดียว มีเส้นแบ่งให้ดูเป็นก้อนเดียวกัน
+function RowActions({ onUp, onDown, onDelete, size = 'sm' }) {
+  const btnSize = size === 'xs' ? 'h-6 w-6' : size === 'sm' ? 'h-7 w-7' : 'h-6 w-6'
+  const iconSize = size === 'xs' ? 'text-[11px]' : size === 'sm' ? 'text-[13px]' : 'text-[11px]'
+  return (
+    <div className="flex flex-shrink-0 items-center gap-0.5 rounded-lg border border-line bg-paper/70 p-0.5">
+      <button
+        type="button"
+        onClick={onUp}
+        className={`flex ${btnSize} items-center justify-center rounded-md border-none bg-transparent text-ink-soft hover:bg-white`}
+        aria-label="เลื่อนขึ้น"
+      >
+        <i className={`ti ti-arrow-up ${iconSize}`} />
+      </button>
+      <button
+        type="button"
+        onClick={onDown}
+        className={`flex ${btnSize} items-center justify-center rounded-md border-none bg-transparent text-ink-soft hover:bg-white`}
+        aria-label="เลื่อนลง"
+      >
+        <i className={`ti ti-arrow-down ${iconSize}`} />
+      </button>
+      <div className="mx-0.5 h-4 w-px bg-line" />
+      <button
+        type="button"
+        onClick={onDelete}
+        className={`flex ${btnSize} items-center justify-center rounded-md border-none bg-transparent text-coral hover:bg-coral-tint`}
+        aria-label="ลบรายการนี้"
+      >
+        <i className={`ti ti-trash ${iconSize}`} />
+      </button>
+    </div>
+  )
+}
+
 export function CollectionEditor({ schema }) {
-  const { content, updateCollection, resetCollection } = useContent()
-  const items = content[schema.key] || []
+  const { content, updateCollection } = useContent()
+  const savedItems = content[schema.key] || []
+
+  // ---------- ระบบ Draft ----------
+  // แก้ไขทั้งหมดเกิดขึ้นใน draft ก่อน ไม่มีผลกับข้อมูลจริงจนกว่าจะกด "บันทึกการเปลี่ยนแปลง"
+  // เปลี่ยน schema.key (สลับไปหน้าอื่น) ให้รีเซ็ต draft ใหม่จากข้อมูลจริงล่าสุดเสมอ
+  const [draftItems, setDraftItems] = useState(savedItems)
   const [openIdx, setOpenIdx] = useState(null)
+  const [justSaved, setJustSaved] = useState(false)
+
+  useEffect(() => {
+    setDraftItems(content[schema.key] || [])
+    setOpenIdx(null)
+    setJustSaved(false)
+  }, [schema.key])
+
+  const isDirty = JSON.stringify(draftItems) !== JSON.stringify(savedItems)
 
   const updateItem = (idx, key, value) => {
-    updateCollection(
-      schema.key,
-      items.map((it, i) => (i === idx ? { ...it, [key]: value } : it))
-    )
+    setDraftItems((items) => items.map((it, i) => (i === idx ? { ...it, [key]: value } : it)))
   }
   const addItem = () => {
-    updateCollection(schema.key, [...items, emptyFromFields(schema.fields)])
-    setOpenIdx(items.length)
+    setDraftItems((items) => [...items, emptyFromFields(schema.fields)])
+    setOpenIdx(draftItems.length)
   }
   const removeItem = (idx) => {
     if (!window.confirm('ยืนยันลบรายการนี้?')) return
-    updateCollection(schema.key, items.filter((_, i) => i !== idx))
+    setDraftItems((items) => items.filter((_, i) => i !== idx))
     setOpenIdx(null)
   }
   const moveItem = (idx, dir) => {
     const target = idx + dir
-    if (target < 0 || target >= items.length) return
-    const next = [...items]
-    ;[next[idx], next[target]] = [next[target], next[idx]]
-    updateCollection(schema.key, next)
+    if (target < 0 || target >= draftItems.length) return
+    setDraftItems((items) => {
+      const next = [...items]
+      ;[next[idx], next[target]] = [next[target], next[idx]]
+      return next
+    })
   }
-  const handleReset = () => {
-    if (window.confirm('รีเซ็ตกลับเป็นค่าเริ่มต้น? การแก้ไขทั้งหมดในหัวข้อนี้จะหายไป')) {
-      resetCollection(schema.key)
-      setOpenIdx(null)
-    }
+
+  const handleSave = () => {
+    updateCollection(schema.key, draftItems)
+    setJustSaved(true)
+    setTimeout(() => setJustSaved(false), 1500)
+  }
+
+  const handleDiscard = () => {
+    if (!window.confirm('ยกเลิกการแก้ไขทั้งหมดที่ยังไม่บันทึก?')) return
+    setDraftItems(savedItems)
+    setOpenIdx(null)
   }
 
   return (
@@ -506,28 +515,40 @@ export function CollectionEditor({ schema }) {
           <h2 className="text-[18px] font-bold text-navy-900">{schema.label}</h2>
           {schema.description && <p className="mt-1 text-[12.5px] leading-relaxed text-ink-soft">{schema.description}</p>}
         </div>
-        <div className="flex flex-shrink-0 gap-2">
-          <button
-            type="button"
-            onClick={handleReset}
-            className="flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-2 text-[11.5px] font-semibold text-ink-soft hover:bg-paper"
-          >
-            <i className="ti ti-refresh text-[13px]" />
-            รีเซ็ตค่าเริ่มต้น
-          </button>
+        <div className="flex flex-shrink-0 items-center gap-2">
+          {isDirty && (
+            <button
+              type="button"
+              onClick={handleDiscard}
+              className="rounded-lg border border-line bg-white px-3 py-2 text-[11.5px] font-semibold text-ink-soft hover:bg-paper"
+            >
+              ยกเลิกการแก้ไข
+            </button>
+          )}
           <button
             type="button"
             onClick={addItem}
-            className="flex items-center gap-1.5 rounded-lg border-none bg-navy-900 px-3.5 py-2 text-[11.5px] font-bold text-white hover:bg-navy-800"
+            className="flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-2 text-[11.5px] font-semibold text-navy-900 hover:bg-paper"
           >
             <i className="ti ti-plus text-[13px]" />
             เพิ่มรายการใหม่
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!isDirty}
+            className={`flex items-center gap-1.5 rounded-lg border-none px-3.5 py-2 text-[11.5px] font-bold text-white ${
+              isDirty ? 'bg-navy-900 hover:bg-navy-800' : 'cursor-not-allowed bg-navy-900/40'
+            }`}
+          >
+            <i className="ti ti-device-floppy text-[13px]" />
+            {justSaved ? 'บันทึกแล้ว ✓' : 'บันทึกการเปลี่ยนแปลง'}
           </button>
         </div>
       </div>
 
       <div className="flex flex-col gap-3">
-        {items.map((item, idx) => {
+        {draftItems.map((item, idx) => {
           const isOpen = openIdx === idx
           const title = schema.itemLabel
             ? schema.itemLabel(item)
@@ -590,12 +611,28 @@ export function CollectionEditor({ schema }) {
             </div>
           )
         })}
-        {items.length === 0 && (
+        {draftItems.length === 0 && (
           <p className="rounded-xl border border-dashed border-line py-10 text-center text-[12px] text-ink-soft">
             ยังไม่มีรายการ กด "+ เพิ่มรายการใหม่" เพื่อเริ่มต้น
           </p>
         )}
       </div>
+
+      {isDirty && (
+        <div className="sticky bottom-4 mt-4 flex items-center justify-between rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5">
+          <span className="flex items-center gap-1.5 text-[12px] font-semibold text-amber-700">
+            <i className="ti ti-alert-circle text-[14px]" />
+            มีการแก้ไขที่ยังไม่ได้บันทึก
+          </span>
+          <button
+            type="button"
+            onClick={handleSave}
+            className="rounded-md border-none bg-amber-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-amber-700"
+          >
+            บันทึกตอนนี้
+          </button>
+        </div>
+      )}
     </div>
   )
 }
