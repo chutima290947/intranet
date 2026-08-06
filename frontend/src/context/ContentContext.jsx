@@ -42,27 +42,11 @@ export function ContentProvider({ children }) {
     })
   }, [])
 
-  const resetCollection = useCallback((key) => {
-    setContent((prev) => ({ ...prev, [key]: DEFAULT_CONTENT[key] }))
-    setSaveError(null)
-    api.resetContentKey(key).catch((err) => {
-      console.error('รีเซ็ตข้อมูลบนเซิร์ฟเวอร์ไม่สำเร็จ', err)
-      setSaveError(err.message)
-    })
-  }, [])
 
-  const resetAll = useCallback(() => {
-    setContent(DEFAULT_CONTENT)
-    setSaveError(null)
-    Promise.all(Object.keys(DEFAULT_CONTENT).map((key) => api.resetContentKey(key))).catch((err) => {
-      console.error('รีเซ็ตข้อมูลทั้งหมดบนเซิร์ฟเวอร์ไม่สำเร็จ', err)
-      setSaveError(err.message)
-    })
-  }, [])
 
   return (
     <ContentContext.Provider
-      value={{ content, updateCollection, resetCollection, resetAll, isLoading, loadError, saveError }}
+      value={{ content, updateCollection }}
     >
       {children}
     </ContentContext.Provider>

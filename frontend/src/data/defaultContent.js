@@ -312,7 +312,7 @@ DIGITAL_SERVICES: [
       ],
     },
     {
-      icon: 'ti-file-medical', title: 'Trauma Center', sub: 'แนวทางการปฏิบัติอุบัติเหตุ',
+      icon: 'ti-first-aid-kit', title: 'Trauma Center', sub: 'แนวทางการปฏิบัติอุบัติเหตุ',
       subItems: [
         { label: 'การส่งต่อผู้ป่วยไปรับการรักษาที่สถานพยาบาลอื่นๆ', href: '#' },
         { label: 'การคัดกรองผู้ป่วย (Triage + Policy)', href: '#' },
