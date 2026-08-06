@@ -89,6 +89,7 @@ function isExpired(expiry) {
 export function PartnerDetailPage({ partner, onBack }) {
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
+  const [zoomQr, setZoomQr] = useState(null) // เก็บ src ของรูป QR ที่กำลังขยายดู
 
   const subItems = partner?.subItems || []
 
@@ -201,16 +202,33 @@ export function PartnerDetailPage({ partner, onBack }) {
                 </span>
               </div>
 
-              {(s.expiry || s.payorCode || s.contact) && (
-                <div className="mt-1.5 pl-[22px] text-[11.5px] leading-relaxed text-ink-soft">
-                  {s.expiry && <div>{s.expiry}</div>}
-                  {s.payorCode && (
-                    <div>Payor Code : {s.payorCode}</div>
-                  )}
-                  {s.contact && (
-                    <div className="whitespace-pre-line">
-                      กรณีมีปัญหาติดต่อ {renderTextWithLinks(s.contact)}
-                    </div>
+              {(s.expiry || s.payorCode || s.contact || s.qr) && (
+                <div className="mt-1.5 flex items-start gap-3 pl-[22px]">
+                  <div className="min-w-0 flex-1 text-[11.5px] leading-relaxed text-ink-soft">
+                    {s.expiry && <div>{s.expiry}</div>}
+                    {s.payorCode && (
+                      <div>Payor Code : {s.payorCode}</div>
+                    )}
+                    {s.contact && (
+                      <div className="whitespace-pre-line">
+                        กรณีมีปัญหาติดต่อ {renderTextWithLinks(s.contact)}
+                      </div>
+                    )}
+                  </div>
+
+                  {s.qr && (
+                    <button
+                      type="button"
+                      onClick={() => setZoomQr(s.qr)}
+                      className="shrink-0 rounded-md border border-line bg-white p-1"
+                      title="คลิกเพื่อขยาย QR Code"
+                    >
+                      <img
+                        src={s.qr}
+                        alt={`QR Code - ${s.label}`}
+                        className="h-20 w-20 object-contain"
+                      />
+                    </button>
                   )}
                 </div>
               )}
@@ -263,6 +281,33 @@ export function PartnerDetailPage({ partner, onBack }) {
           >
             <i className="ti ti-chevron-right text-sm" />
           </button>
+        </div>
+      )}
+
+      {/* Modal ขยายดู QR Code */}
+      {zoomQr && (
+        <div
+          className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 px-6"
+          onClick={() => setZoomQr(null)}
+        >
+          <div
+            className="max-w-[90vw] rounded-lg bg-white p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-2 flex justify-end">
+              <button
+                onClick={() => setZoomQr(null)}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-ink-soft hover:bg-line/50"
+              >
+                <i className="ti ti-x text-base" />
+              </button>
+            </div>
+            <img
+              src={zoomQr}
+              alt="QR Code ขยาย"
+              className="max-h-[70vh] w-auto object-contain"
+            />
+          </div>
         </div>
       )}
     </div>

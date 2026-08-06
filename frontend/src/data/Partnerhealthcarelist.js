@@ -5,6 +5,7 @@
    รูปแบบแต่ละรายการตรงกับที่ buildDocs() และ PartnerDetailPage.jsx อ่าน:
    { label, expiry?, payorCode?, contact?, docs?: [{ label, href }] }
 ------------------------------------------------------------------ */
+import qrScg from '../assets/qr/scg.jpg'
 
 export const HEALTHCARE_PARTNERS = [
   {
@@ -2807,6 +2808,7 @@ export const HEALTHCARE_PARTNERS = [
   {
     label: 'บริษัท ปูนซิเมนต์ไทย จำกัด (มหาชน) และบริษัทในเครือซิเมนต์ไทย',
     expiry: 'Exp.31/12/2570',
+    qr: qrScg,
     contact: 'เอกสารประกอบการวางบิล\nPayor Code : 6700465001\n- สำเนาบัตรประชาชน / Passport\n- ใบรับรองแพทย์ / ใบเคลม\nกรณีมีปัญหาติดต่อ คุณจันทิมา เตี๋ยวสกุล (ขวัญ) โทรศัพท์ 081-5379899\nQR Code ตรวจสอบสิทธิ์โครงการ OPD ไม่ต้องจ่ายเงิน และ IPD ไม่ต้องใช้ใบส่งตัว',
     docs: [
       {
