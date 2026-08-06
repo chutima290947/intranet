@@ -4,9 +4,32 @@ import { api } from '../lib/api'
 
 const ContentContext = createContext(null)
 
+// deep merge: เอา DEFAULT_CONTENT เป็นฐาน แล้วทับด้วย saved
+// ถ้า saved ไม่มี key ไหน (เช่น qrImage ที่เพิ่งเพิ่มใหม่) จะยังคงค่าจาก DEFAULT_CONTENT ไว้
+function deepMerge(base, override) {
+  if (Array.isArray(base) && Array.isArray(override)) {
+    const length = Math.max(base.length, override.length)
+    const result = []
+    for (let i = 0; i < length; i++) {
+      result[i] = deepMerge(base[i], override[i])
+    }
+    return result
+  }
+  if (
+    base && override &&
+    typeof base === 'object' && typeof override === 'object' &&
+    !Array.isArray(base) && !Array.isArray(override)
+  ) {
+    const result = { ...base }
+    for (const key of Object.keys(override)) {
+      result[key] = deepMerge(base[key], override[key])
+    }
+    return result
+  }
+  return override !== undefined ? override : base
+}
+
 export function ContentProvider({ children }) {
-  // เริ่มด้วยค่าเริ่มต้นในโค้ดไปก่อน (โหลดหน้าเว็บได้ทันทีไม่ต้องรอ API)
-  // แล้วค่อย "ทับ" ด้วยข้อมูลจาก Neon Postgres (ผ่าน backend) เมื่อโหลดเสร็จ
   const [content, setContent] = useState(DEFAULT_CONTENT)
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
@@ -18,7 +41,7 @@ export function ContentProvider({ children }) {
       .getContent()
       .then((saved) => {
         if (cancelled) return
-        setContent({ ...DEFAULT_CONTENT, ...saved })
+        setContent(deepMerge(DEFAULT_CONTENT, saved))   // 👈 เปลี่ยนจาก { ...DEFAULT_CONTENT, ...saved }
         setLoadError(null)
       })
       .catch((err) => {
@@ -42,12 +65,8 @@ export function ContentProvider({ children }) {
     })
   }, [])
 
-
-
   return (
-    <ContentContext.Provider
-      value={{ content, updateCollection }}
-    >
+    <ContentContext.Provider value={{ content, updateCollection }}>
       {children}
     </ContentContext.Provider>
   )
