@@ -1,6 +1,7 @@
-// ตัวกลางเรียก backend API (ต่อกับ Neon Postgres ผ่าน backend/)
-// ตั้งค่า URL ของ backend ผ่าน .env: VITE_API_URL=https://your-backend.example.com
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+// ลำดับความสำคัญ:
+// 1) ถ้ามี VITE_API_URL ใน .env ให้ใช้ค่านั้นก่อนเสมอ (เผื่อ deploy จริงที่ frontend/backend อยู่คนละโดเมน)
+// 2) ถ้าไม่มี ให้คำนวณจาก hostname ปัจจุบันของหน้าเว็บเอง (แก้ปัญหา IP เปลี่ยนไปเรื่อยๆ ตอน dev ในวง LAN)
+const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`
 const TOKEN_KEY = 'intranet_admin_token'
 
 export function getToken() {
