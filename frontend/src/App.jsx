@@ -22,7 +22,6 @@ import { ContactCard } from './components/Home/ContactCard'
 import { QualityCenter } from './components/Home/QualityCenter'
 import { PartnerList } from './components/Home/PartnerList'
 import { PartnerDetailPage } from './components/Home/PartnerDetailPage'
-import { UploadBox } from './components/Home/UploadBox'
 import { ExpandableCards } from './components/Home/ExpandableCards'
 import { DivisionGrid } from './components/Division/DivisionGrid'
 import { ReportGrid } from './components/Report/Reportgrid'
@@ -184,7 +183,6 @@ function AppInner() {
                 <NSystem />
                 <OnCall />
                 <Promo />
-                <UploadBox />
               </div>
               <div className="flex flex-col gap-3.5">
                 <DigitalServices onOpenService={(s) => goTo('service', s.label)} />
