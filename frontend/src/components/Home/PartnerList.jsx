@@ -5,7 +5,6 @@ export function buildDocs(item) {
   const candidates = [
     { key: 'detail', label: 'รายละเอียด', href: item.detailHref, file: item.detailFile },
     { key: 'contract', label: 'เอกสารสัญญา', href: item.contractHref, file: item.contractFile },
-    { key: 'attachment', label: 'เอกสารแนบท้ายสัญญา', href: item.attachmentHref, file: item.attachmentFile },
     { key: 'signature', label: 'ลายเซ็นผู้มีอำนาจส่งตัว', href: item.signatureHref, file: item.signatureFile },
   ]
   const docs = candidates
