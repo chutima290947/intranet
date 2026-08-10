@@ -23,6 +23,9 @@ import { QualityCenter } from './components/Home/QualityCenter'
 import { PartnerList } from './components/Home/PartnerList'
 import { PartnerDetailPage } from './components/Home/PartnerDetailPage'
 import { ExpandableCards } from './components/Home/ExpandableCards'
+import { GenericListSection } from './components/Home/GenericListSection'
+import { GenericGridSection } from './components/Home/GenericGridSection'
+import { GenericExpandableSection } from './components/Home/GenericExpandableSection'
 import { DivisionGrid } from './components/Division/DivisionGrid'
 import { ReportGrid } from './components/Report/Reportgrid'
 import { DoctorSchedulePage } from './components/Home/DoctorSchedulePage'
@@ -49,8 +52,14 @@ function loadStoredPage() {
   }
 }
 
+function renderCustomSection(s) {
+  if (s.template === 'grid') return <GenericGridSection section={s} />
+  if (s.template === 'expandable') return <GenericExpandableSection section={s} />
+  return <GenericListSection section={s} />
+}
+
 function AppInner() {
-  const { content } = useContent()
+  const { content, customSections } = useContent()
   const { isAuthenticated } = useAuth()
 
   const initial = loadStoredPage()
@@ -90,10 +99,11 @@ function AppInner() {
 
   useEffect(() => {
     if (page !== 'home') return
+    const allSections = [...content.SECTIONS, ...customSections]
     const onScroll = () => {
       const offset = (quicknavRef.current?.offsetHeight || 0) + 20
       let current = ''
-      for (const s of content.SECTIONS) {
+      for (const s of allSections) {
         const el = document.getElementById(s.id)
         if (el && el.getBoundingClientRect().top <= offset) current = s.id
       }
@@ -101,7 +111,7 @@ function AppInner() {
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
-  }, [page, content.SECTIONS])
+  }, [page, content.SECTIONS, customSections])
 
   const handleQuickNavClick = (e) => {
     const link = e.target.closest('.qn-btn') || e.target.closest('a[href^="#"]')
@@ -183,6 +193,11 @@ function AppInner() {
                 <NSystem />
                 <OnCall />
                 <Promo />
+                {customSections.filter((s) => (s.column || 'left') === 'left').map((s) => (
+                  <div key={s.id} id={s.id}>
+                    {renderCustomSection(s)}
+                  </div>
+                ))}
               </div>
               <div className="flex flex-col gap-3.5">
                 <DigitalServices onOpenService={(s) => goTo('service', s.label)} />
@@ -198,6 +213,11 @@ function AppInner() {
                 <QualityCenter />
                 <PartnerList onOpenPartner={(p) => goTo('partner', p.name)} />
                 <ExpandableCards />
+                {customSections.filter((s) => s.column === 'right').map((s) => (
+                  <div key={s.id} id={s.id}>
+                    {renderCustomSection(s)}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
