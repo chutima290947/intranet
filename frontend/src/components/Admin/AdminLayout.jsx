@@ -3,13 +3,19 @@ import { ADMIN_SCHEMAS } from '../../data/adminSchemas'
 import { CollectionEditor } from './editors/CollectionEditor'
 import { JsonEditor } from './editors/JsonEditor'
 import { SiteSettingsEditor } from './editors/SiteSettingsEditor'
+import { CustomSectionsPanel } from './CustomSectionsPanel'
 import { useAuth } from '../../context/AuthContext'
+
+// key พิเศษสำหรับเมนู "Section ที่สร้างเอง" — ไม่ได้อยู่ใน ADMIN_SCHEMAS
+// เพราะไม่ใช่ collection ตายตัวแบบอื่น แต่เป็นรายการที่สร้าง/ลบเองได้ไม่จำกัด
+const CUSTOM_SECTIONS_KEY = '__custom_sections__'
 
 export function AdminLayout({ onExit }) {
   const { logout } = useAuth()
   const [activeKey, setActiveKey] = useState(ADMIN_SCHEMAS[0].items[0].key)
 
   const activeSchema = ADMIN_SCHEMAS.flatMap((g) => g.items).find((s) => s.key === activeKey)
+  const isCustomSectionsPage = activeKey === CUSTOM_SECTIONS_KEY
 
   const handleLogout = () => {
     logout()
@@ -46,6 +52,25 @@ export function AdminLayout({ onExit }) {
               </div>
             </div>
           ))}
+
+          {/* เมนูพิเศษ: Section ที่สร้างเองในหน้า Home — เพิ่ม/ลบได้ไม่จำกัด ไม่ต้องแก้โค้ด */}
+          <div className="mb-4">
+            <div className="mb-1.5 px-2 text-[10px] font-bold tracking-wide text-ink-soft/70 uppercase">
+              กำหนดเอง
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <button
+                type="button"
+                onClick={() => setActiveKey(CUSTOM_SECTIONS_KEY)}
+                className={`flex items-center gap-1.5 rounded-md border-none px-2.5 py-2 text-left text-[12px] font-semibold ${
+                  isCustomSectionsPage ? 'bg-blue-tint text-blue-600' : 'bg-transparent text-ink hover:bg-paper'
+                }`}
+              >
+                <i className="ti ti-layout-grid-add text-[13px]" />
+                Section ที่จะเพิ่ม (หน้า Home)
+              </button>
+            </div>
+          </div>
         </nav>
 
         <div className="border-t border-line p-3">
@@ -67,9 +92,10 @@ export function AdminLayout({ onExit }) {
       </aside>
 
       <main className="flex-1 overflow-y-auto px-8 py-7">
-        {activeSchema?.type === 'json' && <JsonEditor schema={activeSchema} />}
-        {activeSchema?.type === 'list' && <CollectionEditor schema={activeSchema} />}
-        {activeSchema?.type === 'site' && <SiteSettingsEditor />}
+        {isCustomSectionsPage && <CustomSectionsPanel />}
+        {!isCustomSectionsPage && activeSchema?.type === 'json' && <JsonEditor schema={activeSchema} />}
+        {!isCustomSectionsPage && activeSchema?.type === 'list' && <CollectionEditor schema={activeSchema} />}
+        {!isCustomSectionsPage && activeSchema?.type === 'site' && <SiteSettingsEditor />}
       </main>
     </div>
   )

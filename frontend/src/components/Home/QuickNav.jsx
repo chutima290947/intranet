@@ -2,8 +2,9 @@ import { forwardRef } from 'react'
 import { useContent } from '../../context/ContentContext'
 
 export const QuickNav = forwardRef(function QuickNav({ active, onNavClick }, ref) {
-  const { content } = useContent()
-  const SECTIONS = content.SECTIONS
+  const { content, customSections } = useContent()
+  // รวม section เดิม (ในโค้ด) กับ custom sections (สร้างเองผ่านแอดมิน) เข้าเมนูเดียวกัน
+  const SECTIONS = [...content.SECTIONS, ...customSections]
 
   return (
     <div
