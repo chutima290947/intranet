@@ -1,6 +1,10 @@
 export function PromoModal({ promo, onClose }) {
   if (!promo) return null
 
+  const imgUrl = promo.img
+    ? promo.img + (promo.img.indexOf('?') !== -1 ? '&' : '?') + 'v=' + (promo.updatedAt || promo.id || Date.now())
+    : null
+
   return (
     <div
       className="fixed inset-0 z-[999] flex items-center justify-center bg-black/40 px-4"
@@ -20,9 +24,9 @@ export function PromoModal({ promo, onClose }) {
         <div
           className="flex h-[110px] items-center justify-center"
           style={
-            promo.img
-              ? { backgroundImage: `url(${promo.img})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-              : { background: `linear-gradient(135deg, ${promo.color}, var(--color-blue-500))` }
+            imgUrl
+              ? { backgroundImage: 'url(' + imgUrl + ')', backgroundSize: 'cover', backgroundPosition: 'center' }
+              : { background: 'linear-gradient(135deg, ' + promo.color + ', var(--color-blue-500))' }
           }
         >
           {!promo.img && <i className={`ti ${promo.icon} text-4xl text-white/85`} />}

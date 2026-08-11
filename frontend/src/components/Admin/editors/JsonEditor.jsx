@@ -6,27 +6,49 @@ export function JsonEditor({ schema }) {
   const [text, setText] = useState(() => JSON.stringify(content[schema.key], null, 2))
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     setText(JSON.stringify(content[schema.key], null, 2))
     setError('')
   }, [schema.key])
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    let parsed
+
     try {
-      const parsed = JSON.parse(text)
-      updateCollection(schema.key, parsed)
+      parsed = JSON.parse(text)
+    } catch (e) {
+      setError('รูปแบบ JSON ไม่ถูกต้อง: ' + e.message)
+      return
+    }
+
+    try {
+      setBusy(true)
       setError('')
+      await updateCollection(schema.key, parsed)
       setSaved(true)
       setTimeout(() => setSaved(false), 1500)
     } catch (e) {
-      setError('รูปแบบ JSON ไม่ถูกต้อง: ' + e.message)
+      setError(e.message || 'บันทึกไม่สำเร็จ กรุณาลองใหม่')
+    } finally {
+      setBusy(false)
     }
   }
 
-  const handleReset = () => {
-    if (window.confirm('รีเซ็ตกลับเป็นค่าเริ่มต้น? การแก้ไขทั้งหมดในหัวข้อนี้จะหายไป')) {
-      resetCollection(schema.key)
+  const handleReset = async () => {
+    if (!window.confirm('รีเซ็ตกลับเป็นค่าเริ่มต้น? การแก้ไขทั้งหมดในหัวข้อนี้จะหายไป')) {
+      return
+    }
+
+    try {
+      setBusy(true)
+      setError('')
+      await resetCollection(schema.key)
+    } catch (e) {
+      setError(e.message || 'รีเซ็ตไม่สำเร็จ กรุณาลองใหม่')
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -44,22 +66,25 @@ export function JsonEditor({ schema }) {
         value={text}
         onChange={(e) => setText(e.target.value)}
         spellCheck={false}
-        className="h-[520px] w-full rounded-md border border-line bg-[#0d1520] p-3 font-mono text-[11.5px] leading-relaxed text-[#d4e0f0] outline-none"
+        disabled={busy}
+        className="h-[520px] w-full rounded-md border border-line bg-[#0d1520] p-3 font-mono text-[11.5px] leading-relaxed text-[#d4e0f0] outline-none disabled:opacity-60"
       />
       {error && <p className="mt-2 text-[12px] font-semibold text-coral">{error}</p>}
       <div className="mt-3 flex items-center gap-2">
         <button
           type="button"
           onClick={handleSave}
-          className="rounded-md border-none bg-navy-900 px-4 py-2 text-[12px] font-bold text-white"
+          disabled={busy}
+          className="rounded-md border-none bg-navy-900 px-4 py-2 text-[12px] font-bold text-white disabled:opacity-60"
         >
-          บันทึกการเปลี่ยนแปลง
+          {busy ? 'กำลังบันทึก...' : 'บันทึกการเปลี่ยนแปลง'}
         </button>
         {saved && <span className="text-[12px] font-semibold text-teal">บันทึกแล้ว ✓</span>}
         <button
           type="button"
           onClick={handleReset}
-          className="rounded-md border border-line bg-white px-4 py-2 text-[12px] font-semibold text-ink-soft"
+          disabled={busy}
+          className="rounded-md border border-line bg-white px-4 py-2 text-[12px] font-semibold text-ink-soft disabled:opacity-60"
         >
           รีเซ็ตค่าเริ่มต้น
         </button>

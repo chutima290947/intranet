@@ -1,96 +1,134 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { api } from '../lib/api'
 import { DEFAULT_CONTENT } from '../data/defaultContent'
 
-const STORAGE_KEY = 'intranet_content_v1'
-// custom sections (สร้างเองผ่านแอดมิน ไม่มีอยู่ในไฟล์โค้ด) เก็บแยก key ต่างหาก
-// เพื่อไม่ให้ merge ปนกับ content หลัก และจัดการแยกอิสระจากกัน
-const CUSTOM_SECTIONS_KEY = 'intranet_custom_sections_v1'
+// custom sections เก็บรวมเป็น array เดียวใน content_store ภายใต้ key พิเศษนี้
+// (ไม่ merge ปนกับ DEFAULT_CONTENT เพราะไม่ใช่ key ที่มีอยู่ในโค้ด)
+const CUSTOM_SECTIONS_KEY = '__custom_sections__'
 
 const ContentContext = createContext(null)
-
-function loadInitial() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return DEFAULT_CONTENT
-    const saved = JSON.parse(raw)
-    return { ...DEFAULT_CONTENT, ...saved }
-  } catch (err) {
-    console.error('โหลดข้อมูลที่บันทึกไว้ไม่สำเร็จ ใช้ค่าเริ่มต้นแทน', err)
-    return DEFAULT_CONTENT
-  }
-}
-
-// custom sections: array ของ { id, label, icon, color, template: 'list', items: [] }
-function loadCustomSections() {
-  try {
-    const raw = localStorage.getItem(CUSTOM_SECTIONS_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
-  } catch (err) {
-    console.error('โหลด custom sections ไม่สำเร็จ', err)
-    return []
-  }
-}
 
 function genId() {
   return 'cs-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
 }
 
 export function ContentProvider({ children }) {
-  const [content, setContent] = useState(loadInitial)
-  const [customSections, setCustomSections] = useState(loadCustomSections)
+  const [content, setContent] = useState(DEFAULT_CONTENT)
+  const [customSections, setCustomSections] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
 
+  // โหลดข้อมูลทั้งหมดจากเซิร์ฟเวอร์ (Neon) ตอนแอปเริ่มทำงาน
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(content))
-    } catch (err) {
-      console.error('บันทึกข้อมูลไม่สำเร็จ (พื้นที่จัดเก็บอาจเต็ม)', err)
-    }
-  }, [content])
+    let cancelled = false
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(CUSTOM_SECTIONS_KEY, JSON.stringify(customSections))
-    } catch (err) {
-      console.error('บันทึก custom sections ไม่สำเร็จ (พื้นที่จัดเก็บอาจเต็ม)', err)
-    }
-  }, [customSections])
+    api
+      .getContent()
+      .then((serverContent) => {
+        if (cancelled) return
 
-  const updateCollection = useCallback((key, value) => {
+        const { [CUSTOM_SECTIONS_KEY]: sections, ...rest } = serverContent || {}
+
+        setContent({ ...DEFAULT_CONTENT, ...rest })
+        setCustomSections(Array.isArray(sections) ? sections : [])
+        setLoadError('')
+      })
+      .catch((err) => {
+        if (cancelled) return
+
+        console.error('โหลดข้อมูลจากเซิร์ฟเวอร์ไม่สำเร็จ', err)
+        setLoadError(err.message || 'โหลดข้อมูลจากเซิร์ฟเวอร์ไม่สำเร็จ')
+
+        // เซิร์ฟเวอร์เข้าไม่ได้ ใช้ค่าเริ่มต้นไปก่อน อย่างน้อยหน้าเว็บยังแสดงผลได้
+        setContent(DEFAULT_CONTENT)
+        setCustomSections([])
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // บันทึก collection ปกติ (ตาม schema.key ต่างๆ) — ต้อง login ฝั่ง backend ถึงจะผ่าน
+  // โยน error ออกไปให้ตัวเรียกจัดการเอง (เช่น CollectionEditor แสดงข้อความ error)
+  const updateCollection = useCallback(async (key, value) => {
+    await api.setContentKey(key, value)
     setContent((prev) => ({ ...prev, [key]: value }))
   }, [])
 
   // ---------- Custom Sections API ----------
+  // เก็บเป็น array เดียวทั้งก้อนภายใต้ CUSTOM_SECTIONS_KEY แต่ละครั้งที่แก้ไข
+  // จะอัปเดตหน้าจอทันที (optimistic) แล้วยิงไปเซฟที่เซิร์ฟเวอร์เบื้องหลัง
+  // ถ้าเซฟไม่สำเร็จ (เช่น token หมดอายุ) จะย้อนสถานะกลับและแจ้งเตือน
+
   const addCustomSection = useCallback(({ label, icon, color, column, template, sub }) => {
     const id = genId()
-    setCustomSections((prev) => [
-      ...prev,
-      {
-        id,
-        label: label || 'Section ใหม่',
-        icon: icon || 'ti-list',
-        color: color || 'var(--color-blue-600)',
-        column: column === 'right' ? 'right' : 'left', // default ซ้าย
-        // 'list' = รายการยาว, 'grid' = แบบไอคอนตาราง, 'expandable' = การ์ดพับ/กางเดียว
-        template: ['list', 'grid', 'expandable'].includes(template) ? template : 'list',
-        sub: sub || '', // ใช้เฉพาะ template แบบ 'expandable' (คำอธิบายรองใต้ชื่อ section)
-        items: [],
-      },
-    ])
+    const newSection = {
+      id,
+      label: label || 'Section ใหม่',
+      icon: icon || 'ti-list',
+      color: color || 'var(--color-blue-600)',
+      column: column === 'right' ? 'right' : 'left',
+      template: ['list', 'grid', 'expandable'].includes(template) ? template : 'list',
+      sub: sub || '',
+      items: [],
+    }
+
+    setCustomSections((prev) => {
+      const next = [...prev, newSection]
+
+      api.setContentKey(CUSTOM_SECTIONS_KEY, next).catch((err) => {
+        console.error('บันทึก custom section ไม่สำเร็จ', err)
+        alert(err.message || 'บันทึก section ไม่สำเร็จ กรุณาลองใหม่')
+        setCustomSections((cur) => cur.filter((s) => s.id !== id))
+      })
+
+      return next
+    })
+
     return id
   }, [])
 
   const updateCustomSectionMeta = useCallback((id, patch) => {
-    setCustomSections((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)))
+    setCustomSections((prev) => {
+      const next = prev.map((s) => (s.id === id ? { ...s, ...patch } : s))
+
+      api.setContentKey(CUSTOM_SECTIONS_KEY, next).catch((err) => {
+        console.error('บันทึกการแก้ไข section ไม่สำเร็จ', err)
+        alert(err.message || 'บันทึกไม่สำเร็จ กรุณาลองใหม่')
+      })
+
+      return next
+    })
   }, [])
 
   const updateCustomSectionItems = useCallback((id, items) => {
-    setCustomSections((prev) => prev.map((s) => (s.id === id ? { ...s, items } : s)))
+    setCustomSections((prev) => {
+      const next = prev.map((s) => (s.id === id ? { ...s, items } : s))
+
+      api.setContentKey(CUSTOM_SECTIONS_KEY, next).catch((err) => {
+        console.error('บันทึกรายการใน section ไม่สำเร็จ', err)
+        alert(err.message || 'บันทึกไม่สำเร็จ กรุณาลองใหม่')
+      })
+
+      return next
+    })
   }, [])
 
   const removeCustomSection = useCallback((id) => {
-    setCustomSections((prev) => prev.filter((s) => s.id !== id))
+    setCustomSections((prev) => {
+      const next = prev.filter((s) => s.id !== id)
+
+      api.setContentKey(CUSTOM_SECTIONS_KEY, next).catch((err) => {
+        console.error('ลบ section ไม่สำเร็จ', err)
+        alert(err.message || 'ลบไม่สำเร็จ กรุณาลองใหม่')
+      })
+
+      return next
+    })
   }, [])
 
   const moveCustomSection = useCallback((id, dir) => {
@@ -98,8 +136,14 @@ export function ContentProvider({ children }) {
       const idx = prev.findIndex((s) => s.id === id)
       const target = idx + dir
       if (idx < 0 || target < 0 || target >= prev.length) return prev
+
       const next = [...prev]
       ;[next[idx], next[target]] = [next[target], next[idx]]
+
+      api.setContentKey(CUSTOM_SECTIONS_KEY, next).catch((err) => {
+        console.error('จัดเรียง section ไม่สำเร็จ', err)
+      })
+
       return next
     })
   }, [])
@@ -115,6 +159,8 @@ export function ContentProvider({ children }) {
         updateCustomSectionItems,
         removeCustomSection,
         moveCustomSection,
+        isLoading,
+        loadError,
       }}
     >
       {children}
