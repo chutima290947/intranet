@@ -58,8 +58,23 @@ function renderCustomSection(s) {
   return <GenericListSection section={s} />
 }
 
+// ------------------------------------------------------------------
+// LoadingScreen
+// แสดงระหว่างรอโหลดข้อมูลจริงจาก Neon (ContentContext: isLoading)
+// กันไม่ให้ค่าเริ่มต้น (DEFAULT_CONTENT ซึ่งมีรูป asset เก่าฝังอยู่)
+// โผล่ขึ้นมาก่อนแล้วค่อยถูกสลับเป็นข้อมูลจริงทีหลัง (อาการ "กระพริบ")
+// ------------------------------------------------------------------
+function LoadingScreen() {
+  return (
+    <div className="flex min-h-screen w-full flex-col items-center justify-center gap-3 bg-paper">
+      <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-navy-900/15 border-t-navy-900" />
+      <p className="text-[12.5px] font-semibold text-ink-soft">กำลังโหลดข้อมูล...</p>
+    </div>
+  )
+}
+
 function AppInner() {
-  const { content, customSections } = useContent()
+  const { content, customSections, isLoading } = useContent()
   const { isAuthenticated } = useAuth()
 
   const initial = loadStoredPage()
@@ -169,6 +184,16 @@ function AppInner() {
       )
       if (match) scrollToSection(match.id)
     }
+  }
+
+  // -----------------------------------------------------------
+  // สำคัญ: รอข้อมูลจริงจาก Neon โหลดเสร็จก่อน ค่อย render เนื้อหา
+  // ถ้าไม่กันตรงนี้ หน้าเว็บจะ render ด้วย DEFAULT_CONTENT (รูป asset
+  // เก่าที่ import ไว้ใน data.js) ไปก่อนชั่วขณะ แล้วค่อยสลับเป็นข้อมูล
+  // จริงทีหลัง ทำให้เห็นรูปเก่ากระพริบก่อนรูปที่อัปโหลดจริงจะขึ้น
+  // -----------------------------------------------------------
+  if (isLoading) {
+    return <LoadingScreen />
   }
 
   if (page === 'admin' && isAuthenticated) {

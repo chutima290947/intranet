@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useContent } from '../../context/ContentContext'
-import defaultBannerImg from '../../assets/announcement-mybplus.jpg'
 
 const ANN_COLORS = [
   { bg: 'bg-blue-tint', text: 'text-blue-600' },

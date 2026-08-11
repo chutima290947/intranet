@@ -1,9 +1,3 @@
-import promoDental from '../assets/promo-dental.jpg'
-import promoCheckup from '../assets/promo-checkup.jpg'
-import promoPed from '../assets/promo-ped.jpg'
-import promoGyn from '../assets/promo-gyn.webp'
-import promoMed from '../assets/promo-med.jpg'
-
 import hrPeopleConnect from '../assets/digital-services/hr-people-connect.png'
 import hrForms from '../assets/digital-services/hr-forms.png'
 import hrPolicy from '../assets/digital-services/hr-policy.png'
@@ -30,6 +24,13 @@ import { OPD_PED_PACKAGE_ITEMS, OPD_GYN_PACKAGE_ITEMS } from './promoPackageItem
    ContentContext จะโหลดค่าจากไฟล์นี้เป็นค่าเริ่มต้น แล้ว "ทับ" ด้วยข้อมูล
    ที่ผู้ดูแลระบบแก้ไขและบันทึกไว้ใน localStorage
    ห้ามลบ key ใดออกโดยไม่แก้ adminSchemas.js และคอมโพเนนต์ที่เกี่ยวข้องด้วย
+
+   หมายเหตุ (สำคัญ): PROMOS ด้านล่างนี้ "ไม่มี" img แล้ว เพราะรูปโปรโมชัน
+   ย้ายไปใช้ระบบอัปโหลดผ่าน CMS (เก็บใน Neon ตาราง uploads) แทนไฟล์ asset
+   ในเครื่องแล้ว ค่า default ตรงนี้เป็นแค่ fallback เผื่อโหลดจาก
+   เซิร์ฟเวอร์ไม่สำเร็จ — ตอนใช้งานจริง ContentContext จะทับด้วยข้อมูล
+   จริงจากฐานข้อมูลเสมอ ถ้าไม่มี img ให้ Promo.jsx จะ fallback ไปแสดง
+   icon/gradient แทนตามที่โค้ดรองรับอยู่แล้ว
 ------------------------------------------------------------------ */
 
 export const DEFAULT_CONTENT = {
@@ -322,31 +323,33 @@ DIGITAL_SERVICES: [
     },
   ],
 
-PROMOS: [
-  {
-    name: 'Dental', tag: 'หมวด A', color: 'var(--color-navy-900)', icon: 'ti-tooth', img: promoDental,
-    items: [{ label: 'ทำฟันใช้สิทธิ์ประกัน', icon: 'ti-tooth' }],
-  },
-  {
-    name: 'Health Check Up Package', tag: 'หมวด B', color: 'var(--color-navy-900)', icon: 'ti-eye', img: promoCheckup,
-    items: [
-      { label: 'Additional ปี 2026-2027', icon: 'ti-clipboard-plus' },
-      { label: 'Health Promotion ปี 2026-2027', icon: 'ti-heartbeat' },
-    ],
-  },
-  {
-    name: 'OPD PED Package', tag: 'หมวด B', color: 'var(--color-navy-900)', icon: 'ti-heart', img: promoPed,
-    items: OPD_PED_PACKAGE_ITEMS,
-  },
-  {
-    name: 'OPD GYN Package', tag: 'หมวด C', color: 'var(--color-coral)', icon: 'ti-stethoscope', img: promoGyn,
-    items: OPD_GYN_PACKAGE_ITEMS,
-  },
-  {
-    name: 'OPD Med Package', tag: 'หมวด D', color: 'var(--color-navy-900)', icon: 'ti-pill', img: promoMed,
-    items: [{ label: 'แพ็กเกจวัคซีนสำหรับผู้ใหญ่และผู้สูงอายุ', icon: 'ti-syringe' }],
-  },
-],
+  // หมายเหตุ: ไม่มี img แล้ว เพราะรูปโปรโมชันย้ายไปใช้ระบบอัปโหลด/CMS
+  // ค่าจริงจะถูกดึงมาจาก database เสมอเมื่อโหลดสำเร็จ
+  PROMOS: [
+    {
+      name: 'Dental', tag: 'หมวด A', color: 'var(--color-navy-900)', icon: 'ti-tooth',
+      items: [{ label: 'ทำฟันใช้สิทธิ์ประกัน', icon: 'ti-tooth' }],
+    },
+    {
+      name: 'Health Check Up Package', tag: 'หมวด B', color: 'var(--color-navy-900)', icon: 'ti-eye',
+      items: [
+        { label: 'Additional ปี 2026-2027', icon: 'ti-clipboard-plus' },
+        { label: 'Health Promotion ปี 2026-2027', icon: 'ti-heartbeat' },
+      ],
+    },
+    {
+      name: 'OPD PED Package', tag: 'หมวด B', color: 'var(--color-navy-900)', icon: 'ti-heart',
+      items: OPD_PED_PACKAGE_ITEMS,
+    },
+    {
+      name: 'OPD GYN Package', tag: 'หมวด C', color: 'var(--color-coral)', icon: 'ti-stethoscope',
+      items: OPD_GYN_PACKAGE_ITEMS,
+    },
+    {
+      name: 'OPD Med Package', tag: 'หมวด D', color: 'var(--color-navy-900)', icon: 'ti-pill',
+      items: [{ label: 'แพ็กเกจวัคซีนสำหรับผู้ใหญ่และผู้สูงอายุ', icon: 'ti-syringe' }],
+    },
+  ],
 
   QUALITY: [
     { icon: 'ti-file-text', label: 'Document Mangement', warn: false },
