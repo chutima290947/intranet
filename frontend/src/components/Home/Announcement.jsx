@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useContent } from '../../context/ContentContext'
-import defaultBannerImg from '../../assets/announcement-mybplus.jpg'
 
 const ANN_COLORS = [
   { bg: 'bg-blue-tint', text: 'text-blue-600' },
@@ -22,14 +21,13 @@ export function Announcement() {
   const [stack, setStack] = useState([])
 
   const pinned = ANN_NEWS.find((n) => n.pinned) || ANN_NEWS[0]
-  const bannerImg = pinned?.img || defaultBannerImg
+  const bannerImg = pinned?.img || ''
 
   const openNews = (n) => {
     if (n.tree && n.tree.length > 0) {
       setActiveNews(n)
       setStack([])
     }
-    // ถ้าไม่มี tree ปล่อยให้ <a href> จัดการลิงก์/ไฟล์ตามปกติ
   }
   const closeNewsTree = () => {
     setActiveNews(null)
@@ -56,11 +54,15 @@ export function Announcement() {
       {pinned && (
         <div
           className="relative flex min-h-[176px] flex-col justify-end overflow-hidden rounded-lg bg-gradient-to-tr from-navy-950 to-blue-600 p-6"
-          style={{
-            backgroundImage: `linear-gradient(90deg, rgba(10,20,50,.88) 30%, rgba(10,20,50,.35) 75%), url(${bannerImg})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
+          style={
+            bannerImg
+              ? {
+                  backgroundImage: `linear-gradient(90deg, rgba(10,20,50,.88) 30%, rgba(10,20,50,.35) 75%), url(${bannerImg})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }
+              : {}
+          }
         >
           {pinned.badge && (
             <span className="mb-3 inline-flex w-fit items-center gap-1 rounded-[20px] bg-coral px-2.5 py-[3px] text-[9px] font-bold text-white">
@@ -136,7 +138,6 @@ export function Announcement() {
         </div>
       )}
 
-      {/* เจาะลึกดูเมนูย่อยของข่าวที่เลือก */}
       {activeNews && (
         <div className="mt-3">
           <button
