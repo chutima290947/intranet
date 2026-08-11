@@ -58,8 +58,23 @@ function renderCustomSection(s) {
   return <GenericListSection section={s} />
 }
 
+// ------------------------------------------------------------------
+// LoadingScreen
+// แสดงระหว่างรอโหลดข้อมูลจริงจาก Neon (ContentContext: isLoading)
+// กันไม่ให้ค่าเริ่มต้น (DEFAULT_CONTENT ซึ่งมีรูป asset เก่าฝังอยู่)
+// โผล่ขึ้นมาก่อนแล้วค่อยถูกสลับเป็นข้อมูลจริงทีหลัง (อาการ "กระพริบ")
+// ------------------------------------------------------------------
+function LoadingScreen() {
+  return (
+    <div className="flex min-h-screen w-full flex-col items-center justify-center gap-3 bg-paper">
+      <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-navy-900/15 border-t-navy-900" />
+      <p className="text-[12.5px] font-semibold text-ink-soft">กำลังโหลดข้อมูล...</p>
+    </div>
+  )
+}
+
 function AppInner() {
-  const { content, customSections } = useContent()
+  const { content, customSections, isLoading } = useContent()
   const { isAuthenticated } = useAuth()
 
   const initial = loadStoredPage()
@@ -171,6 +186,16 @@ function AppInner() {
     }
   }
 
+  // -----------------------------------------------------------
+  // สำคัญ: รอข้อมูลจริงจาก Neon โหลดเสร็จก่อน ค่อย render เนื้อหา
+  // ถ้าไม่กันตรงนี้ หน้าเว็บจะ render ด้วย DEFAULT_CONTENT (รูป asset
+  // เก่าที่ import ไว้ใน data.js) ไปก่อนชั่วขณะ แล้วค่อยสลับเป็นข้อมูล
+  // จริงทีหลัง ทำให้เห็นรูปเก่ากระพริบก่อนรูปที่อัปโหลดจริงจะขึ้น
+  // -----------------------------------------------------------
+  if (isLoading) {
+    return <LoadingScreen />
+  }
+
   if (page === 'admin' && isAuthenticated) {
     return <AdminLayout onExit={() => goTo('home')} />
   }
@@ -212,7 +237,8 @@ function AppInner() {
                 </button>
                 <QualityCenter />
                 <PartnerList onOpenPartner={(p) => goTo('partner', p.name)} />
-                <ExpandableCards />
+                                <ExpandableCards />
+
                 {customSections.filter((s) => s.column === 'right').map((s) => (
                   <div key={s.id} id={s.id}>
                     {renderCustomSection(s)}
@@ -223,46 +249,16 @@ function AppInner() {
           </div>
         </>
       )}
-
-      {page === 'division' && (
-        <DivisionGrid searchQuery={searchQuery} initialActiveId={selectedDivisionId} />
-      )}
-
-      {page === 'doctor' && <DoctorSchedulePage onBack={() => goTo('home')} />}
-
-      {page === 'report' && (
-        <ReportGrid searchQuery={searchQuery} initialActiveId={selectedReportId} />
-      )}
-
-      {page === 'online' && <RequestGrid searchQuery={searchQuery} />}
-
-      {page === 'partner' && (
-        <PartnerDetailPage
-          partner={content.PARTNERS.find((p) => p.name === selectedPartnerName)}
-          onBack={() => goTo('home')}
-        />
-      )}
-
-      {page === 'service' && (
-        <DigitalServicePage
-          service={content.DIGITAL_SERVICES.find((s) => s.label === selectedServiceLabel)}
-          onBack={() => goTo('home')}
-        />
-      )}
-
-      <Footer />
-
-      <BackToTop />
     </>
   )
 }
 
 export default function App() {
   return (
-    <ContentProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <ContentProvider>
         <AppInner />
-      </AuthProvider>
-    </ContentProvider>
+      </ContentProvider>
+    </AuthProvider>
   )
 }
