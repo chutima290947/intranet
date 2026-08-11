@@ -12,15 +12,25 @@ export function SiteSettingsEditor() {
   const { content, updateCollection } = useContent()
   const [form, setForm] = useState(content.SITE)
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => setForm(content.SITE), [content.SITE])
 
   const handleChange = (key, value) => setForm((f) => ({ ...f, [key]: value }))
 
-  const handleSave = () => {
-    updateCollection('SITE', form)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 1500)
+  const handleSave = async () => {
+    try {
+      setBusy(true)
+      setError('')
+      await updateCollection('SITE', form)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 1500)
+    } catch (e) {
+      setError(e.message || 'บันทึกไม่สำเร็จ กรุณาลองใหม่')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
@@ -33,17 +43,20 @@ export function SiteSettingsEditor() {
             <input
               value={form[f.key] || ''}
               onChange={(e) => handleChange(f.key, e.target.value)}
-              className="w-full rounded-md border border-line px-3 py-2 text-[13px] outline-none focus:border-blue-500"
+              disabled={busy}
+              className="w-full rounded-md border border-line px-3 py-2 text-[13px] outline-none focus:border-blue-500 disabled:opacity-60"
             />
           </div>
         ))}
+        {error && <p className="text-[12px] font-semibold text-coral">{error}</p>}
         <div className="mt-1 flex items-center gap-2">
           <button
             type="button"
             onClick={handleSave}
-            className="w-fit rounded-md border-none bg-navy-900 px-4 py-2 text-[12.5px] font-bold text-white"
+            disabled={busy}
+            className="w-fit rounded-md border-none bg-navy-900 px-4 py-2 text-[12.5px] font-bold text-white disabled:opacity-60"
           >
-            บันทึก
+            {busy ? 'กำลังบันทึก...' : 'บันทึก'}
           </button>
           {saved && <span className="text-[12px] font-semibold text-teal">บันทึกแล้ว ✓</span>}
         </div>
