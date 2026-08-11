@@ -16,10 +16,35 @@ export function Announcement() {
   const ANN_NEWS = content.ANN_NEWS
   const [showAll, setShowAll] = useState(false)
 
-  // หาข่าวที่ถูกปักหมุด (pinned: true) มาแสดงเป็น banner ใหญ่
-  // ถ้าไม่มีข่าวไหนถูกปักหมุดเลย ใช้ข่าวแรกสุดในลิสต์แทนโดยอัตโนมัติ
+  // ข่าวที่กำลังเจาะเข้าไปดูเมนูย่อยอยู่ (null = ยังอยู่หน้าลิสต์ข่าวปกติ)
+  const [activeNews, setActiveNews] = useState(null)
+  // stack ของ breadcrumb เวลาเจาะลึกเข้าไปในเมนูย่อยหลายชั้น
+  const [stack, setStack] = useState([])
+
   const pinned = ANN_NEWS.find((n) => n.pinned) || ANN_NEWS[0]
   const bannerImg = pinned?.img || defaultBannerImg
+
+  const openNews = (n) => {
+    if (n.tree && n.tree.length > 0) {
+      setActiveNews(n)
+      setStack([])
+    }
+    // ถ้าไม่มี tree ปล่อยให้ <a href> จัดการลิงก์/ไฟล์ตามปกติ
+  }
+  const closeNewsTree = () => {
+    setActiveNews(null)
+    setStack([])
+  }
+  const enterNode = (node) => {
+    if (node.children && node.children.length > 0) {
+      setStack([...stack, { label: node.label, items: node.children }])
+    }
+  }
+  const goBackNode = () => setStack(stack.slice(0, -1))
+  const goToCrumb = (index) => setStack(index < 0 ? [] : stack.slice(0, index + 1))
+
+  const rootItems = activeNews?.tree || []
+  const currentItems = stack.length === 0 ? rootItems : stack[stack.length - 1].items
 
   return (
     <div id="sec-ann">
@@ -73,15 +98,14 @@ export function Announcement() {
         </div>
       )}
 
-      {showAll && (
+      {showAll && !activeNews && (
         <div className="mt-3 flex flex-col gap-2">
           {ANN_NEWS.map((n, i) => {
             const c = ANN_COLORS[i % ANN_COLORS.length]
-            return (
-              <div
-                key={n.title}
-                className="flex items-center gap-3 rounded-md border border-line bg-white px-3.5 py-3 transition-colors hover:border-blue-500/40"
-              >
+            const hasTree = n.tree && n.tree.length > 0
+            const href = !hasTree ? n.href || n.file?.dataUrl : undefined
+            const rowContent = (
+              <>
                 <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] ${c.bg}`}>
                   <i className={`ti ${n.icon || 'ti-news'} text-lg ${c.text}`} />
                 </div>
@@ -90,9 +114,95 @@ export function Announcement() {
                   <p className="mt-0.5 truncate text-xs text-ink-soft">{n.sub}</p>
                 </div>
                 <i className="ti ti-chevron-right flex-shrink-0 text-base text-ink-soft/60" />
+              </>
+            )
+            const rowClass =
+              'flex items-center gap-3 rounded-md border border-line bg-white px-3.5 py-3 no-underline transition-colors hover:border-blue-500/40'
+
+            return hasTree ? (
+              <button key={n.title} type="button" onClick={() => openNews(n)} className={rowClass + ' text-left'}>
+                {rowContent}
+              </button>
+            ) : href ? (
+              <a key={n.title} href={href} download={n.file?.name} className={rowClass}>
+                {rowContent}
+              </a>
+            ) : (
+              <div key={n.title} className={rowClass}>
+                {rowContent}
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* เจาะลึกดูเมนูย่อยของข่าวที่เลือก */}
+      {activeNews && (
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={stack.length === 0 ? closeNewsTree : goBackNode}
+            className="mb-2.5 flex items-center gap-1.5 rounded-lg border-none bg-transparent text-[13px] font-medium text-blue-600"
+          >
+            <i className="ti ti-arrow-left text-base" />
+            {stack.length === 0 ? 'กลับไปหน้ารายการข่าว' : activeNews.title}
+          </button>
+
+          <div className="mb-3 flex items-center gap-2">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] bg-blue-tint">
+              <i className={`ti ${activeNews.icon || 'ti-news'} text-lg text-blue-600`} />
+            </div>
+            <h3 className="text-[14px] font-bold text-navy-900">
+              {stack.length === 0 ? activeNews.title : stack[stack.length - 1].label}
+            </h3>
+          </div>
+
+          {stack.length > 0 && (
+            <div className="mb-3 flex flex-wrap items-center gap-1.5 rounded-lg bg-blue-tint/40 px-3.5 py-2 text-[12px] font-semibold text-ink-soft">
+              <button type="button" onClick={() => goToCrumb(-1)} className="rounded px-1 hover:bg-blue-100 hover:text-blue-600">
+                {activeNews.title}
+              </button>
+              {stack.map((s, i) => (
+                <span key={i} className="flex items-center gap-1.5">
+                  <i className="ti ti-chevron-right text-[10px]" />
+                  <button type="button" onClick={() => goToCrumb(i)} className="rounded px-1 hover:bg-blue-100 hover:text-blue-600">
+                    {s.label}
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2">
+            {currentItems.map((node, i) => {
+              const hasChildren = node.children && node.children.length > 0
+              const rowClass =
+                'flex items-center gap-3 rounded-md border border-line bg-white px-3.5 py-3 no-underline transition-colors hover:border-blue-500/40'
+
+              if (hasChildren) {
+                return (
+                  <button key={i} type="button" onClick={() => enterNode(node)} className={rowClass + ' text-left'}>
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-blue-tint">
+                      <i className={`ti ${node.icon || 'ti-folder'} text-sm text-blue-600`} />
+                    </div>
+                    <span className="flex-1 text-[13px] text-navy-900">{node.label}</span>
+                    <i className="ti ti-chevron-right flex-shrink-0 text-sm text-ink-soft/60" />
+                  </button>
+                )
+              }
+              return (
+                <a key={i} href={node.href || '#'} className={rowClass}>
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-blue-tint">
+                    <i className={`ti ${node.icon || 'ti-file-text'} text-sm text-blue-600`} />
+                  </div>
+                  <span className="flex-1 text-[13px] text-navy-900">{node.label}</span>
+                </a>
+              )
+            })}
+            {currentItems.length === 0 && (
+              <p className="py-6 text-center text-[12px] text-ink-soft">ยังไม่มีรายการในหัวข้อนี้</p>
+            )}
+          </div>
         </div>
       )}
     </div>
