@@ -254,10 +254,8 @@ function FileFieldInput({ value, onChange }) {
           </span>
 
           <div className="flex items-center gap-3">
-            
             {fileInfo.url && (
               <a
-              
                 href={getFileUrl(fileInfo.url)}
                 target="_blank"
                 rel="noreferrer"
@@ -738,11 +736,14 @@ export function CollectionEditor({ schema }) {
   const [draftItems, setDraftItems] = useState(savedItems)
   const [openIdx, setOpenIdx] = useState(null)
   const [justSaved, setJustSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   useEffect(() => {
     setDraftItems(content[schema.key] || [])
     setOpenIdx(null)
     setJustSaved(false)
+    setSaveError('')
   }, [schema.key, content])
 
   const isDirty = JSON.stringify(draftItems) !== JSON.stringify(savedItems)
@@ -776,10 +777,21 @@ export function CollectionEditor({ schema }) {
     })
   }
 
-  const handleSave = () => {
-    updateCollection(schema.key, draftItems)
-    setJustSaved(true)
-    setTimeout(() => setJustSaved(false), 1500)
+  // สำคัญ: updateCollection เป็น async (ยิงไปบันทึกที่ Neon) ต้อง await
+  // และดัก error ไว้ (เช่น token หมดอายุ ยังไม่ login) ไม่งั้นจะขึ้น "บันทึกแล้ว"
+  // ทั้งที่จริงๆ ไม่สำเร็จ
+  const handleSave = async () => {
+    try {
+      setSaving(true)
+      setSaveError('')
+      await updateCollection(schema.key, draftItems)
+      setJustSaved(true)
+      setTimeout(() => setJustSaved(false), 1500)
+    } catch (err) {
+      setSaveError(err.message || 'บันทึกไม่สำเร็จ กรุณาลองใหม่')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleDiscard = () => {
@@ -787,6 +799,7 @@ export function CollectionEditor({ schema }) {
 
     setDraftItems(savedItems)
     setOpenIdx(null)
+    setSaveError('')
   }
 
   return (
@@ -805,7 +818,8 @@ export function CollectionEditor({ schema }) {
             <button
               type="button"
               onClick={handleDiscard}
-              className="rounded-lg border border-line bg-white px-3.5 py-2 text-[11.5px] font-semibold text-ink-soft hover:bg-paper"
+              disabled={saving}
+              className="rounded-lg border border-line bg-white px-3.5 py-2 text-[11.5px] font-semibold text-ink-soft hover:bg-paper disabled:opacity-60"
             >
               ยกเลิกการแก้ไข
             </button>
@@ -814,7 +828,8 @@ export function CollectionEditor({ schema }) {
           <button
             type="button"
             onClick={addItem}
-            className="flex items-center gap-1.5 rounded-lg border border-line bg-white px-3.5 py-2 text-[11.5px] font-bold text-navy-900 hover:bg-paper"
+            disabled={saving}
+            className="flex items-center gap-1.5 rounded-lg border border-line bg-white px-3.5 py-2 text-[11.5px] font-bold text-navy-900 hover:bg-paper disabled:opacity-60"
           >
             <i className="ti ti-plus" />
             เพิ่มรายการใหม่
@@ -823,16 +838,22 @@ export function CollectionEditor({ schema }) {
           <button
             type="button"
             onClick={handleSave}
-            disabled={!isDirty}
+            disabled={!isDirty || saving}
             className={`flex items-center gap-1.5 rounded-lg border-none px-3.5 py-2 text-[11.5px] font-bold text-white ${
-              isDirty ? 'bg-navy-900 hover:bg-navy-800' : 'cursor-not-allowed bg-navy-900/40'
+              isDirty && !saving ? 'bg-navy-900 hover:bg-navy-800' : 'cursor-not-allowed bg-navy-900/40'
             }`}
           >
             <i className={justSaved ? 'ti ti-check' : 'ti ti-device-floppy'} />
-            {justSaved ? 'บันทึกแล้ว ✓' : 'บันทึกการเปลี่ยนแปลง'}
+            {saving ? 'กำลังบันทึก...' : justSaved ? 'บันทึกแล้ว ✓' : 'บันทึกการเปลี่ยนแปลง'}
           </button>
         </div>
       </div>
+
+      {saveError && (
+        <p className="mb-3 rounded-md bg-coral-tint px-3 py-2 text-[12px] font-semibold text-coral">
+          {saveError}
+        </p>
+      )}
 
       <div className="flex flex-col gap-3">
         {draftItems.map((item, idx) => {
@@ -944,9 +965,10 @@ export function CollectionEditor({ schema }) {
           <button
             type="button"
             onClick={handleSave}
-            className="rounded-md border-none bg-amber-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-amber-700"
+            disabled={saving}
+            className="rounded-md border-none bg-amber-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-amber-700 disabled:opacity-60"
           >
-            บันทึกตอนนี้
+            {saving ? 'กำลังบันทึก...' : 'บันทึกตอนนี้'}
           </button>
         </div>
       )}

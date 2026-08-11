@@ -26,33 +26,38 @@ export function Promo() {
       </div>
       <div className="px-[18px] py-4">
         <div className="grid grid-cols-4 gap-[11px] max-[1100px]:grid-cols-3 max-[560px]:grid-cols-2">
-          {PROMOS.map(p => (
-            <button
-              type="button"
-              className="overflow-hidden rounded-md border border-line text-left"
-              key={p.name}
-              onClick={() => setSelected(p)}
-            >
-              <div
-                className="flex h-[92px] w-full items-center justify-center"
-                style={
-                  p.img
-                    ? { backgroundImage: `url(${p.img})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                    : { background: `linear-gradient(135deg, ${p.color || '#1B3A6B'}, var(--color-blue-500))` }
-                }
+          {PROMOS.map(p => {
+            // ต่อ query string กันรูป cache ค้าง
+            const imgUrl = p.img ? `${p.img}${p.img.includes('?') ? '&' : '?'}v=${p.updatedAt || p.id || ''}` : null
+
+            return (
+              <button
+                type="button"
+                className="overflow-hidden rounded-md border border-line text-left"
+                key={p.name}
+                onClick={() => setSelected(p)}
               >
-                {!p.img && (
-                  p.icon ? (
-                    <i className={`ti ${p.icon} text-[34px] text-white/85`} />
-                  ) : (
-                    <span className="text-[22px] font-bold tracking-wide text-white/90">{getInitials(p.name)}</span>
-                  )
-                )}
-              </div>
-              <span className="relative top-0 left-0 m-1.5 inline-block rounded-[20px] px-2.5 py-[3px] text-[8px] font-bold text-white" style={{ background: p.color }}>{p.tag}</span>
-              <div className="bg-white px-[9px] py-2 text-[10.5px] leading-[1.35] font-bold text-navy-900">{p.name}</div>
-            </button>
-          ))}
+                <div
+                  className="flex h-[92px] w-full items-center justify-center"
+                  style={
+                    imgUrl
+                      ? { backgroundImage: `url(${imgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                      : { background: `linear-gradient(135deg, ${p.color || '#1B3A6B'}, var(--color-blue-500))` }
+                  }
+                >
+                  {!p.img && (
+                    p.icon ? (
+                      <i className={`ti ${p.icon} text-[34px] text-white/85`} />
+                    ) : (
+                      <span className="text-[22px] font-bold tracking-wide text-white/90">{getInitials(p.name)}</span>
+                    )
+                  )}
+                </div>
+                <span className="relative top-0 left-0 m-1.5 inline-block rounded-[20px] px-2.5 py-[3px] text-[8px] font-bold text-white" style={{ background: p.color }}>{p.tag}</span>
+                <div className="bg-white px-[9px] py-2 text-[10.5px] leading-[1.35] font-bold text-navy-900">{p.name}</div>
+              </button>
+            )
+          })}
         </div>
       </div>
 
