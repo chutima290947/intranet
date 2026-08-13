@@ -15,6 +15,7 @@ import { QuickNav } from './components/Home/QuickNav'
 import { Announcement } from './components/Home/Announcement'
 import { DigitalServices } from './components/Home/DigitalServices'
 import { DigitalServicePage } from './components/Home/DigitalServicePage'
+import { AnnouncementTreePage } from './components/Home/AnnouncementTreePage'
 import { NSystem } from './components/Home/NSystem'
 import { OnCall } from './components/Home/OnCall'
 import { Promo } from './components/Home/Promo'
@@ -85,6 +86,7 @@ function AppInner() {
   const [selectedReportId, setSelectedReportId] = useState(initial.selectedReportId)
   const [selectedPartnerName, setSelectedPartnerName] = useState(initial.selectedPartnerName)
   const [selectedServiceLabel, setSelectedServiceLabel] = useState(null)
+  const [selectedNewsTitle, setSelectedNewsTitle] = useState(null)
   const quicknavRef = useRef(null)
 
   // จำหน้าล่าสุดไว้ใน sessionStorage เผื่อรีเฟรชหน้า (ยกเว้นหน้า admin จะไม่จำไว้
@@ -160,6 +162,9 @@ function AppInner() {
       setSelectedServiceLabel(payload || null)
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })
+    if (target === 'news') {
+      setSelectedNewsTitle(payload || null)
+    }
   }
     
 
@@ -214,7 +219,7 @@ function AppInner() {
           <div className="mx-auto max-w-[1680px] px-8 pt-[22px] pb-[60px]">
             <div className="grid grid-cols-[1.65fr_1fr] gap-[18px] max-[1100px]:grid-cols-1">
               <div className="flex flex-col gap-4">
-                <Announcement />
+                <Announcement onOpenNews={(n) => goTo('news', n.title)} />
                 <NSystem />
                 <OnCall />
                 <Promo />
@@ -249,6 +254,43 @@ function AppInner() {
           </div>
         </>
       )}
+
+      {page === 'division' && (
+        <DivisionGrid searchQuery={searchQuery} initialActiveId={selectedDivisionId} />
+      )}
+
+      {page === 'doctor' && <DoctorSchedulePage onBack={() => goTo('home')} />}
+
+      {page === 'report' && (
+        <ReportGrid searchQuery={searchQuery} initialActiveId={selectedReportId} />
+      )}
+
+      {page === 'online' && <RequestGrid searchQuery={searchQuery} />}
+
+      {page === 'partner' && (
+        <PartnerDetailPage
+          partner={content.PARTNERS.find((p) => p.name === selectedPartnerName)}
+          onBack={() => goTo('home')}
+        />
+      )}
+
+      {page === 'service' && (
+        <DigitalServicePage
+          service={content.DIGITAL_SERVICES.find((s) => s.label === selectedServiceLabel)}
+          onBack={() => goTo('home')}
+        />
+      )}
+
+      {page === 'news' && (
+        <AnnouncementTreePage
+          news={content.ANN_NEWS.find((n) => n.title === selectedNewsTitle)}
+          onBack={() => goTo('home')}
+        />
+      )}
+
+      <Footer />
+
+      <BackToTop />
     </>
   )
 }
