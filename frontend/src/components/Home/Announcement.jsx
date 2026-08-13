@@ -10,6 +10,25 @@ const ANN_COLORS = [
   { bg: 'bg-green-tint', text: 'text-green' },
 ]
 
+// แปลง URL ของไฟล์ที่อัปโหลดให้เปิดจาก Frontend ได้ (relative path จาก backend -> absolute)
+// รูปแบบเดียวกับ getFileUrl ใน CollectionEditor.jsx / OnCall.jsx
+function getFileUrl(url) {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+
+  const API_URL =
+  import.meta.env.VITE_API_URL ||
+  `http://${window.location.hostname}:3001`;
+}
+
+// แต่ละข่าว/รายการอาจมี "href" (ลิงก์ภายนอก) หรือ "file" (ไฟล์ที่อัปโหลด เช่น jpg/pdf) อย่างใดอย่างหนึ่ง
+// href มาก่อนถ้ามีทั้งคู่ — ไฟล์ที่อัปโหลดจริงมีรูปแบบ { id, name, url, size } ไม่ใช่ dataUrl แบบเดิม
+function resolveLink(item) {
+  if (item?.href) return item.href
+  if (item?.file?.url) return getFileUrl(item.file.url)
+  return null
+}
+
 export function Announcement({ onOpenNews }) {
   const { content } = useContent()
   const ANN_NEWS = content.ANN_NEWS
@@ -17,6 +36,7 @@ export function Announcement({ onOpenNews }) {
 
   const pinned = ANN_NEWS.find((n) => n.pinned) || ANN_NEWS[0]
   const bannerImg = pinned?.img || ''
+  const pinnedLink = pinned ? resolveLink(pinned) : null
 
   return (
     <div id="sec-ann">
@@ -47,18 +67,11 @@ export function Announcement({ onOpenNews }) {
           <div className="mb-[5px] max-w-[80%] font-display text-lg font-semibold text-white">{pinned.title}</div>
           <div className="mb-4 max-w-[75%] text-[11.5px] leading-[1.5] text-white/62">{pinned.sub}</div>
           <div className="flex items-center gap-[9px]">
-            {pinned.href && (
+            {pinnedLink && (
               <a
-                href={pinned.href}
-                className="rounded-xs border-none bg-white px-4 py-2 text-[11.5px] font-bold text-coral no-underline"
-              >
-                อ่านรายละเอียด
-              </a>
-            )}
-            {pinned.file?.dataUrl && (
-              <a
-                href={pinned.file.dataUrl}
-                download={pinned.file.name}
+                href={pinnedLink}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="rounded-xs border-none bg-white px-4 py-2 text-[11.5px] font-bold text-coral no-underline"
               >
                 อ่านรายละเอียด
@@ -79,7 +92,7 @@ export function Announcement({ onOpenNews }) {
           {ANN_NEWS.map((n, i) => {
             const c = ANN_COLORS[i % ANN_COLORS.length]
             const hasTree = n.tree && n.tree.length > 0
-            const href = !hasTree ? n.href || n.file?.dataUrl : undefined
+            const link = !hasTree ? resolveLink(n) : null
             const rowContent = (
               <>
                 <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] ${c.bg}`}>
@@ -95,12 +108,15 @@ export function Announcement({ onOpenNews }) {
             const rowClass =
               'flex items-center gap-3 rounded-md border border-line bg-white px-3.5 py-3 no-underline transition-colors hover:border-blue-500/40'
 
+            // มี tree ย่อย -> เปิดหน้าดูตามลำดับชั้น (AnnouncementTreePage)
+            // มีลิงก์/ไฟล์ตรงตัว -> เปิดแท็บใหม่
+            // ไม่มีทั้งคู่ -> แสดงเฉยๆ
             return hasTree ? (
               <button key={n.title} type="button" onClick={() => onOpenNews(n)} className={rowClass + ' text-left'}>
                 {rowContent}
               </button>
-            ) : href ? (
-              <a key={n.title} href={href} download={n.file?.name} className={rowClass}>
+            ) : link ? (
+              <a key={n.title} href={link} target="_blank" rel="noopener noreferrer" className={rowClass}>
                 {rowContent}
               </a>
             ) : (
