@@ -18,18 +18,21 @@ CREATE TABLE IF NOT EXISTS admin_users (
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- ไฟล์ที่อัปโหลดผ่าน UploadBox (เก็บตัวไฟล์เป็น bytea ตรงในตาราง
--- เหมาะกับไฟล์ขนาดเล็ก-กลาง เช่น PDF/รูปภาพของ intranet ภายในองค์กร
--- ถ้าปริมาณไฟล์เยอะ/ใหญ่ในอนาคต แนะนำย้ายไปเก็บใน object storage เช่น S3/R2 แล้วเก็บแค่ URL แทน)
+-- ไฟล์ที่อัปโหลดผ่าน UploadBox
+-- เก็บตัวไฟล์จริงบน disk (multer) ส่วน DB เก็บแค่ metadata + path (stored_name/url)
+-- คอลัมน์ data (bytea) เป็นของเดิมจากยุค store-in-DB ก่อน migrate มาเป็น disk-based —
+-- คงไว้เพื่อ backward-compat กับ record เก่า, record ใหม่ไม่ต้องเขียนคอลัมน์นี้แล้ว (NULL ได้)
 CREATE TABLE IF NOT EXISTS uploads (
   id             SERIAL PRIMARY KEY,
-  folder         TEXT NOT NULL,
+  folder         VARCHAR(100) NOT NULL,
   original_name  TEXT NOT NULL,
-  mime_type      TEXT NOT NULL,
+  stored_name    TEXT NOT NULL,
+  url            TEXT NOT NULL,
+  mime_type      VARCHAR(150) NOT NULL,
   size_bytes     INTEGER NOT NULL,
-  data           BYTEA NOT NULL,
-  uploaded_by    TEXT,
-  created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+  uploaded_by    VARCHAR(150),
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  data           BYTEA
 );
 
 CREATE INDEX IF NOT EXISTS idx_uploads_folder ON uploads (folder);

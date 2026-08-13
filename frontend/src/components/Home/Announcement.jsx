@@ -10,6 +10,25 @@ const ANN_COLORS = [
   { bg: 'bg-green-tint', text: 'text-green' },
 ]
 
+// แปลง URL ของไฟล์ที่อัปโหลดให้เปิดจาก Frontend ได้ (relative path จาก backend -> absolute)
+// รูปแบบเดียวกับ getFileUrl ใน CollectionEditor.jsx / OnCall.jsx
+function getFileUrl(url) {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+
+  const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`
+  return `${API_URL}${url}`
+}
+
+// แต่ละข่าวอาจมี "href" (ลิงก์ภายนอก) หรือ "file" (ไฟล์ที่อัปโหลด เช่น jpg/pdf) อย่างใดอย่างหนึ่ง
+// ตาม schema ใน ADMIN_SCHEMAS (ANN_NEWS) — href มาก่อนถ้ามีทั้งคู่
+// หมายเหตุ: ไฟล์ที่อัปโหลดจริงมีรูปแบบ { id, name, url, size } ไม่ใช่ dataUrl แบบเดิม
+function resolveLink(item) {
+  if (item?.href) return item.href
+  if (item?.file?.url) return getFileUrl(item.file.url)
+  return null
+}
+
 export function Announcement() {
   const { content } = useContent()
   const ANN_NEWS = content.ANN_NEWS
@@ -18,7 +37,8 @@ export function Announcement() {
   // หาข่าวที่ถูกปักหมุด (pinned: true) มาแสดงเป็น banner ใหญ่
   // ถ้าไม่มีข่าวไหนถูกปักหมุดเลย ใช้ข่าวแรกสุดในลิสต์แทนโดยอัตโนมัติ
   const pinned = ANN_NEWS.find((n) => n.pinned) || ANN_NEWS[0]
-  const bannerImg = pinned?.img || defaultBannerImg
+  const bannerImg = pinned?.img
+  const pinnedLink = pinned ? resolveLink(pinned) : null
 
   return (
     <div id="sec-ann">
@@ -30,11 +50,15 @@ export function Announcement() {
       {pinned && (
         <div
           className="relative flex min-h-[176px] flex-col justify-end overflow-hidden rounded-lg bg-gradient-to-tr from-navy-950 to-blue-600 p-6"
-          style={{
-            backgroundImage: `linear-gradient(90deg, rgba(10,20,50,.88) 30%, rgba(10,20,50,.35) 75%), url(${bannerImg})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
+          style={
+            bannerImg
+              ? {
+                  backgroundImage: `linear-gradient(90deg, rgba(10,20,50,.88) 30%, rgba(10,20,50,.35) 75%), url(${bannerImg})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }
+              : undefined
+          }
         >
           {pinned.badge && (
             <span className="mb-3 inline-flex w-fit items-center gap-1 rounded-[20px] bg-coral px-2.5 py-[3px] text-[9px] font-bold text-white">
@@ -45,18 +69,12 @@ export function Announcement() {
           <div className="mb-[5px] max-w-[80%] font-display text-lg font-semibold text-white">{pinned.title}</div>
           <div className="mb-4 max-w-[75%] text-[11.5px] leading-[1.5] text-white/62">{pinned.sub}</div>
           <div className="flex items-center gap-[9px]">
-            {pinned.href && (
+            {/* ลิงก์ไปเว็บไซต์โรงพยาบาล (href) หรือเปิดไฟล์ที่แนบไว้ (jpg/pdf) — เปิดแท็บใหม่เสมอ */}
+            {pinnedLink && (
               <a
-                href={pinned.href}
-                className="rounded-xs border-none bg-white px-4 py-2 text-[11.5px] font-bold text-coral no-underline"
-              >
-                อ่านรายละเอียด
-              </a>
-            )}
-            {pinned.file?.dataUrl && (
-              <a
-                href={pinned.file.dataUrl}
-                download={pinned.file.name}
+                href={pinnedLink}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="rounded-xs border-none bg-white px-4 py-2 text-[11.5px] font-bold text-coral no-underline"
               >
                 อ่านรายละเอียด
@@ -76,11 +94,12 @@ export function Announcement() {
         <div className="mt-3 flex flex-col gap-2">
           {ANN_NEWS.map((n, i) => {
             const c = ANN_COLORS[i % ANN_COLORS.length]
-            return (
-              <div
-                key={n.title}
-                className="flex items-center gap-3 rounded-md border border-line bg-white px-3.5 py-3 transition-colors hover:border-blue-500/40"
-              >
+            const rowClasses =
+              'flex items-center gap-3 rounded-md border border-line bg-white px-3.5 py-3 transition-colors hover:border-blue-500/40'
+            const link = resolveLink(n)
+
+            const rowContent = (
+              <>
                 <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] ${c.bg}`}>
                   <i className={`ti ${n.icon || 'ti-news'} text-lg ${c.text}`} />
                 </div>
@@ -89,6 +108,24 @@ export function Announcement() {
                   <p className="mt-0.5 truncate text-xs text-ink-soft">{n.sub}</p>
                 </div>
                 <i className="ti ti-chevron-right flex-shrink-0 text-base text-ink-soft/60" />
+              </>
+            )
+
+            // ข่าวมี href หรือ file (jpg/pdf) -> ทั้งแถวคลิกได้ เปิดแท็บใหม่
+            // ไม่มีทั้งคู่ -> แสดงข่าวปกติ ไม่ทำเป็นลิงก์
+            return link ? (
+              <a
+                key={n.title}
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${rowClasses} no-underline`}
+              >
+                {rowContent}
+              </a>
+            ) : (
+              <div key={n.title} className={rowClasses}>
+                {rowContent}
               </div>
             )
           })}

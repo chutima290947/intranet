@@ -194,8 +194,17 @@ function ImageFieldInput({ value, onChange }) {
 }
 
 // ============================================================
-// PDF / File Field
+// PDF / Image File Field (แนบไฟล์ทั่วไป — รองรับ PDF และรูปภาพ)
 // ============================================================
+
+// รายชื่อประเภทไฟล์ที่อนุญาตสำหรับ field แบบ "file" (ใช้ร่วมกันทุก collection)
+const ALLOWED_FILE_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+]
+const ALLOWED_FILE_ACCEPT = 'application/pdf,image/jpeg,image/png,image/webp'
 
 function FileFieldInput({ value, onChange }) {
   const [error, setError] = useState('')
@@ -216,8 +225,8 @@ function FileFieldInput({ value, onChange }) {
       return
     }
 
-    if (file.type !== 'application/pdf') {
-      setError('กรุณาเลือกไฟล์ PDF เท่านั้น')
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      setError('กรุณาเลือกไฟล์ PDF หรือรูปภาพ (JPG, PNG, WEBP) เท่านั้น')
       return
     }
 
@@ -291,12 +300,12 @@ function FileFieldInput({ value, onChange }) {
             {uploading
               ? 'กำลังอัปโหลด...'
               : selectedFolder
-                ? 'เลือกไฟล์ PDF'
+                ? 'เลือกไฟล์ PDF หรือรูปภาพ (JPG/PNG/WEBP)'
                 : 'กรุณาเลือกโฟลเดอร์ก่อน'}
 
             <input
               type="file"
-              accept="application/pdf"
+              accept={ALLOWED_FILE_ACCEPT}
               onChange={handleFile}
               disabled={uploading || !selectedFolder}
               className="hidden"

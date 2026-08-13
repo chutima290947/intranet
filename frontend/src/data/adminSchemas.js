@@ -359,7 +359,7 @@ export const ADMIN_SCHEMAS = [
         key: 'DIGITAL_SERVICES',
         label: 'Digital Services',
         description:
-          'ไอคอนบริการดิจิทัลทั้งหมด บางรายการมีเมนูย่อยแบบแท็บ (groups) หรือเมนูต้นไม้ซ้อนหลายชั้น (tree)',
+          'ไอคอนบริการดิจิทัลทั้งหมด บางรายการมีเมนูย่อยแบบแท็บ (groups) หรือเมนูต้นไม้ซ้อนหลายชั้น (tree) — ถ้าไม่มีเมนูย่อยเลย ให้ใส่ลิงก์/แนบไฟล์ตรงตัวได้เลย',
         type: 'list',
         itemLabel: (i) => i.label,
         fields: [
@@ -367,6 +367,20 @@ export const ADMIN_SCHEMAS = [
             key: 'label',
             label: 'ชื่อบริการ',
             type: 'text',
+          },
+
+          {
+            key: 'href',
+            label:
+              'ลิงก์ (URL) — ใช้เมื่อไม่มีเมนูย่อยด้านล่าง (groups/tree)',
+            type: 'url',
+          },
+          {
+            key: 'file',
+            label:
+              'หรือแนบไฟล์ PDF — ใช้เมื่อไม่มีเมนูย่อยด้านล่าง (groups/tree)',
+            type: 'file',
+            uploadFolder: 'med',
           },
 
           {
@@ -391,6 +405,19 @@ export const ADMIN_SCHEMAS = [
                 label:
                   'รูปโลโก้วงกลม (แนะนำ 200x200px ขึ้นไป)',
                 type: 'image',
+                uploadFolder: 'med',
+              },
+              {
+                key: 'href',
+                label:
+                  'ลิงก์ (URL) — ใช้เมื่อไม่มีรายการย่อยด้านล่าง',
+                type: 'url',
+              },
+              {
+                key: 'file',
+                label:
+                  'หรือแนบไฟล์ PDF — ใช้เมื่อไม่มีรายการย่อยด้านล่าง',
+                type: 'file',
                 uploadFolder: 'med',
               },
               {
