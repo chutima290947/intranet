@@ -1,5 +1,24 @@
 import { useState, useEffect } from 'react'
 
+// แปลง URL ของไฟล์ที่อัปโหลดให้เปิดจาก Frontend ได้ (relative path จาก backend -> absolute)
+// รูปแบบเดียวกับ getFileUrl ใน Announcement.jsx / CollectionEditor.jsx / OnCall.jsx
+function getFileUrl(url) {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+
+  const API_URL =
+  import.meta.env.VITE_API_URL ||
+  `http://${window.location.hostname}:3001`;
+}
+
+// แต่ละโหนดปลายทางอาจมี "href" (ลิงก์ภายนอก) หรือ "file" (ไฟล์ที่อัปโหลด เช่น jpg/pdf) อย่างใดอย่างหนึ่ง
+// href มาก่อนถ้ามีทั้งคู่ — เหมือน resolveLink ใน Announcement.jsx
+function resolveLink(item) {
+  if (item?.href) return item.href
+  if (item?.file?.url) return getFileUrl(item.file.url)
+  return null
+}
+
 export function AnnouncementTreePage({ news, onBack }) {
   const [stack, setStack] = useState([])
 
@@ -78,10 +97,12 @@ export function AnnouncementTreePage({ news, onBack }) {
               </button>
             )
           }
+          const link = resolveLink(node)
           return (
             <a
               key={i}
-              href={node.href || '#'}
+              href={link || '#'}
+              {...(link && { target: '_blank', rel: 'noopener noreferrer' })}
               className="flex items-center gap-3 rounded-lg border border-line bg-white px-4 py-3.5 no-underline transition-colors hover:border-blue-500/40 hover:bg-blue-tint"
             >
               <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-blue-tint">
