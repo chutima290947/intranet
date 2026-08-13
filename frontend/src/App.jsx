@@ -237,7 +237,8 @@ function AppInner() {
                 </button>
                 <QualityCenter />
                 <PartnerList onOpenPartner={(p) => goTo('partner', p.name)} />
-                <ExpandableCards />
+                                <ExpandableCards />
+
                 {customSections.filter((s) => s.column === 'right').map((s) => (
                   <div key={s.id} id={s.id}>
                     {renderCustomSection(s)}
@@ -248,46 +249,16 @@ function AppInner() {
           </div>
         </>
       )}
-
-      {page === 'division' && (
-        <DivisionGrid searchQuery={searchQuery} initialActiveId={selectedDivisionId} />
-      )}
-
-      {page === 'doctor' && <DoctorSchedulePage onBack={() => goTo('home')} />}
-
-      {page === 'report' && (
-        <ReportGrid searchQuery={searchQuery} initialActiveId={selectedReportId} />
-      )}
-
-      {page === 'online' && <RequestGrid searchQuery={searchQuery} />}
-
-      {page === 'partner' && (
-        <PartnerDetailPage
-          partner={content.PARTNERS.find((p) => p.name === selectedPartnerName)}
-          onBack={() => goTo('home')}
-        />
-      )}
-
-      {page === 'service' && (
-        <DigitalServicePage
-          service={content.DIGITAL_SERVICES.find((s) => s.label === selectedServiceLabel)}
-          onBack={() => goTo('home')}
-        />
-      )}
-
-      <Footer />
-
-      <BackToTop />
     </>
   )
 }
 
 export default function App() {
   return (
-    <ContentProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <ContentProvider>
         <AppInner />
-      </AuthProvider>
-    </ContentProvider>
+      </ContentProvider>
+    </AuthProvider>
   )
 }
