@@ -6,10 +6,12 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [username, setUsername] = useState(null)
+  const [role, setRole] = useState(null)
+  const [roleLabel, setRoleLabel] = useState(null)
+  const [permissions, setPermissions] = useState([])
   const [checkingSession, setCheckingSession] = useState(true)
   const [error, setError] = useState('')
 
-  // ตอนโหลดหน้าเว็บใหม่ เช็คว่า token ที่เก็บไว้ใน sessionStorage ยังใช้ได้อยู่ไหม
   useEffect(() => {
     const token = getToken()
     if (!token) {
@@ -21,6 +23,9 @@ export function AuthProvider({ children }) {
       .then((res) => {
         setIsAuthenticated(true)
         setUsername(res.username)
+        setRole(res.role)
+        setRoleLabel(res.roleLabel)
+        setPermissions(res.permissions || [])
       })
       .catch(() => {
         setToken(null)
@@ -35,6 +40,12 @@ export function AuthProvider({ children }) {
       setToken(res.token)
       setIsAuthenticated(true)
       setUsername(res.username)
+      setRole(res.role)
+      setRoleLabel(res.roleLabel)
+      // token มี permissions ฝังอยู่ แต่ response login ไม่ได้ส่งกลับมาตรงๆ
+      // เรียก /me อีกทีเพื่อความชัวร์ว่า permissions ตรงกับใน token เป๊ะ
+      const me = await api.me()
+      setPermissions(me.permissions || [])
       setError('')
       return true
     } catch (err) {
@@ -47,10 +58,33 @@ export function AuthProvider({ children }) {
     setToken(null)
     setIsAuthenticated(false)
     setUsername(null)
+    setRole(null)
+    setRoleLabel(null)
+    setPermissions([])
+  }
+
+  // เช็คสิทธิ์แบบสั้นๆ ใช้ในหน้าแอดมิน เช่น can('ANN_NEWS', 'update')
+  // super_admin (role name เท่ากับ 'super_admin') ผ่านทุกอย่างเสมอ กันเคส seed data ไม่ครบ
+  const can = (resource, action) => {
+    if (role === 'super_admin') return true
+    return permissions.includes(`${resource}:${action}`)
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, username, checkingSession, login, logout, error }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        username,
+        role,
+        roleLabel,
+        permissions,
+        checkingSession,
+        login,
+        logout,
+        error,
+        can,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

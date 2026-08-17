@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect } from 'react'
 import { buildDocs } from './PartnerList'
 
 const PAGE_SIZE = 50
+const DOCS_COLLAPSE_LIMIT = 8
+const DOCS_SEARCH_THRESHOLD = 10
 
 const normalize = (str) => (str || '').toLowerCase().replace(/\s+/g, '')
 
@@ -84,6 +86,100 @@ function isExpired(expiry) {
   expiryDate.setHours(0, 0, 0, 0)
 
   return expiryDate < today
+}
+
+// รายการเอกสารแนบของแต่ละ item — ย่อ/ขยาย + ค้นหาในตัว เมื่อมีจำนวนเยอะ
+// เพื่อไม่ให้การ์ดที่มีเอกสาร 40+ ไฟล์ (เช่น Health Buddy @ School) ยืดยาวจนใช้งานยาก
+function DocsList({ docs }) {
+  const [expanded, setExpanded] = useState(false)
+  const [docQuery, setDocQuery] = useState('')
+
+  const filteredDocs = useMemo(() => {
+    if (!docQuery) return docs
+    const q = normalize(docQuery)
+    return docs.filter((d) => normalize(d.label).includes(q))
+  }, [docs, docQuery])
+
+  useEffect(() => {
+    // เคลียร์สถานะขยาย/ค้นหาเมื่อผลค้นหาสั้นลงกว่าลิมิตอยู่แล้ว ไม่จำเป็นต้องรีเซ็ต expanded
+  }, [docQuery])
+
+  const showSearch = docs.length > DOCS_SEARCH_THRESHOLD
+  const visibleDocs = expanded
+    ? filteredDocs
+    : filteredDocs.slice(0, DOCS_COLLAPSE_LIMIT)
+  const hasMore = filteredDocs.length > DOCS_COLLAPSE_LIMIT
+
+  return (
+    <div className="mt-2.5 pl-[22px]">
+      {showSearch && (
+        <div className="mb-2 flex max-w-[280px] items-center gap-1.5 rounded-md border border-line bg-bg-soft px-2.5 py-1.5">
+          <i className="ti ti-search text-[12px] text-ink-soft" />
+          <input
+            value={docQuery}
+            onChange={(e) => {
+              setDocQuery(e.target.value)
+              setExpanded(true)
+            }}
+            placeholder={`ค้นหาเอกสาร (${docs.length} ไฟล์)...`}
+            className="w-full border-none bg-transparent text-[11.5px] outline-none"
+          />
+          {docQuery && (
+            <button
+              type="button"
+              onClick={() => setDocQuery('')}
+              className="flex h-4 w-4 items-center justify-center text-ink-soft"
+            >
+              <i className="ti ti-x text-[11px]" />
+            </button>
+          )}
+        </div>
+      )}
+
+      {filteredDocs.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {visibleDocs.map((d, di) => (
+            <a
+              key={di}
+              href={d.link}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 rounded-[20px] border border-blue-600 px-2.5 py-[3px] text-[11px] font-semibold text-blue-600 no-underline"
+            >
+              <i className="ti ti-file-text text-[11px]" />
+              {d.label}
+            </a>
+          ))}
+        </div>
+      )}
+
+      {filteredDocs.length === 0 && (
+        <div className="text-[11px] text-ink-soft">ไม่พบเอกสารที่ค้นหา</div>
+      )}
+
+      {!expanded && hasMore && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="mt-2 flex items-center gap-1 text-[11.5px] font-semibold text-blue-600"
+        >
+          <i className="ti ti-chevron-down text-[11px]" />
+          แสดงทั้งหมด ({filteredDocs.length})
+        </button>
+      )}
+
+      {expanded && docs.length > DOCS_COLLAPSE_LIMIT && (
+        <button
+          type="button"
+          onClick={() => setExpanded(false)}
+          className="mt-2 flex items-center gap-1 text-[11.5px] font-semibold text-blue-600"
+        >
+          <i className="ti ti-chevron-up text-[11px]" />
+          ย่อรายการ
+        </button>
+      )}
+    </div>
+  )
 }
 
 export function PartnerDetailPage({ partner, onBack }) {
@@ -178,12 +274,27 @@ export function PartnerDetailPage({ partner, onBack }) {
           return (
             <div
               key={idx}
-              className="rounded-md border border-line bg-white px-4 py-3"
+              className="relative rounded-md border border-line bg-white px-4 py-3"
             >
+              {s.qr && (
+                <button
+                  type="button"
+                  onClick={() => setZoomQr(s.qr)}
+                  className="absolute right-3 top-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-line bg-white p-1 shadow-sm"
+                  title="คลิกเพื่อขยาย Barcode/QR Code"
+                >
+                  <img
+                    src={s.qr}
+                    alt={`Barcode/QR - ${s.label}`}
+                    className="h-full w-full object-contain"
+                  />
+                </button>
+              )}
+
               <div
                 className={`flex items-start gap-2 text-[13px] font-semibold ${
-                  expired ? 'text-red-700' : 'text-navy-900'
-                }`}
+                  s.qr ? 'pr-14' : ''
+                } ${expired ? 'text-red-700' : 'text-navy-900'}`}
               >
                 <i
                   className={`ti ${
@@ -202,9 +313,9 @@ export function PartnerDetailPage({ partner, onBack }) {
                 </span>
               </div>
 
-              {(s.expiry || s.payorCode || s.contact || s.qr) && (
-                <div className="mt-1.5 flex items-start gap-3 pl-[22px]">
-                  <div className="min-w-0 flex-1 text-[11.5px] leading-relaxed text-ink-soft">
+              {(s.expiry || s.payorCode || s.contact) && (
+                <div className="mt-1.5 pl-[22px]">
+                  <div className="text-[11.5px] leading-relaxed text-ink-soft">
                     {s.expiry && <div>{s.expiry}</div>}
                     {s.payorCode && (
                       <div>Payor Code : {s.payorCode}</div>
@@ -215,40 +326,10 @@ export function PartnerDetailPage({ partner, onBack }) {
                       </div>
                     )}
                   </div>
-
-                  {s.qr && (
-                    <button
-                      type="button"
-                      onClick={() => setZoomQr(s.qr)}
-                      className="shrink-0 rounded-md border border-line bg-white p-1"
-                      title="คลิกเพื่อขยาย QR Code"
-                    >
-                      <img
-                        src={s.qr}
-                        alt={`QR Code - ${s.label}`}
-                        className="h-20 w-20 object-contain"
-                      />
-                    </button>
-                  )}
                 </div>
               )}
 
-              {docs.length > 0 && (
-                <div className="mt-2.5 flex flex-wrap gap-1.5 pl-[22px]">
-                  {docs.map((d, di) => (
-                    <a
-                      key={di}
-                      href={d.link}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1 rounded-[20px] border border-blue-600 px-2.5 py-[3px] text-[11px] font-semibold text-blue-600 no-underline"
-                    >
-                      <i className="ti ti-file-text text-[11px]" />
-                      {d.label}
-                    </a>
-                  ))}
-                </div>
-              )}
+              {docs.length > 0 && <DocsList docs={docs} />}
             </div>
           )
         })}
