@@ -4,6 +4,13 @@ import { guessIcon } from '../../utils/guessIcon'
 
 const DEFAULT_GRADIENT = ['#1B4F9C', '#2A63B8']
 
+// รองรับทั้งข้อมูลเก่า (gradient: [a, b]) และข้อมูลใหม่จากฟอร์ม admin (gradientFrom/gradientTo)
+function resolveGradient(d) {
+  if (d.gradientFrom && d.gradientTo) return [d.gradientFrom, d.gradientTo]
+  if (Array.isArray(d.gradient) && d.gradient.length === 2) return d.gradient
+  return DEFAULT_GRADIENT
+}
+
 // แปลง URL ของไฟล์ที่อัปโหลดให้เปิดจาก Frontend ได้ (relative path จาก backend -> absolute)
 // รูปแบบเดียวกับ getFileUrl ใน Announcement.jsx / CollectionEditor.jsx / OnCall.jsx
 function getFileUrl(url) {
@@ -54,7 +61,7 @@ export function DivisionGrid({ initialActiveId }) {
             style={
               d.img
                 ? { backgroundImage: `url(${d.img})` }
-                : { background: `linear-gradient(135deg, ${(d.gradient || DEFAULT_GRADIENT)[0]}, ${(d.gradient || DEFAULT_GRADIENT)[1]})` }
+                : { background: `linear-gradient(135deg, ${resolveGradient(d)[0]}, ${resolveGradient(d)[1]})` }
             }
           >
             {!d.img && <i className={`ti ${d.icon || guessIcon(d.name)} text-[28px] text-white`} />}
@@ -84,7 +91,7 @@ export function DivisionGrid({ initialActiveId }) {
             </button>
             <div
               className="flex h-16 items-center justify-center"
-              style={{ background: `linear-gradient(135deg, ${(active.gradient || DEFAULT_GRADIENT)[0]}, ${(active.gradient || DEFAULT_GRADIENT)[1]})` }}
+              style={{ background: `linear-gradient(135deg, ${resolveGradient(active)[0]}, ${resolveGradient(active)[1]})` }}
             >
               <i className={`ti ${active.icon || guessIcon(active.name)} text-2xl text-white`} />
             </div>

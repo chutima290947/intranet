@@ -6,7 +6,7 @@ export const ADMIN_SCHEMAS = [
         key: 'ANN_NEWS',
         label: 'ข่าวประชาสัมพันธ์ (รายการทั้งหมด)',
         description:
-          'รายการข่าวที่แสดงในลิสต์ด้านล่าง "ดูประกาศทั้งหมด" — ติ๊ก "ปักหมุดเป็น Banner" ที่ข่าวใดข่าวหนึ่ง เพื่อให้ข่าวนั้นแสดงเป็น Banner ใหญ่ด้านบนแทน',
+          'รายการข่าวที่แสดงในลิสต์ด้านล่าง "ดูประกาศทั้งหมด" — ติ๊ก "ปักหมุดเป็น Banner" ที่ข่าวใดข่าวหนึ่ง เพื่อให้ข่าวนั้นแสดงเป็น Banner ใหญ่ด้านบนแทน — ถ้าข่าวมีรายชื่อย่อย/เมนูย่อย ให้ใส่ในช่อง "เมนูรายชื่อย่อย" ด้านล่าง (ระบบจะพาไปหน้าแสดงรายชื่อย่อยแทนการเปิดลิงก์ตรง)',
         type: 'list',
         itemLabel: (i) => i.title,
         fields: [
@@ -39,14 +39,21 @@ export const ADMIN_SCHEMAS = [
           },
           {
             key: 'href',
-            label: 'ลิงก์ (URL ภายนอก)',
+            label:
+              'ลิงก์ (URL ภายนอก) — ใช้เมื่อไม่มีเมนูรายชื่อย่อยด้านล่าง',
             type: 'url',
           },
           {
             key: 'file',
-            label: 'หรือแนบไฟล์ PDF',
+            label:
+              'หรือแนบไฟล์ PDF — ใช้เมื่อไม่มีเมนูรายชื่อย่อยด้านล่าง',
             type: 'file',
             uploadFolder: 'marketing',
+          },
+          {
+            key: 'tree',
+            label: 'เมนูรายชื่อย่อย (ซ้อนได้หลายชั้น)',
+            type: 'tree',
           },
         ],
       },
@@ -230,24 +237,92 @@ export const ADMIN_SCHEMAS = [
       {
         key: 'QUALITY',
         label: 'ศูนย์รวมระบบคุณภาพและความปลอดภัย',
+        description:
+          'ถ้าใส่ "หัวข้อบทความ" ด้านล่าง คลิกไอคอนนี้จะพาไปหน้าเนื้อหาแทนการเปิดลิงก์ตรง — ถ้าเว้นว่างไว้ จะใช้ลิงก์/ไฟล์แนบด้านบนตามปกติ',
         type: 'list',
         itemLabel: (i) => i.label,
         fields: [
           {
             key: 'label',
-            label: 'ข้อความ',
+            label: 'ชื่อเมนู (แสดงบนไอคอน)',
             type: 'text',
           },
           {
+            key: 'icon',
+            label: 'ไอคอน',
+            type: 'icon',
+          },
+          {
+            key: 'warn',
+            label: 'ใช้สีแดง (เตือน) แทนสีเขียวปกติ',
+            type: 'boolean',
+          },
+          {
             key: 'href',
-            label: 'ลิงก์ (URL)',
+            label:
+              'ลิงก์ (URL) — ใช้เมื่อไม่มี "หัวข้อบทความ" ด้านล่าง',
             type: 'url',
           },
           {
             key: 'file',
-            label: 'หรือแนบไฟล์ PDF',
+            label:
+              'หรือแนบไฟล์ PDF — ใช้เมื่อไม่มี "หัวข้อบทความ" ด้านล่าง',
             type: 'file',
             uploadFolder: 'hr',
+          },
+          {
+            key: 'articleTitle',
+            label:
+              'หัวข้อบทความ (หน้าเนื้อหา) — กรอกช่องนี้เพื่อเปิดใช้หน้าเนื้อหา',
+            type: 'text',
+          },
+          {
+            key: 'author',
+            label: 'ผู้เขียน/ผู้เผยแพร่',
+            type: 'text',
+          },
+          {
+            key: 'publishedAt',
+            label: 'วันที่เผยแพร่ (อัตโนมัติ)',
+            type: 'readonly-datetime', // แสดงผลอย่างเดียว แก้ไม่ได้
+          },
+          {
+            key: 'updatedAt',
+            label: 'วันที่อัปเดตล่าสุด (อัตโนมัติ)',
+            type: 'readonly-datetime',
+          },
+          {
+            key: 'intro',
+            label: 'คำอธิบายนำ',
+            type: 'textarea',
+          },
+          {
+            key: 'articleItems',
+            label: 'รายการเอกสาร/ลิงก์ในหน้าเนื้อหา',
+            type: 'sublist',
+            fields: [
+              {
+                key: 'label',
+                label: 'ข้อความ',
+                type: 'text',
+              },
+              {
+                key: 'isNew',
+                label: 'ติดป้าย "ใหม่"',
+                type: 'boolean',
+              },
+              {
+                key: 'href',
+                label: 'ลิงก์ (URL)',
+                type: 'url',
+              },
+              {
+                key: 'file',
+                label: 'หรือแนบไฟล์ PDF',
+                type: 'file',
+                uploadFolder: 'hr',
+              },
+            ],
           },
         ],
       },
@@ -303,52 +378,35 @@ export const ADMIN_SCHEMAS = [
                 type: 'text',
               },
               {
-                key: 'detailHref',
-                label: 'ลิงก์ "รายละเอียด" (URL)',
-                type: 'url',
-              },
-              {
-                key: 'detailFile',
-                label: 'หรือแนบไฟล์ "รายละเอียด"',
-                type: 'file',
+                key: 'qr',
+                label:
+                  'รูปบาร์โค้ด/QR Code สำหรับสแกน (แสดงมุมขวาบนของการ์ด ต่อท้ายชื่อ)',
+                type: 'image',
                 uploadFolder: 'hr',
               },
               {
-                key: 'contractHref',
-                label: 'ลิงก์ "เอกสารสัญญา" (URL)',
-                type: 'url',
-              },
-              {
-                key: 'contractFile',
-                label: 'หรือแนบไฟล์ "เอกสารสัญญา"',
-                type: 'file',
-                uploadFolder: 'hr',
-              },
-              {
-                key: 'attachmentHref',
+                key: 'docs',
                 label:
-                  'ลิงก์ "เอกสารแนบท้ายสัญญา" (URL)',
-                type: 'url',
-              },
-              {
-                key: 'attachmentFile',
-                label:
-                  'หรือแนบไฟล์ "เอกสารแนบท้ายสัญญา"',
-                type: 'file',
-                uploadFolder: 'hr',
-              },
-              {
-                key: 'signatureHref',
-                label:
-                  'ลิงก์ "ลายเซ็นผู้มีอำนาจส่งตัว" (URL)',
-                type: 'url',
-              },
-              {
-                key: 'signatureFile',
-                label:
-                  'หรือแนบไฟล์ "ลายเซ็นผู้มีอำนาจส่งตัว"',
-                type: 'file',
-                uploadFolder: 'hr',
+                  'เอกสารแนบเพิ่มเติม (จำนวนไม่จำกัด — ใช้กรณีมีหลายไฟล์ เช่น รายชื่อโรงเรียนแต่ละแห่งในเครือ)',
+                type: 'sublist',
+                fields: [
+                  {
+                    key: 'label',
+                    label: 'ชื่อรายการ (เช่น ชื่อโรงเรียน/สาขา)',
+                    type: 'text',
+                  },
+                  {
+                    key: 'href',
+                    label: 'ลิงก์ (URL ภายนอก)',
+                    type: 'url',
+                  },
+                  {
+                    key: 'file',
+                    label: 'หรือแนบไฟล์ PDF',
+                    type: 'file',
+                    uploadFolder: 'hr',
+                  },
+                ],
               },
             ],
           },
@@ -516,49 +574,28 @@ export const ADMIN_SCHEMAS = [
     group: 'Division',
     items: [
       {
-        key: 'DIVISIONS',
-        label: 'ฝ่ายงาน (Division)',
-        type: 'list',
-        itemLabel: (i) => i.name,
-        fields: [
-          {
-            key: 'name',
-            label: 'ชื่อฝ่าย',
-            type: 'text',
-          },
-          {
-            key: 'desc',
-            label: 'คำอธิบาย',
-            type: 'textarea',
-          },
-          {
-            key: 'subItems',
-            label: 'ทีมย่อย / ระบบภายในฝ่าย',
-            type: 'sublist',
-            fields: [
-              {
-                key: 'label',
-                label: 'ชื่อทีม/ระบบ',
-                type: 'text',
-              },
-              {
-                key: 'href',
-                label: 'ลิงก์ (URL)',
-                type: 'url',
-              },
-              {
-                key: 'file',
-                label: 'หรือแนบไฟล์ PDF',
-                type: 'file',
-                uploadFolder: 'emp',
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-
+  key: 'DIVISIONS',
+  label: 'ฝ่ายงาน (Division)',
+  type: 'list',
+  itemLabel: (i) => i.name,
+  fields: [
+    { key: 'name', label: 'ชื่อฝ่าย', type: 'text' },
+    { key: 'desc', label: 'คำอธิบาย', type: 'textarea' },
+    { key: 'icon', label: 'ไอคอน (เว้นว่างได้ ระบบจะเดาให้อัตโนมัติ)', type: 'icon' },
+    { key: 'img', label: 'รูปภาพปก (jpg/png/webp)', type: 'image' },
+    {
+      key: 'subItems', label: 'ทีมย่อย / ระบบภายในฝ่าย', type: 'sublist',
+      fields: [
+        { key: 'label', label: 'ชื่อทีม/ระบบ', type: 'text' },
+        { key: 'icon', label: 'ไอคอน', type: 'icon' },
+        { key: 'href', label: 'ลิงก์ (URL)', type: 'url' },
+        { key: 'file', label: 'หรือแนบไฟล์ PDF', type: 'file' },
+      ],
+    },
+  ],
+},
+],
+},
   {
     group: 'Report',
     items: [
@@ -583,7 +620,7 @@ export const ADMIN_SCHEMAS = [
     ],
   },
 
-  {
+ {
     group: 'ตารางแพทย์',
     items: [
       {
@@ -599,14 +636,39 @@ export const ADMIN_SCHEMAS = [
           },
           {
             key: 'href',
-            label: 'ลิงก์ (URL ภายนอก, ถ้ามี)',
+            label:
+              'ลิงก์ (URL ภายนอก) — ใช้เมื่อไม่มีรายการย่อยด้านล่าง',
             type: 'url',
           },
           {
             key: 'file',
-            label: 'หรือแนบไฟล์ PDF',
+            label:
+              'หรือแนบไฟล์ PDF — ใช้เมื่อไม่มีรายการย่อยด้านล่าง',
             type: 'file',
             uploadFolder: 'doctor',
+          },
+          {
+            key: 'subItems',
+            label: 'รายการย่อย (ลิงก์ภายในหัวข้อนี้)',
+            type: 'sublist',
+            fields: [
+              {
+                key: 'label',
+                label: 'ข้อความ',
+                type: 'text',
+              },
+              {
+                key: 'href',
+                label: 'ลิงก์ (URL ภายนอก)',
+                type: 'url',
+              },
+              {
+                key: 'file',
+                label: 'หรือแนบไฟล์ PDF',
+                type: 'file',
+                uploadFolder: 'doctor',
+              },
+            ],
           },
         ],
       },

@@ -21,6 +21,7 @@ import { OnCall } from './components/Home/OnCall'
 import { Promo } from './components/Home/Promo'
 import { ContactCard } from './components/Home/ContactCard'
 import { QualityCenter } from './components/Home/QualityCenter'
+import { QualityDetailPage } from './components/Home/QualityDetailPage'
 import { PartnerList } from './components/Home/PartnerList'
 import { PartnerDetailPage } from './components/Home/PartnerDetailPage'
 import { ExpandableCards } from './components/Home/ExpandableCards'
@@ -32,6 +33,7 @@ import { ReportGrid } from './components/Report/Reportgrid'
 import { DoctorSchedulePage } from './components/Home/DoctorSchedulePage'
 import { RequestGrid } from './components/Online/Requestgrid'
 import { AdminLayout } from './components/Admin/AdminLayout'
+import { SetupPasswordPage } from './components/Auth/SetupPasswordPage'
 
 const STORAGE_KEY = 'intranet:last-page'
 
@@ -79,7 +81,7 @@ function AppInner() {
   const { isAuthenticated } = useAuth()
 
   const initial = loadStoredPage()
-  const [page, setPage] = useState(initial.page) // 'home' | 'division' | 'report' | 'doctor' | 'online' | 'partner' | 'admin'
+  const [page, setPage] = useState(initial.page) // 'home' | 'division' | 'report' | 'doctor' | 'online' | 'partner' | 'quality' | 'admin'
   const [activeSection, setActiveSection] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDivisionId, setSelectedDivisionId] = useState(initial.selectedDivisionId)
@@ -87,6 +89,7 @@ function AppInner() {
   const [selectedPartnerName, setSelectedPartnerName] = useState(initial.selectedPartnerName)
   const [selectedServiceLabel, setSelectedServiceLabel] = useState(null)
   const [selectedNewsTitle, setSelectedNewsTitle] = useState(null)
+  const [selectedQualityLabel, setSelectedQualityLabel] = useState(null)
   const quicknavRef = useRef(null)
 
   // จำหน้าล่าสุดไว้ใน sessionStorage เผื่อรีเฟรชหน้า (ยกเว้นหน้า admin จะไม่จำไว้
@@ -145,8 +148,8 @@ function AppInner() {
     setTimeout(() => focusEl.classList.remove('section-focus'), 2000)
   }
 
-  // target: 'home' | 'division' | 'report' | 'doctor' | 'online' | 'partner' | 'admin'
-  // payload: id/name ของ division/report/partner ที่ถูกเลือก (optional)
+  // target: 'home' | 'division' | 'report' | 'doctor' | 'online' | 'partner' | 'quality' | 'admin'
+  // payload: id/name ของ division/report/partner/quality ที่ถูกเลือก (optional)
   const goTo = (target, payload) => {
     setPage(target)
     if (target === 'division') {
@@ -160,6 +163,9 @@ function AppInner() {
     }
     if (target === 'service') {
       setSelectedServiceLabel(payload || null)
+    }
+    if (target === 'quality') {
+      setSelectedQualityLabel(payload || null)
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })
     if (target === 'news') {
@@ -240,7 +246,7 @@ function AppInner() {
                 >
                   <i className="ti ti-stethoscope text-[17px]" />ตารางแพทย์
                 </button>
-                <QualityCenter />
+                <QualityCenter onOpenQuality={(q) => goTo('quality', q.label)} />
                 <PartnerList onOpenPartner={(p) => goTo('partner', p.name)} />
                                 <ExpandableCards />
 
@@ -288,6 +294,13 @@ function AppInner() {
         />
       )}
 
+      {page === 'quality' && (
+        <QualityDetailPage
+          quality={content.QUALITY.find((q) => q.label === selectedQualityLabel)}
+          onBack={() => goTo('home')}
+        />
+      )}
+
       <Footer />
 
       <BackToTop />
@@ -296,11 +309,20 @@ function AppInner() {
 }
 
 export default function App() {
+  // เช็ค URL path แบบง่ายๆ (ไม่ใช้ router library เพราะแอปนี้ยังไม่มี)
+  // /setup-password/xxxxx แยกออกไปแสดงหน้าตั้งรหัสผ่านเลย ไม่ต้องผ่าน ContentProvider/AuthProvider
+  // ใช้ regex ที่ไม่สนใจว่าจะมี base path (เช่น /intranet/) นำหน้าอยู่หรือไม่
+  const path = window.location.pathname
+  const setupMatch = path.match(/\/setup-password\/([^/]+)\/?$/)
+  if (setupMatch) {
+    return <SetupPasswordPage token={setupMatch[1]} />
+  }
+
   return (
-    <AuthProvider>
-      <ContentProvider>
+    <ContentProvider>
+      <AuthProvider>
         <AppInner />
-      </ContentProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </ContentProvider>
   )
 }

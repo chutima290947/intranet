@@ -441,7 +441,7 @@ DIGITAL_SERVICES: [
 
   // ---------------- ตารางแพทย์ ----------------
   DOCTOR_LINKS: [
-    { icon: 'ti-calendar-user', label: 'ตารางทำงานแพทย์', href: '#' },
+    { icon: 'ti-calendar-user', label: 'ตารางทำงานแพทย์', href: '' },
     { icon: 'ti-stethoscope', label: 'ตารางแพทย์ Consult', href: '#' },
     { icon: 'ti-moon-stars', label: 'ตารางเวร GP นอกเวลา / ICU', href: '#' },
     { icon: 'ti-users', label: 'OUR DOCTOR', href: '#' },

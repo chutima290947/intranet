@@ -42,6 +42,9 @@ async function request(path, options = {}) {
   }
   if (res.status === 204) return null
   return res.json()
+
+
+  
 }
 
 export const api = {
@@ -110,4 +113,27 @@ export const api = {
     }),
   deleteUpload: (id) => request(`/api/uploads/${id}`, { method: 'DELETE' }),
   downloadUrl: (id) => `${API_URL}/api/uploads/${id}/download`,
+
+// ---- users & roles ----
+  listUsers: () => request('/api/users'),
+  getAssignableRoles: () => request('/api/users/roles-assignable'),
+  createUser: (username, displayName, roleId) =>
+    request('/api/users', { method: 'POST', body: JSON.stringify({ username, displayName, roleId }) }),
+  updateUserRole: (id, roleId) =>
+    request(`/api/users/${id}`, { method: 'PATCH', body: JSON.stringify({ roleId }) }),
+  deleteUser: (id) => request(`/api/users/${id}`, { method: 'DELETE' }),
+    resetUserPassword: (id) => request(`/api/users/${id}/reset-password`, { method: 'POST' }),
+
+  listRoles: () => request('/api/roles'),
+  getPermissionCatalog: () => request('/api/roles/permission-catalog'),
+  createRole: (name, label) =>
+    request('/api/roles', { method: 'POST', body: JSON.stringify({ name, label }) }),
+  setRolePermissions: (roleId, permissions) =>
+    request(`/api/roles/${roleId}/permissions`, { method: 'PUT', body: JSON.stringify({ permissions }) }),
+  deleteRole: (id) => request(`/api/roles/${id}`, { method: 'DELETE' }),
+
+  // ---- setup password (ครั้งแรก) ----
+  checkSetupToken: (token) => request(`/api/auth/setup-password/${token}`),
+  setupPassword: (token, password) =>
+    request('/api/auth/setup-password', { method: 'POST', body: JSON.stringify({ token, password }) }),
 }
