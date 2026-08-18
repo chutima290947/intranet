@@ -112,13 +112,26 @@ authRouter.get('/setup-password/:token', async (req, res) => {
   res.json({ username: user.username, displayName: user.display_name })
 })
 
-// ใช้ให้ frontend เช็คว่า token ที่เก็บไว้ยังใช้ได้อยู่ไหม (ตอนโหลดหน้าเว็บใหม่)
 authRouter.get('/me', requireAuth, async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT u.username, r.name as role_name, r.label as role_label
+     FROM admin_users u
+     LEFT JOIN roles r ON r.id = u.role_id
+     WHERE u.id = $1`,
+    [req.user.sub]
+  )
+  const user = rows[0]
+  if (!user) return res.status(401).json({ error: 'ไม่พบผู้ใช้นี้แล้ว' })
+
+  const permissions = await getPermissionsForRole(
+    (await pool.query('SELECT role_id FROM admin_users WHERE id = $1', [req.user.sub])).rows[0]?.role_id
+  )
+
   res.json({
-    username: req.user.username,
-    role: req.user.role,
-    roleLabel: req.user.roleLabel,
-    permissions: req.user.permissions,
+    username: user.username,
+    role: user.role_name,
+    roleLabel: user.role_label,
+    permissions,
   })
 })
 
