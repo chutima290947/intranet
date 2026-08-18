@@ -35,23 +35,32 @@ export function DigitalServices({ onOpenService }) {
 
   return (
     <div id="sec-digital">
-      <div className="mb-[11px] flex items-center justify-between">
+      <div className="mb-3.5 flex items-center justify-between">
         <div className="flex items-center gap-2 font-display text-sm font-semibold text-navy-900">
-          <span className="h-[7px] w-[7px] rounded-full bg-coral" />Digital Services
+          <span className="h-[7px] w-[7px] rounded-full bg-coral" />
+          Digital Services
         </div>
       </div>
-      <div className="grid grid-cols-4 gap-[9px] max-[900px]:grid-cols-3 max-[560px]:grid-cols-2">
-        {DIGITAL_SERVICES.map(s => (
+
+      {/* การ์ดแต่ละอัน: เว้นระยะห่างมากขึ้น, มีขอบ+เงาจางๆ ให้รู้สึกว่ากดได้, hover ยกตัวขึ้นชัดเจน */}
+      <div className="grid grid-cols-4 gap-3 max-[900px]:grid-cols-3 max-[560px]:grid-cols-2">
+        {DIGITAL_SERVICES.map((s) => (
           <button
             type="button"
-            className="flex flex-col items-center gap-[7px] rounded-md border border-line bg-white px-1.5 py-3.5 text-center"
             key={s.label}
             onClick={() => handleClick(s)}
+            className="group flex flex-col items-center gap-2.5 rounded-xl border border-line bg-white px-2 py-4 text-center shadow-[0_1px_2px_rgba(11,40,80,.04)] transition-all duration-150 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_6px_16px_rgba(11,40,80,.08)] active:translate-y-0"
           >
-            <div className="flex h-[42px] w-[42px] items-center justify-center rounded-[11px]" style={{ background: s.color }}>
-              <i className={"ti " + s.icon + " text-[19px] text-white"} />
+            <div
+              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform duration-150 group-hover:scale-105"
+              style={{ background: s.color }}
+            >
+              <i className={`ti ${s.icon} text-[20px] text-white`} />
             </div>
-            <span className="text-[10px] font-semibold">{s.label}</span>
+
+            <span className="text-[10.5px] font-semibold leading-tight text-ink">
+              {s.label}
+            </span>
           </button>
         ))}
       </div>
