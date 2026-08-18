@@ -387,12 +387,12 @@ export const ADMIN_SCHEMAS = [
               {
                 key: 'docs',
                 label:
-                  'เอกสารแนบเพิ่มเติม (จำนวนไม่จำกัด — ใช้กรณีมีหลายไฟล์ เช่น รายชื่อโรงเรียนแต่ละแห่งในเครือ)',
+                  'เอกสารแนบ (ตั้งชื่อรายการเองได้ เช่น รายละเอียด, โปรแกรมตรวจ, หนังสือสัญญา ฯลฯ จำนวนไม่จำกัด)',
                 type: 'sublist',
                 fields: [
                   {
                     key: 'label',
-                    label: 'ชื่อรายการ (เช่น ชื่อโรงเรียน/สาขา)',
+                    label: 'ชื่อรายการ',
                     type: 'text',
                   },
                   {
@@ -574,28 +574,28 @@ export const ADMIN_SCHEMAS = [
     group: 'Division',
     items: [
       {
-  key: 'DIVISIONS',
-  label: 'ฝ่ายงาน (Division)',
-  type: 'list',
-  itemLabel: (i) => i.name,
-  fields: [
-    { key: 'name', label: 'ชื่อฝ่าย', type: 'text' },
-    { key: 'desc', label: 'คำอธิบาย', type: 'textarea' },
-    { key: 'icon', label: 'ไอคอน (เว้นว่างได้ ระบบจะเดาให้อัตโนมัติ)', type: 'icon' },
-    { key: 'img', label: 'รูปภาพปก (jpg/png/webp)', type: 'image' },
-    {
-      key: 'subItems', label: 'ทีมย่อย / ระบบภายในฝ่าย', type: 'sublist',
-      fields: [
-        { key: 'label', label: 'ชื่อทีม/ระบบ', type: 'text' },
-        { key: 'icon', label: 'ไอคอน', type: 'icon' },
-        { key: 'href', label: 'ลิงก์ (URL)', type: 'url' },
-        { key: 'file', label: 'หรือแนบไฟล์ PDF', type: 'file' },
-      ],
-    },
-  ],
-},
-],
-},
+        key: 'DIVISIONS',
+        label: 'ฝ่ายงาน (Division)',
+        type: 'list',
+        itemLabel: (i) => i.name,
+        fields: [
+          { key: 'name', label: 'ชื่อฝ่าย', type: 'text' },
+          { key: 'desc', label: 'คำอธิบาย', type: 'textarea' },
+          { key: 'icon', label: 'ไอคอน (เว้นว่างได้ ระบบจะเดาให้อัตโนมัติ)', type: 'icon' },
+          { key: 'img', label: 'รูปภาพปก (jpg/png/webp)', type: 'image' },
+          {
+            key: 'subItems', label: 'ทีมย่อย / ระบบภายในฝ่าย', type: 'sublist',
+            fields: [
+              { key: 'label', label: 'ชื่อทีม/ระบบ', type: 'text' },
+              { key: 'icon', label: 'ไอคอน', type: 'icon' },
+              { key: 'href', label: 'ลิงก์ (URL)', type: 'url' },
+              { key: 'file', label: 'หรือแนบไฟล์ PDF', type: 'file' },
+            ],
+          },
+        ],
+      },
+    ],
+  },
   {
     group: 'Report',
     items: [
@@ -620,7 +620,7 @@ export const ADMIN_SCHEMAS = [
     ],
   },
 
- {
+  {
     group: 'ตารางแพทย์',
     items: [
       {
