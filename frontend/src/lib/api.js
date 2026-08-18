@@ -65,6 +65,11 @@ export const api = {
       body: JSON.stringify({ username, password }),
     }),
   me: () => request('/api/auth/me'),
+  changePassword: (currentPassword, newPassword) =>
+    request('/api/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
 
   // ---- uploads ----
   listUploads: (folder) =>

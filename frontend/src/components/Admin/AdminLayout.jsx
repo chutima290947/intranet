@@ -6,12 +6,15 @@ import { SiteSettingsEditor } from './editors/SiteSettingsEditor'
 import { CustomSectionsPanel } from './CustomSectionsPanel'
 import { UserRolePanel } from './UserRolePanel'
 import { useAuth } from '../../context/AuthContext'
+import { ChangePasswordModal } from './ChangePasswordModal'
 
 const CUSTOM_SECTIONS_KEY = '__custom_sections__'
 const USER_ROLE_KEY = '__user_role_panel__'
 
 export function AdminLayout({ onExit }) {
   const { logout, can } = useAuth()
+  const [showChangePassword, setShowChangePassword] = useState(false)
+
 
   const firstVisibleKey = ADMIN_SCHEMAS.flatMap((g) => g.items).find((s) => can(s.key, 'view'))?.key || null
   const [activeKey, setActiveKey] = useState(firstVisibleKey)
@@ -105,9 +108,17 @@ export function AdminLayout({ onExit }) {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-1.5 rounded-md border-none bg-coral px-3 py-2 text-[12px] font-bold text-white"
+            className="mb-2 flex w-full items-center justify-center gap-1.5 rounded-md border-none bg-coral px-3 py-2 text-[12px] font-bold text-white"
           >
             <i className="ti ti-logout text-sm" />ออกจากระบบ
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => setShowChangePassword(true)}
+            className="flex w-full items-center justify-center gap-1.5 rounded-md border border-line bg-white px-3 py-2 text-[12px] font-semibold text-ink"
+          >
+            <i className="ti ti-key text-sm" />เปลี่ยนรหัสผ่าน
           </button>
         </div>
       </aside>
@@ -129,6 +140,9 @@ export function AdminLayout({ onExit }) {
           <p className="py-10 text-center text-[13px] text-ink-soft">ไม่มีเมนูที่คุณมีสิทธิ์เข้าถึง</p>
         )}
       </main>
+           {showChangePassword && (
+       <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
+     )}
     </div>
   )
 }

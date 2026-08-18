@@ -5,9 +5,14 @@ const DEFAULT_FROM = '#1B4F9C'
 const DEFAULT_TO = '#2A63B8'
 const DEFAULT_GLOW = '27,79,156'
 
-export function ReportGrid() {
+export function ReportGrid({ searchQuery = '' }) {
   const { content } = useContent()
   const REPORTS = content.REPORTS
+
+  const q = searchQuery.trim().toLowerCase()
+  const filteredReports = q
+    ? REPORTS.filter((r) => (r.name || '').toLowerCase().includes(q))
+    : REPORTS
 
   return (
     <div className="mx-auto max-w-[1680px] px-8 pb-[70px] pt-[22px]">
@@ -19,8 +24,8 @@ export function ReportGrid() {
         </div>
       </div>
 
-      <div className="flex flex-wrap justify-center gap-x-10 gap-y-14">
-        {REPORTS.map((r) => (
+        <div className="flex flex-wrap justify-center gap-x-10 gap-y-14">
+          {filteredReports.map((r) => (
           <a
             key={r.id}
             href={r.href || '#'}
@@ -40,8 +45,12 @@ export function ReportGrid() {
               {r.name}
             </span>
           </a>
-        ))}
+          ))}
       </div>
+
+      {filteredReports.length === 0 && (
+        <p className="py-12 text-center text-[13px] text-ink-soft">ไม่พบระบบรายงานที่ค้นหา</p>
+      )}
     </div>
   )
 }

@@ -65,6 +65,7 @@ export function Hero({ onLoginSuccess }) {
             </button>
           </div>
         ) : (
+
           <form
             className="flex min-w-[250px] flex-col gap-2.5 rounded-lg bg-white/98 px-5 pt-5 pb-[18px] shadow-[0_20px_44px_rgba(4,16,36,.35)]"
             onSubmit={handleSubmit}

@@ -33,7 +33,7 @@ export function QualityCenter({ onOpenQuality }) {
             const hasArticle = Boolean(q.articleTitle)
             const link = resolveLink(q)
             const cellClasses =
-              'flex flex-col items-center gap-[7px] rounded-md border border-line px-2 py-3 text-center transition-colors hover:border-blue-500/40'
+              'flex flex-col items-center gap-[7px] rounded-md border border-line bg-white px-2 py-3 text-center transition-colors hover:border-blue-500/40'
             const cellContent = (
               <>
                 <div className={`flex h-[38px] w-[38px] items-center justify-center rounded-[10px] ${q.warn ? 'bg-coral-tint' : 'bg-teal-tint'}`}>
@@ -44,13 +44,14 @@ export function QualityCenter({ onOpenQuality }) {
             )
 
             // มีหัวข้อบทความ -> ไปหน้าเนื้อหาภายในเว็บ
+            // ใช้ cellClasses เดียวกับการ์ดอื่นทุกอัน (มีกรอบ+พื้นขาว) ต่างกันแค่ tag เป็น <button> เพราะไม่มี href
             if (hasArticle) {
               return (
                 <button
                   key={q.label}
                   type="button"
                   onClick={() => onOpenQuality?.(q)}
-                  className={`${cellClasses} border-none bg-transparent`}
+                  className={cellClasses}
                 >
                   {cellContent}
                 </button>

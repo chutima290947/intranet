@@ -29,10 +29,20 @@ function resolveLink(item) {
   return null
 }
 
-export function DivisionGrid({ initialActiveId }) {
+export function DivisionGrid({ initialActiveId, searchQuery = '' }) {
   const { content } = useContent()
   const DIVISIONS = content.DIVISIONS
   const [active, setActive] = useState(null)
+
+  const q = searchQuery.trim().toLowerCase()
+  const filteredDivisions = q
+    ? DIVISIONS.filter(
+        (d) =>
+          (d.name || '').toLowerCase().includes(q) ||
+          (d.desc || '').toLowerCase().includes(q) ||
+          (d.subItems || []).some((s) => (s.label || '').toLowerCase().includes(q))
+      )
+    : DIVISIONS
 
   // เปิด modal ของฝ่ายที่ถูกเลือกมาจาก dropdown ใน NavBar โดยอัตโนมัติ
   useEffect(() => {
@@ -48,8 +58,8 @@ export function DivisionGrid({ initialActiveId }) {
         <p className="mt-1 text-sm text-ink-soft">เลือกฝ่ายงานเพื่อดูรายละเอียดและทีมย่อยภายใน</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 max-[900px]:grid-cols-2 max-[600px]:grid-cols-1">
-        {DIVISIONS.map(d => (
+        <div className="grid grid-cols-3 gap-4 max-[900px]:grid-cols-2 max-[600px]:grid-cols-1">
+          {filteredDivisions.map(d => (
           <div
             key={d.id}
             data-card
@@ -71,8 +81,12 @@ export function DivisionGrid({ initialActiveId }) {
               <p className="mb-3 text-xs leading-relaxed text-ink-soft">{d.desc}</p>
             </div>
           </div>
-        ))}
+          ))}
       </div>
+
+      {filteredDivisions.length === 0 && (
+        <p className="py-12 text-center text-[13px] text-ink-soft">ไม่พบฝ่ายงานที่ค้นหา</p>
+      )}
 
       {active && (
         <div

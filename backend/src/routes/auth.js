@@ -113,6 +113,40 @@ authRouter.get('/setup-password/:token', async (req, res) => {
 })
 
 authRouter.get('/me', requireAuth, async (req, res) => {
+
+// เปลี่ยนรหัสผ่านของตัวเอง (ต้อง login อยู่แล้ว + ยืนยันรหัสเก่าให้ถูกก่อน)
+authRouter.post('/change-password', requireAuth, async (req, res) => {
+  const { currentPassword, newPassword } = req.body || {}
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'กรุณากรอกรหัสผ่านเดิมและรหัสผ่านใหม่' })
+  }
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: 'รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร' })
+  }
+  if (newPassword === currentPassword) {
+    return res.status(400).json({ error: 'รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านเดิม' })
+  }
+
+  const { rows } = await pool.query(
+    `SELECT id, password_hash FROM admin_users WHERE id = $1`,
+    [req.user.sub]
+  )
+  const user = rows[0]
+  if (!user || !user.password_hash) {
+    return res.status(401).json({ error: 'ไม่พบผู้ใช้นี้แล้ว' })
+  }
+
+  const ok = await bcrypt.compare(currentPassword, user.password_hash)
+  if (!ok) {
+    return res.status(401).json({ error: 'รหัสผ่านเดิมไม่ถูกต้อง' })
+  }
+
+  const hash = await bcrypt.hash(newPassword, 10)
+  await pool.query(`UPDATE admin_users SET password_hash = $1 WHERE id = $2`, [hash, user.id])
+
+  res.json({ ok: true })
+})
+
   const { rows } = await pool.query(
     `SELECT u.username, r.name as role_name, r.label as role_label
      FROM admin_users u

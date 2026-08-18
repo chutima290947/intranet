@@ -1,21 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useContent } from '../../context/ContentContext'
-
-/**
- * RequestGrid — launcher-style grid page for staff-facing request/service apps.
- * ข้อมูลหมวดหมู่และรายการทั้งหมดดึงมาจาก content.REQUEST_CATEGORIES
- * (แก้ไขได้ผ่านแผงควบคุมเนื้อหา หมวด "ระบบ Online")
- *
- * โลโก้: ลำดับความสำคัญ
- *   1) item.img — รูปที่อัปโหลดผ่านแผงควบคุมเนื้อหาโดยตรง (base64)
- *   2) ไฟล์ใน src/assets/logos/ ที่ชื่อไฟล์ตรงกับชื่อระบบ (slugify แล้ว)
- *   3) ถ้าไม่มีทั้งคู่ → แสดงตัวอักษรย่อ (initials) จากชื่อระบบโดยอัตโนมัติ
- *      เช่น "Patient List" → "PL", "iMed" → "IM"
- *
- * ทุกโลโก้ (ไม่ว่าไฟล์ต้นฉบับจะมีสัดส่วน/ระยะขอบเท่าไหร่) จะถูกบังคับให้อยู่ใน
- * กรอบขนาดคงที่เดียวกัน (ICON_BOX_SIZE) พร้อม padding เท่ากันเสมอ เพื่อไม่ให้
- * บางโลโก้ดูใหญ่/เล็กกว่ากันเวลาเทียบในกริดเดียวกัน
- */
 
 const logoModules = import.meta.glob('../../assets/logos/*.{png,jpg,jpeg,svg,webp}', {
   eager: true,
@@ -134,6 +118,10 @@ export function RequestGrid({ searchQuery = '' }) {
   const CATEGORIES = content.REQUEST_CATEGORIES
   const [query, setQuery] = useState(searchQuery)
 
+  useEffect(() => {
+    setQuery(searchQuery)
+  }, [searchQuery])
+
   const filtered = CATEGORIES.map((category) => ({
     ...category,
     items: category.items.filter((item) =>
@@ -143,20 +131,9 @@ export function RequestGrid({ searchQuery = '' }) {
 
   return (
     <div className="mx-auto max-w-[1680px] px-8 py-8">
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-[19px] font-bold text-navy-900">Request &amp; Services</h2>
-          <p className="text-[13px] text-gray-500">ระบบและแบบฟอร์มออนไลน์ทั้งหมดของโรงพยาบาล</p>
-        </div>
-        <div className="relative w-full max-w-[280px]">
-          <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-[15px] text-gray-400" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="ค้นหาระบบ..."
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-[13px] outline-none focus:border-navy-900 focus:bg-white"
-          />
-        </div>
+      <div className="mb-6">
+        <h2 className="text-[19px] font-bold text-navy-900">Request &amp; Services</h2>
+        <p className="text-[13px] text-gray-500">ระบบและแบบฟอร์มออนไลน์ทั้งหมดของโรงพยาบาล</p>
       </div>
 
       <div className="flex flex-col gap-7">

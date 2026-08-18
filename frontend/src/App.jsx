@@ -41,7 +41,15 @@ function loadStoredPage() {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY)
     if (!raw) {
-      return { page: 'home', selectedDivisionId: null, selectedReportId: null, selectedPartnerName: null }
+      return {
+        page: 'home',
+        selectedDivisionId: null,
+        selectedReportId: null,
+        selectedPartnerName: null,
+        selectedServiceLabel: null,
+        selectedQualityLabel: null,
+        selectedNewsTitle: null,
+      }
     }
     const parsed = JSON.parse(raw)
     return {
@@ -49,9 +57,20 @@ function loadStoredPage() {
       selectedDivisionId: parsed.selectedDivisionId ?? null,
       selectedReportId: parsed.selectedReportId ?? null,
       selectedPartnerName: parsed.selectedPartnerName ?? null,
+      selectedServiceLabel: parsed.selectedServiceLabel ?? null,
+      selectedQualityLabel: parsed.selectedQualityLabel ?? null,
+      selectedNewsTitle: parsed.selectedNewsTitle ?? null,
     }
   } catch {
-    return { page: 'home', selectedDivisionId: null, selectedReportId: null, selectedPartnerName: null }
+    return {
+      page: 'home',
+      selectedDivisionId: null,
+      selectedReportId: null,
+      selectedPartnerName: null,
+      selectedServiceLabel: null,
+      selectedQualityLabel: null,
+      selectedNewsTitle: null,
+    }
   }
 }
 
@@ -76,6 +95,8 @@ function LoadingScreen() {
   )
 }
 
+const scrollToSectionRef = { current: () => {} }
+
 function AppInner() {
   const { content, customSections, isLoading } = useContent()
   const { isAuthenticated } = useAuth()
@@ -87,13 +108,17 @@ function AppInner() {
   const [selectedDivisionId, setSelectedDivisionId] = useState(initial.selectedDivisionId)
   const [selectedReportId, setSelectedReportId] = useState(initial.selectedReportId)
   const [selectedPartnerName, setSelectedPartnerName] = useState(initial.selectedPartnerName)
-  const [selectedServiceLabel, setSelectedServiceLabel] = useState(null)
-  const [selectedNewsTitle, setSelectedNewsTitle] = useState(null)
-  const [selectedQualityLabel, setSelectedQualityLabel] = useState(null)
+  const [selectedServiceLabel, setSelectedServiceLabel] = useState(initial.selectedServiceLabel)
+  const [selectedNewsTitle, setSelectedNewsTitle] = useState(initial.selectedNewsTitle)
+  const [selectedQualityLabel, setSelectedQualityLabel] = useState(initial.selectedQualityLabel)
+  const [pendingScrollId, setPendingScrollId] = useState(null)
   const quicknavRef = useRef(null)
 
   // จำหน้าล่าสุดไว้ใน sessionStorage เผื่อรีเฟรชหน้า (ยกเว้นหน้า admin จะไม่จำไว้
   // เพื่อไม่ให้ค้างอยู่หน้า admin ถ้า session การ login หมดอายุไปแล้วตอนรีเฟรช)
+  // สำคัญ: ต้องจำ selectedServiceLabel / selectedQualityLabel / selectedNewsTitle ไว้ด้วย
+  // ไม่งั้นรีเฟรชหน้า service/quality/news แล้ว page จะถูกต้อง แต่ id ของหัวข้อที่เปิดอยู่หาย
+  // ทำให้ content.QUALITY.find(...) หรือเทียบเท่าหาไม่เจอ กลายเป็นหน้า "ไม่พบเนื้อหานี้"
   useEffect(() => {
     try {
       sessionStorage.setItem(
@@ -103,12 +128,23 @@ function AppInner() {
           selectedDivisionId,
           selectedReportId,
           selectedPartnerName,
+          selectedServiceLabel,
+          selectedQualityLabel,
+          selectedNewsTitle,
         })
       )
     } catch {
       // ignore storage errors (e.g. private browsing quota)
     }
-  }, [page, selectedDivisionId, selectedReportId, selectedPartnerName])
+  }, [
+    page,
+    selectedDivisionId,
+    selectedReportId,
+    selectedPartnerName,
+    selectedServiceLabel,
+    selectedQualityLabel,
+    selectedNewsTitle,
+  ])
 
   // กันไม่ให้เข้าหน้า admin ได้ถ้ายังไม่ login (กันไว้เผื่อ state หลุด เช่น logout จากแท็บอื่น)
   useEffect(() => {
@@ -172,7 +208,16 @@ function AppInner() {
       setSelectedNewsTitle(payload || null)
     }
   }
-    
+
+  useEffect(() => {
+    if (page === 'home' && pendingScrollId) {
+      const t = setTimeout(() => {
+        scrollToSectionRef.current(pendingScrollId)
+        setPendingScrollId(null)
+      }, 60)
+      return () => clearTimeout(t)
+    }
+  }, [page, pendingScrollId])
 
   const scrollToSection = (id) => {
     const target = document.getElementById(id)
@@ -184,16 +229,47 @@ function AppInner() {
     focusEl.classList.add('section-focus')
     setTimeout(() => focusEl.classList.remove('section-focus'), 2000)
   }
+  scrollToSectionRef.current = scrollToSection
 
   const handleSearch = (query) => {
     setSearchQuery(query)
     if (!query) return
 
-    if (page === 'home') {
-      const match = content.SECTIONS.find((s) =>
-        (s.label || '').toLowerCase().includes(query.toLowerCase())
-      )
-      if (match) scrollToSection(match.id)
+    const q = query.toLowerCase()
+
+    // 1) หัวข้อในหน้า Home (Announcement, ตารางเวร, โปรโมชัน ฯลฯ)
+    const sectionMatch = content.SECTIONS.find((s) => (s.label || '').toLowerCase().includes(q))
+    if (sectionMatch) {
+      if (page === 'home') {
+        scrollToSection(sectionMatch.id)
+      } else {
+        setPendingScrollId(sectionMatch.id)
+        goTo('home')
+      }
+      return
+    }
+
+    // 2) ชื่อฝ่ายงาน (Division)
+    const divisionMatch = content.DIVISIONS.find((d) => (d.name || '').toLowerCase().includes(q))
+    if (divisionMatch) {
+      goTo('division', divisionMatch.id)
+      return
+    }
+
+    // 3) ชื่อระบบรายงาน (Report)
+    const reportMatch = content.REPORTS.find((r) => (r.name || '').toLowerCase().includes(q))
+    if (reportMatch) {
+      goTo('report')
+      return
+    }
+
+    // 4) รายการในระบบ Online (Request & Services)
+    const hasOnlineMatch = (content.REQUEST_CATEGORIES || []).some((c) =>
+      (c.items || []).some((i) => (i.name || '').toLowerCase().includes(q))
+    )
+    if (hasOnlineMatch) {
+      goTo('online')
+      return
     }
   }
 
@@ -248,7 +324,7 @@ function AppInner() {
                 </button>
                 <QualityCenter onOpenQuality={(q) => goTo('quality', q.label)} />
                 <PartnerList onOpenPartner={(p) => goTo('partner', p.name)} />
-                                <ExpandableCards />
+                <ExpandableCards />
 
                 {customSections.filter((s) => s.column === 'right').map((s) => (
                   <div key={s.id} id={s.id}>

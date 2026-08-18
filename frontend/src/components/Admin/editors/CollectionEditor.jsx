@@ -190,55 +190,100 @@ function countDescendants(children) {
   )
 }
 
-function TreeNodeRow({ node, idx, updateNode, removeNode, addChild, moveNode, depth }) {
-  const [showLink, setShowLink] = useState(
-    Boolean(node.href || node.file)
-  )
-  const [expanded, setExpanded] = useState(false)
+// เก็บ path ของทุก node ที่ "มีลูก" ในทั้งต้นไม้ (ใช้ตอนกด "ขยายทั้งหมด")
+// path เป็น string เช่น "0", "0-1", "0-1-2" อ้างอิงตามตำแหน่ง idx ของแต่ละชั้น
+function collectExpandablePaths(nodes, prefix = '') {
+  const list = Array.isArray(nodes) ? nodes : []
+  let paths = []
 
+  list.forEach((node, idx) => {
+    const path = prefix ? `${prefix}-${idx}` : `${idx}`
+
+    if (Array.isArray(node.children) && node.children.length > 0) {
+      paths.push(path)
+      paths = paths.concat(collectExpandablePaths(node.children, path))
+    }
+  })
+
+  return paths
+}
+
+function TreeNodeRow({
+  node,
+  idx,
+  path,
+  updateNode,
+  removeNode,
+  addChild,
+  moveNode,
+  depth,
+  expandedPaths,
+  togglePath,
+  expandPath,
+}) {
+  const [showLink, setShowLink] = useState(false)
+
+  const expanded = expandedPaths.has(path)
   const hasLink = Boolean(node.href || node.file)
   const hasChildren = Array.isArray(node.children) && node.children.length > 0
   const descendantCount = hasChildren ? countDescendants(node.children) : 0
 
   const handleAddChild = () => {
     addChild(idx)
-    setExpanded(true)
+    expandPath(path)
   }
+
+  // สีพื้นหลังไล่ตามความลึกของ node — อ่อนลงเรื่อยๆ ทีละชั้น ช่วยให้ตาแยกระดับได้ง่ายโดยไม่ต้องนับ indent
+  const depthBg =
+    depth === 0
+      ? 'bg-white'
+      : depth === 1
+        ? 'bg-slate-50/70'
+        : 'bg-slate-50/40'
 
   return (
     <div
       className={
         depth === 0
-          ? 'rounded-lg border border-line bg-white'
-          : 'rounded-lg bg-paper/20'
+          ? `rounded-lg border border-line ${depthBg} shadow-[0_1px_2px_rgba(11,40,80,.04)]`
+          : `rounded-lg border border-line/60 ${depthBg}`
       }
     >
-      <div className="flex items-center gap-2 px-2 py-1.5">
-        {hasChildren ? (
-          <button
-            type="button"
-            onClick={() => setExpanded((e) => !e)}
-            className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-navy-900/[.06] text-[10px] font-bold text-navy-900 hover:bg-navy-900/[.12]"
-            aria-label={expanded ? 'พับหัวข้อย่อย' : 'ขยายหัวข้อย่อย'}
-            title={expanded ? 'พับหัวข้อย่อย' : 'ขยายหัวข้อย่อย'}
-          >
-            <i
-              className={`ti ti-chevron-right text-[13px] transition-transform ${
-                expanded ? 'rotate-90' : ''
-              }`}
-            />
-          </button>
-        ) : (
-          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-navy-900/[.06] text-[10px] font-bold text-navy-900">
-            {idx + 1}
-          </span>
-        )}
+      <div className="flex items-center gap-2 px-2.5 py-2">
+        {/* พื้นที่ตัวเลข + ปุ่มขยาย — เลขลำดับโชว์เฉพาะหัวข้อหลัก (depth 0) เท่านั้น หัวข้อย่อยเอาออกเพื่อลดความรก */}
+        <div className="flex flex-shrink-0 items-center gap-1">
+          {depth === 0 && (
+            <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-navy-900/[.07] text-[10.5px] font-bold text-navy-900">
+              {idx + 1}
+            </span>
+          )}
+
+          {hasChildren ? (
+            <button
+              type="button"
+              onClick={() => togglePath(path)}
+              className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-ink-soft transition-colors hover:bg-navy-900/[.08] hover:text-navy-900"
+              aria-label={expanded ? 'พับหัวข้อย่อย' : 'ขยายหัวข้อย่อย'}
+              title={expanded ? 'พับหัวข้อย่อย' : 'ขยายหัวข้อย่อย'}
+            >
+              <i
+                className={`ti ti-chevron-right text-[14px] transition-transform ${
+                  expanded ? 'rotate-90' : ''
+                }`}
+              />
+            </button>
+          ) : (
+            <span className="h-7 w-7 flex-shrink-0" aria-hidden="true" />
+          )}
+        </div>
 
         <input
           value={node.label || ''}
           onChange={(e) => updateNode(idx, { label: e.target.value })}
           placeholder="ข้อความหัวข้อ"
-          className="flex-1 rounded-lg border border-line px-2.5 py-2 text-[12px] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          className={`flex-1 rounded-lg border border-line bg-white px-2.5 py-2 text-[12.5px] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 ${
+            depth === 0 ? 'font-semibold text-navy-900' : 'text-ink'
+          }`}
         />
 
         {hasChildren && !expanded && (
@@ -321,6 +366,10 @@ function TreeNodeRow({ node, idx, updateNode, removeNode, addChild, moveNode, de
             nodes={node.children}
             onChange={(next) => updateNode(idx, { children: next })}
             depth={depth + 1}
+            path={path}
+            expandedPaths={expandedPaths}
+            togglePath={togglePath}
+            expandPath={expandPath}
           />
         </div>
       )}
@@ -328,7 +377,8 @@ function TreeNodeRow({ node, idx, updateNode, removeNode, addChild, moveNode, de
   )
 }
 
-function TreeNodeEditor({ nodes, onChange, depth = 0 }) {
+// depth 0 ใช้ gap กว้างกว่าเล็กน้อย ให้แต่ละหัวข้อหลักแยกจากกันชัดเจน ส่วน depth ลึกกว่าใช้ gap แคบลงเพราะอยู่ในกรอบเดียวกันแล้ว
+function TreeNodeEditor({ nodes, onChange, depth = 0, path = '', expandedPaths, togglePath, expandPath }) {
   const list = Array.isArray(nodes) ? nodes : []
 
   const updateNode = (idx, patch) => {
@@ -360,21 +410,29 @@ function TreeNodeEditor({ nodes, onChange, depth = 0 }) {
   }
 
   return (
-    <div className={depth > 0 ? 'mt-2 border-l-2 border-line pl-3' : ''}>
-      <div className="flex flex-col gap-2">
-        {list.map((node, idx) => (
-          <TreeNodeRow
-            key={idx}
-            node={node}
-            idx={idx}
-            total={list.length}
-            depth={depth}
-            updateNode={updateNode}
-            removeNode={removeNode}
-            addChild={addChild}
-            moveNode={moveNode}
-          />
-        ))}
+    <div className={depth > 0 ? 'mt-2 border-l-2 border-blue-100 pl-3' : ''}>
+      <div className={`flex flex-col ${depth === 0 ? 'gap-2.5' : 'gap-2'}`}>
+        {list.map((node, idx) => {
+          const childPath = path ? `${path}-${idx}` : `${idx}`
+
+          return (
+            <TreeNodeRow
+              key={idx}
+              node={node}
+              idx={idx}
+              path={childPath}
+              total={list.length}
+              depth={depth}
+              updateNode={updateNode}
+              removeNode={removeNode}
+              addChild={addChild}
+              moveNode={moveNode}
+              expandedPaths={expandedPaths}
+              togglePath={togglePath}
+              expandPath={expandPath}
+            />
+          )
+        })}
       </div>
 
       <button
@@ -385,6 +443,128 @@ function TreeNodeEditor({ nodes, onChange, depth = 0 }) {
         <i className="ti ti-plus" />
         เพิ่มหัวข้อ{depth > 0 ? 'ย่อย' : ''}
       </button>
+    </div>
+  )
+}
+
+// ครอบ TreeNodeEditor ระดับบนสุด — คุมสถานะขยาย/ยุบของทั้งต้นไม้ไว้ที่จุดเดียว
+// เพื่อให้ปุ่ม "ขยายทั้งหมด / ยุบทั้งหมด" สั่งได้ทีเดียวทั้งก้อน แทนที่จะเป็น local state แยกทุกแถว
+// path ของ node หนึ่งๆ อ้างอิงเป็น "0-1-2" (idx แต่ละชั้นคั่นด้วย -)
+// สองฟังก์ชันนี้ใช้หา parent prefix และจำนวนชั้น เพื่อเช็คว่า node สอง path เป็น "พี่น้องกัน" (sibling) ไหม
+function getParentPrefix(path) {
+  return path.includes('-') ? path.slice(0, path.lastIndexOf('-')) : ''
+}
+
+function getDepthOf(path) {
+  return path.split('-').length
+}
+
+// ลบ path นี้ทิ้ง พร้อมลบ path ของลูกหลานทั้งหมด (path ที่ขึ้นต้นด้วย prefix + '-')
+function collapseSubtree(set, path) {
+  set.delete(path)
+  Array.from(set).forEach((p) => {
+    if (p.startsWith(`${path}-`)) set.delete(p)
+  })
+}
+
+function TreeEditor({ nodes, onChange }) {
+  const [expandedPaths, setExpandedPaths] = useState(() => new Set())
+
+  // เปิด path นี้ — และยุบ sibling อื่นๆ ที่อยู่ระดับเดียวกัน (accordion: เปิดได้ทีละอันต่อระดับ)
+  const openPath = (path) => {
+    setExpandedPaths((prev) => {
+      const next = new Set(prev)
+      const parentPrefix = getParentPrefix(path)
+      const depth = getDepthOf(path)
+
+      Array.from(next).forEach((p) => {
+        if (p === path) return
+        if (getDepthOf(p) === depth && getParentPrefix(p) === parentPrefix) {
+          collapseSubtree(next, p)
+        }
+      })
+
+      next.add(path)
+      return next
+    })
+  }
+
+  const togglePath = (path) => {
+    setExpandedPaths((prev) => {
+      if (prev.has(path)) {
+        const next = new Set(prev)
+        collapseSubtree(next, path)
+        return next
+      }
+
+      // เปิด path นี้ + ยุบ sibling ระดับเดียวกัน
+      const next = new Set(prev)
+      const parentPrefix = getParentPrefix(path)
+      const depth = getDepthOf(path)
+
+      Array.from(next).forEach((p) => {
+        if (getDepthOf(p) === depth && getParentPrefix(p) === parentPrefix) {
+          collapseSubtree(next, p)
+        }
+      })
+
+      next.add(path)
+      return next
+    })
+  }
+
+  const expandPath = (path) => {
+    openPath(path)
+  }
+
+  const expandablePaths = collectExpandablePaths(nodes)
+  const hasNested = expandablePaths.length > 0
+  const allExpanded =
+    hasNested && expandablePaths.every((p) => expandedPaths.has(p))
+
+  const handleExpandAll = () => {
+    setExpandedPaths(new Set(collectExpandablePaths(nodes)))
+  }
+
+  const handleCollapseAll = () => {
+    setExpandedPaths(new Set())
+  }
+
+  return (
+    <div>
+      {hasNested && (
+        <div className="mb-2 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={handleExpandAll}
+            disabled={allExpanded}
+            className="flex items-center gap-1 rounded-md border border-line bg-white px-2.5 py-1.5 text-[10.5px] font-semibold text-navy-900 hover:bg-paper disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <i className="ti ti-arrows-maximize text-[11px]" />
+            ขยายทั้งหมด
+          </button>
+
+          <button
+            type="button"
+            onClick={handleCollapseAll}
+            disabled={expandedPaths.size === 0}
+            className="flex items-center gap-1 rounded-md border border-line bg-white px-2.5 py-1.5 text-[10.5px] font-semibold text-navy-900 hover:bg-paper disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <i className="ti ti-arrows-minimize text-[11px]" />
+            ยุบทั้งหมด
+          </button>
+        </div>
+      )}
+
+      <TreeNodeEditor
+        nodes={nodes}
+        onChange={onChange}
+        depth={0}
+        path=""
+        expandedPaths={expandedPaths}
+        togglePath={togglePath}
+        expandPath={expandPath}
+      />
     </div>
   )
 }
@@ -606,7 +786,7 @@ export function CollectionEditor({ schema }) {
                           />
                         ) : f.type === 'tree' ? (
                           <div className="rounded-xl border border-line bg-paper/40 p-3">
-                            <TreeNodeEditor
+                            <TreeEditor
                               nodes={item[f.key]}
                               onChange={(v) => updateItem(idx, f.key, v)}
                             />

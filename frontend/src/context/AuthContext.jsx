@@ -63,6 +63,15 @@ export function AuthProvider({ children }) {
     setPermissions([])
   }
 
+  const changePassword = async (currentPassword, newPassword) => {
+    try {
+      await api.changePassword(currentPassword, newPassword)
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: err.message || 'เปลี่ยนรหัสผ่านไม่สำเร็จ' }
+    }
+  }
+
   // เช็คสิทธิ์แบบสั้นๆ ใช้ในหน้าแอดมิน เช่น can('ANN_NEWS', 'update')
   // super_admin (role name เท่ากับ 'super_admin') ผ่านทุกอย่างเสมอ กันเคส seed data ไม่ครบ
   const can = (resource, action) => {
@@ -81,6 +90,7 @@ export function AuthProvider({ children }) {
         checkingSession,
         login,
         logout,
+        changePassword,
         error,
         can,
       }}

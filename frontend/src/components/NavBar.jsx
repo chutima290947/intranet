@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useContent } from '../context/ContentContext'
 import logo from '../assets/logo.png'
 
@@ -7,6 +7,7 @@ export function NavBar({ page, onNavigate, onSearch }) {
   const { DIVISIONS, REPORTS, SITE } = content
 
   const [searchQuery, setSearchQuery] = useState('')
+  const debounceRef = useRef(null)
   const [openMenu, setOpenMenu] = useState(null) // 'division' | 'report' | null
   const [expandedId, setExpandedId] = useState(null)
 
@@ -20,15 +21,23 @@ export function NavBar({ page, onNavigate, onSearch }) {
   }
 
   const handleChange = (e) => {
-    setSearchQuery(e.target.value)
+    const value = e.target.value
+    setSearchQuery(value)
+
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      runSearch(value)
+    }, 300)
   }
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault()
+      if (debounceRef.current) clearTimeout(debounceRef.current)
       runSearch(searchQuery)
     }
     if (e.key === 'Escape') {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
       setSearchQuery('')
       runSearch('')
     }
