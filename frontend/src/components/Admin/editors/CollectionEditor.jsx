@@ -220,8 +220,10 @@ function TreeNodeRow({
   expandedPaths,
   togglePath,
   expandPath,
+  openLinkPath,
+  toggleLinkPath,
 }) {
-  const [showLink, setShowLink] = useState(false)
+  const showLink = openLinkPath === path
 
   const expanded = expandedPaths.has(path)
   const hasLink = Boolean(node.href || node.file)
@@ -303,7 +305,7 @@ function TreeNodeRow({
 
         <button
           type="button"
-          onClick={() => setShowLink((s) => !s)}
+          onClick={() => toggleLinkPath(path)}
           className={`relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border-none ${
             showLink
               ? 'bg-blue-600 text-white'
@@ -370,6 +372,8 @@ function TreeNodeRow({
             expandedPaths={expandedPaths}
             togglePath={togglePath}
             expandPath={expandPath}
+            openLinkPath={openLinkPath}
+            toggleLinkPath={toggleLinkPath}
           />
         </div>
       )}
@@ -378,7 +382,7 @@ function TreeNodeRow({
 }
 
 // depth 0 ใช้ gap กว้างกว่าเล็กน้อย ให้แต่ละหัวข้อหลักแยกจากกันชัดเจน ส่วน depth ลึกกว่าใช้ gap แคบลงเพราะอยู่ในกรอบเดียวกันแล้ว
-function TreeNodeEditor({ nodes, onChange, depth = 0, path = '', expandedPaths, togglePath, expandPath }) {
+function TreeNodeEditor({ nodes, onChange, depth = 0, path = '', expandedPaths, togglePath, expandPath, openLinkPath, toggleLinkPath }) {
   const list = Array.isArray(nodes) ? nodes : []
 
   const updateNode = (idx, patch) => {
@@ -430,6 +434,8 @@ function TreeNodeEditor({ nodes, onChange, depth = 0, path = '', expandedPaths, 
               expandedPaths={expandedPaths}
               togglePath={togglePath}
               expandPath={expandPath}
+              openLinkPath={openLinkPath}
+              toggleLinkPath={toggleLinkPath}
             />
           )
         })}
@@ -469,6 +475,12 @@ function collapseSubtree(set, path) {
 
 function TreeEditor({ nodes, onChange }) {
   const [expandedPaths, setExpandedPaths] = useState(() => new Set())
+  // เก็บ path ของแถวเดียวที่เปิดแผงลิงก์/ไฟล์อยู่ (accordion: เปิดได้ทีละแถวทั้งต้นไม้)
+  const [openLinkPath, setOpenLinkPath] = useState(null)
+
+  const toggleLinkPath = (path) => {
+    setOpenLinkPath((prev) => (prev === path ? null : path))
+  }
 
   // เปิด path นี้ — และยุบ sibling อื่นๆ ที่อยู่ระดับเดียวกัน (accordion: เปิดได้ทีละอันต่อระดับ)
   const openPath = (path) => {
@@ -564,6 +576,8 @@ function TreeEditor({ nodes, onChange }) {
         expandedPaths={expandedPaths}
         togglePath={togglePath}
         expandPath={expandPath}
+        openLinkPath={openLinkPath}
+        toggleLinkPath={toggleLinkPath}
       />
     </div>
   )
