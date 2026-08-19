@@ -9,6 +9,7 @@ function getFileUrl(url) {
   const API_URL =
   import.meta.env.VITE_API_URL ||
   `http://${window.location.hostname}:3001`;
+  return `${API_URL}${url}`
 }
 
 // แต่ละโหนดปลายทางอาจมี "href" (ลิงก์ภายนอก) หรือ "file" (ไฟล์ที่อัปโหลด เช่น jpg/pdf) อย่างใดอย่างหนึ่ง

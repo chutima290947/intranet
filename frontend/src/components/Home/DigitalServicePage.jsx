@@ -86,7 +86,7 @@ export function DigitalServicePage({ service, onBack }) {
                 style={g.img ? {} : { background: service.color }}
               >
                 {g.img ? (
-                  <img src={g.img} alt={g.title} className="h-full w-full object-cover" />
+                  <img src={getFileUrl(g.img)} alt={g.title} className="h-full w-full object-cover" />
                 ) : (
                   <i className={`ti ${g.icon || 'ti-folder'} text-4xl`} />
                 )}

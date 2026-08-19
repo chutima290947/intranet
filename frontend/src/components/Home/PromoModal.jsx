@@ -19,8 +19,10 @@ function resolveLink(item) {
 export function PromoModal({ promo, onClose }) {
   if (!promo) return null
 
-  const imgUrl = promo.img
-    ? promo.img + (promo.img.indexOf('?') !== -1 ? '&' : '?') + 'v=' + (promo.updatedAt || promo.id || Date.now())
+  // แปลง relative path จาก backend เป็น absolute URL ก่อน แล้วค่อยต่อ query string กันรูป cache ค้าง
+  const base = getFileUrl(promo.img)
+  const imgUrl = base
+    ? base + (base.indexOf('?') !== -1 ? '&' : '?') + 'v=' + (promo.updatedAt || promo.id || Date.now())
     : null
 
   return (
