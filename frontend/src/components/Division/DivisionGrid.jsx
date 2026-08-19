@@ -70,7 +70,7 @@ export function DivisionGrid({ initialActiveId, searchQuery = '' }) {
             className="flex h-[76px] items-center justify-center bg-cover bg-center"
             style={
               d.img
-                ? { backgroundImage: `url(${d.img})` }
+                ? { backgroundImage: `url(${getFileUrl(d.img)})` }
                 : { background: `linear-gradient(135deg, ${resolveGradient(d)[0]}, ${resolveGradient(d)[1]})` }
             }
           >

@@ -19,6 +19,7 @@ function getFileUrl(url) {
   const API_URL =
   import.meta.env.VITE_API_URL ||
   `http://${window.location.hostname}:3001`;
+  return `${API_URL}${url}`
 }
 
 // แต่ละข่าว/รายการอาจมี "href" (ลิงก์ภายนอก) หรือ "file" (ไฟล์ที่อัปโหลด เช่น jpg/pdf) อย่างใดอย่างหนึ่ง
@@ -35,7 +36,7 @@ export function Announcement({ onOpenNews }) {
   const [showAll, setShowAll] = useState(false)
 
   const pinned = ANN_NEWS.find((n) => n.pinned) || ANN_NEWS[0]
-  const bannerImg = pinned?.img || ''
+  const bannerImg = getFileUrl(pinned?.img || '')
   const pinnedLink = pinned ? resolveLink(pinned) : null
 
   return (

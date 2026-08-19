@@ -16,6 +16,16 @@ const LOGOS = Object.fromEntries(
 // กรอบไอคอน/โลโก้ทุกใบในหน้านี้ใช้ขนาดเดียวกันหมด แก้ตรงนี้ที่เดียวถ้าอยากปรับทั้งหน้า
 const ICON_BOX = 'h-16 w-16 rounded-2xl'
 
+// แปลง URL ของไฟล์ที่อัปโหลดให้เปิดจาก Frontend ได้ (relative path จาก backend -> absolute)
+// รูปแบบเดียวกับ getFileUrl ใน Announcement.jsx / CollectionEditor.jsx / OnCall.jsx
+function getFileUrl(url) {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+
+  const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`
+  return `${API_URL}${url}`
+}
+
 function slugify(name) {
   return name
     .toLowerCase()
@@ -34,7 +44,7 @@ function getInitials(name) {
 
 function AppCard({ item, accent }) {
   // ลำดับความสำคัญ: รูปที่อัปโหลดผ่านแอดมิน > ไฟล์ในโฟลเดอร์ assets/logos > ตัวอักษรย่อ
-  const logoUrl = item.img || LOGOS[slugify(item.name)]
+  const logoUrl = getFileUrl(item.img) || LOGOS[slugify(item.name)]
 
   const cardContent = (
     <>

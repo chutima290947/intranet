@@ -2,6 +2,16 @@ import { useState } from 'react'
 import { useContent } from '../../context/ContentContext'
 import { PromoModal } from './PromoModal'
 
+// แปลง URL ของไฟล์ที่อัปโหลดให้เปิดจาก Frontend ได้ (relative path จาก backend -> absolute)
+// รูปแบบเดียวกับ getFileUrl ใน Announcement.jsx / CollectionEditor.jsx / OnCall.jsx / PromoModal.jsx
+function getFileUrl(url) {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+
+  const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`
+  return `${API_URL}${url}`
+}
+
 // สร้างตัวอักษรย่อจากชื่อแพ็กเกจ: คำแรก+คำสุดท้าย เอาตัวแรกของแต่ละคำ
 // ถ้ามีคำเดียว ใช้ 2 ตัวอักษรแรกของคำนั้นแทน
 function getInitials(name) {
@@ -27,8 +37,9 @@ export function Promo() {
       <div className="px-[18px] py-4">
         <div className="grid grid-cols-4 gap-[11px] max-[1100px]:grid-cols-3 max-[560px]:grid-cols-2">
           {PROMOS.map(p => {
-            // ต่อ query string กันรูป cache ค้าง
-            const imgUrl = p.img ? `${p.img}${p.img.includes('?') ? '&' : '?'}v=${p.updatedAt || p.id || ''}` : null
+            // แปลง relative path จาก backend เป็น absolute URL ก่อน แล้วค่อยต่อ query string กันรูป cache ค้าง
+            const base = getFileUrl(p.img)
+            const imgUrl = base ? `${base}${base.includes('?') ? '&' : '?'}v=${p.updatedAt || p.id || ''}` : null
 
             return (
               <button
