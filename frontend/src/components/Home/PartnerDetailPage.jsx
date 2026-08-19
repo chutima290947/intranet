@@ -5,6 +5,16 @@ const PAGE_SIZE = 50
 const DOCS_COLLAPSE_LIMIT = 8
 const DOCS_SEARCH_THRESHOLD = 10
 
+// แปลง URL ของไฟล์ที่อัปโหลดให้เปิดจาก Frontend ได้ (relative path จาก backend -> absolute)
+// รูปแบบเดียวกับ getFileUrl ใน Announcement.jsx / PartnerList.jsx / OnCall.jsx
+function getFileUrl(url) {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+
+  const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`
+  return `${API_URL}${url}`
+}
+
 const normalize = (str) => (str || '').toLowerCase().replace(/\s+/g, '')
 
 // แปลง URL ที่อยู่ในข้อความ (เช่น field contact) ให้กลายเป็นลิงก์กดได้
@@ -284,7 +294,7 @@ export function PartnerDetailPage({ partner, onBack }) {
                   title="คลิกเพื่อขยาย Barcode/QR Code"
                 >
                   <img
-                    src={s.qr}
+                    src={getFileUrl(s.qr)}
                     alt={`Barcode/QR - ${s.label}`}
                     className="h-full w-full object-contain"
                   />
@@ -384,7 +394,7 @@ export function PartnerDetailPage({ partner, onBack }) {
               </button>
             </div>
             <img
-              src={zoomQr}
+              src={getFileUrl(zoomQr)}
               alt="QR Code ขยาย"
               className="max-h-[70vh] w-auto object-contain"
             />
