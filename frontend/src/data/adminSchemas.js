@@ -330,6 +330,78 @@ export const ADMIN_SCHEMAS = [
               },
             ],
           },
+          {
+            key: 'diseases',
+            label:
+              'การ์ดโรคติดต่อ (ใช้เมื่อเมนูนี้เป็นหมวด "โรคติดต่อ") — แต่ละการ์ดมีรูป/ป้าย/คำอธิบาย และมีหน้าความรู้+แนวทางในตัวเอง',
+            type: 'sublist',
+            fields: [
+              {
+                key: 'label',
+                label: 'ชื่อโรค (เช่น โรคฝีดาษลิง)',
+                type: 'text',
+              },
+              {
+                key: 'img',
+                label: 'รูปภาพประกอบการ์ด',
+                type: 'image',
+                uploadFolder: 'hr',
+              },
+              {
+                key: 'badge',
+                label: 'ป้ายข้อความ (เช่น เฝ้าระวัง, ระบาด) — เว้นว่างได้',
+                type: 'text',
+              },
+              {
+                key: 'desc',
+                label: 'คำอธิบายย่อ (แสดงบนการ์ด)',
+                type: 'textarea',
+              },
+              {
+                key: 'intro',
+                label: 'ความรู้เกี่ยวกับโรค (เนื้อหาหลักในหน้ารายละเอียด)',
+                type: 'textarea',
+              },
+              {
+                key: 'author',
+                label: 'ผู้เขียน/ผู้เผยแพร่',
+                type: 'text',
+              },
+              {
+                key: 'publishedAt',
+                label: 'วันที่เผยแพร่ (อัตโนมัติ)',
+                type: 'readonly-datetime',
+              },
+              {
+                key: 'updatedAt',
+                label: 'วันที่อัปเดตล่าสุด (อัตโนมัติ)',
+                type: 'readonly-datetime',
+              },
+              {
+                key: 'guidelines',
+                label: 'แนวทางปฏิบัติ (แสดงด้านล่างเนื้อหาความรู้ — ใส่ลิงก์ได้)',
+                type: 'sublist',
+                fields: [
+                  {
+                    key: 'label',
+                    label: 'ข้อความ',
+                    type: 'text',
+                  },
+                  {
+                    key: 'href',
+                    label: 'ลิงก์ (URL)',
+                    type: 'url',
+                  },
+                  {
+                    key: 'file',
+                    label: 'หรือแนบไฟล์ PDF',
+                    type: 'file',
+                    uploadFolder: 'hr',
+                  },
+                ],
+              },
+            ],
+          },
         ],
       },
 
