@@ -307,6 +307,13 @@ export const ADMIN_SCHEMAS = [
                 type: 'text',
               },
               {
+                key: 'img',
+                label:
+                  'รูปภาพประกอบ (ถ้าใส่ จะแสดงเป็นการ์ดรูปภาพแทนข้อความธรรมดา)',
+                type: 'image',
+                uploadFolder: 'hr',
+              },
+              {
                 key: 'isNew',
                 label: 'ติดป้าย "ใหม่"',
                 type: 'boolean',
