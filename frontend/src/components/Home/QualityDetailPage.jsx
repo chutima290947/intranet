@@ -15,11 +15,27 @@ function resolveLink(item) {
   return null
 }
 
+// รูปภาพของ node อาจถูกเก็บเป็น string url ตรงๆ หรือเป็น object { url } (แล้วแต่ตัว FieldInput image คืนค่ามา)
+function resolveImageUrl(img) {
+  if (!img) return null
+  const raw = typeof img === 'string' ? img : img.url
+  return raw ? getFileUrl(raw) : null
+}
+
+// เช็คว่า tree นี้ซ้อนลึกเกิน 2 ชั้นไหม (มีหลานอยู่ใต้ลูกอีกที)
+// ถ้าไม่มี -> ใช้โหมด "แสดงหมวดหมู่ทั้งหมดพร้อมกัน" (flat mode)
+// ถ้ามี -> ใช้โหมดคลิกเข้าไปทีละชั้นแบบเดิม (สำหรับเมนูอื่นที่ซ้อนลึกกว่านี้)
+function hasGrandchildren(nodes) {
+  const list = Array.isArray(nodes) ? nodes : []
+  return list.some((node) => Array.isArray(node.children) && node.children.some((c) => Array.isArray(c.children) && c.children.length > 0))
+}
+
 export function QualityDetailPage({ quality, onBack }) {
   const { content } = useContent()
 
   // stack ของเมนูต้นไม้ที่กำลังดูอยู่ — เหมือน DigitalServicePage.jsx
   // แต่ละชั้นเก็บ { label, items } เพื่อใช้ทำ breadcrumb
+  // ใช้เฉพาะโหมด "คลิกเข้าไปทีละชั้น" (เมื่อ tree ซ้อนลึกกว่า 2 ชั้น) เท่านั้น
   const [stack, setStack] = useState([])
 
   useEffect(() => {
@@ -43,6 +59,10 @@ export function QualityDetailPage({ quality, onBack }) {
   const articleItems = Array.isArray(quality.articleItems) ? quality.articleItems : []
   const rootTree = Array.isArray(quality.tree) ? quality.tree : []
   const hasTree = rootTree.length > 0
+
+  // โหมด flat: ทุกหมวดหมู่หลัก (เช่น quality / keydata / report) แสดงพร้อมกันหมด
+  // ใต้แต่ละหมวดเป็นการ์ดรูปภาพ+ลิงก์ของรายการลูก ไม่ต้องคลิกเข้าไปทีละชั้น
+  const flatMode = hasTree && !hasGrandchildren(rootTree)
 
   const currentItems = stack.length === 0 ? rootTree : stack[stack.length - 1].items
 
@@ -98,7 +118,61 @@ export function QualityDetailPage({ quality, onBack }) {
           <p className="mb-4 text-[13.5px] leading-relaxed text-ink">{quality.intro}</p>
         )}
 
-        {hasTree && (
+        {hasTree && flatMode && (
+          <div className="flex flex-col gap-7">
+            {rootTree.map((category, ci) => {
+              const children = Array.isArray(category.children) ? category.children : []
+
+              return (
+                <div key={ci}>
+                  <h2 className="mb-3 flex items-center gap-2 text-[14px] font-bold text-navy-900">
+                    <i className={`ti ${category.icon || 'ti-folder'} text-base text-blue-600`} />
+                    {category.label}
+                  </h2>
+
+                  <div className="grid grid-cols-3 gap-3 max-[640px]:grid-cols-2">
+                    {children.map((child, i) => {
+                      const link = resolveLink(child)
+                      const imgUrl = resolveImageUrl(child.img)
+                      const CardTag = link ? 'a' : 'div'
+
+                      return (
+                        <CardTag
+                          key={i}
+                          {...(link && { href: link, target: '_blank', rel: 'noopener noreferrer' })}
+                          className="flex flex-col overflow-hidden rounded-lg border border-line bg-white no-underline transition-colors hover:border-blue-500/40 hover:bg-blue-tint"
+                        >
+                          {imgUrl ? (
+                            <img
+                              src={imgUrl}
+                              alt={child.label}
+                              className="h-28 w-full flex-shrink-0 object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-28 w-full flex-shrink-0 items-center justify-center bg-blue-tint">
+                              <i className={`ti ${child.icon || 'ti-file-text'} text-2xl text-blue-600`} />
+                            </div>
+                          )}
+                          <span className="px-3 py-2.5 text-[12.5px] leading-tight text-ink">
+                            {child.label}
+                          </span>
+                        </CardTag>
+                      )
+                    })}
+
+                    {children.length === 0 && (
+                      <p className="col-span-full py-4 text-center text-[12px] text-ink-soft">
+                        ยังไม่มีรายการในหมวดนี้
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {hasTree && !flatMode && (
           <>
             {/* breadcrumb — โชว์เมื่อเข้าไปดูหัวข้อย่อยแล้วเท่านั้น */}
             {stack.length > 0 && (
