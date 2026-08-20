@@ -226,7 +226,8 @@ function TreeNodeRow({
   const showLink = openLinkPath === path
 
   const expanded = expandedPaths.has(path)
-  const hasLink = Boolean(node.href || node.file)
+  // มีการแนบอย่างใดอย่างหนึ่ง (ลิงก์ / ไฟล์ / รูปภาพ) -> โชว์จุดเขียวบนปุ่ม paperclip
+  const hasLink = Boolean(node.href || node.file || node.img)
   const hasChildren = Array.isArray(node.children) && node.children.length > 0
   const descendantCount = hasChildren ? countDescendants(node.children) : 0
 
@@ -311,8 +312,8 @@ function TreeNodeRow({
               ? 'bg-blue-600 text-white'
               : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
           }`}
-          aria-label="แนบลิงก์หรือไฟล์"
-          title="แนบลิงก์หรือไฟล์ให้หัวข้อนี้"
+          aria-label="แนบลิงก์ ไฟล์ หรือรูปภาพ"
+          title="แนบลิงก์ ไฟล์ หรือรูปภาพให้หัวข้อนี้"
         >
           <i className="ti ti-paperclip text-[14px]" />
           {hasLink && !showLink && (
@@ -338,7 +339,7 @@ function TreeNodeRow({
       </div>
 
       {showLink && (
-        <div className="mx-2 mb-2 grid grid-cols-2 gap-2 rounded-lg border border-line bg-paper/40 p-2.5">
+        <div className="mx-2 mb-2 grid grid-cols-3 gap-2 rounded-lg border border-line bg-paper/40 p-2.5 max-[640px]:grid-cols-1">
           <div>
             <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-ink-soft/70">
               ลิงก์ "{node.label || 'หัวข้อนี้'}" (URL)
@@ -357,6 +358,17 @@ function TreeNodeRow({
             <FileFieldInput
               value={node.file}
               onChange={(v) => updateNode(idx, { file: v })}
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-ink-soft/70">
+              รูปภาพประกอบ (แสดงเป็นการ์ด)
+            </label>
+            <FieldInput
+              field={{ type: 'image', uploadFolder: 'quality' }}
+              value={node.img}
+              onChange={(v) => updateNode(idx, { img: v })}
             />
           </div>
         </div>
