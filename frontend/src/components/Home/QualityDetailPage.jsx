@@ -8,10 +8,60 @@ function getFileUrl(url) {
   return `${API_URL}${url}`
 }
 
-function resolveLink(item) {
-  if (item?.href) return item.href
-  if (item?.file?.url) return getFileUrl(item.file.url)
-  return null
+function groupByCategory(items) {
+  const order = []
+  const map = new Map()
+  for (const item of items) {
+    const key = item.category?.trim() || ''
+    if (!map.has(key)) {
+      map.set(key, [])
+      order.push(key)
+    }
+    map.get(key).push(item)
+  }
+  return order.map((key) => ({ category: key, items: map.get(key) }))
+}
+
+function DiseaseCard({ item }) {
+  const link = resolveLink(item)
+  const imgSrc = getFileUrl(item.img)
+  const cardInner = (
+    <>
+      <div className="aspect-[4/3] w-full overflow-hidden rounded-md border border-line bg-paper">
+        <img
+          src={imgSrc}
+          alt={item.label}
+          className="h-full w-full object-cover transition-transform group-hover:scale-105"
+        />
+      </div>
+      <div className="mt-2 flex items-center gap-1.5">
+        <span className="text-[13.5px] font-bold text-navy-900">{item.label}</span>
+        {item.isNew && (
+          <span className="rounded bg-coral-tint px-1.5 py-0.5 text-[9.5px] font-bold text-coral">
+            NEW
+          </span>
+        )}
+      </div>
+      {item.sub && <p className="mt-0.5 text-[12px] text-ink-soft">{item.sub}</p>}
+      {item.tag && (
+        <span className="mt-1.5 inline-block rounded bg-blue-tint px-2 py-0.5 text-[10.5px] font-semibold text-blue-700">
+          {item.tag}
+        </span>
+      )}
+    </>
+  )
+  return link ? (
+    <a
+      href={link}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group block no-underline"
+    >
+      {cardInner}
+    </a>
+  ) : (
+    <div className="group">{cardInner}</div>
+  )
 }
 
 export function QualityDetailPage({ quality, onBack }) {
@@ -70,57 +120,24 @@ export function QualityDetailPage({ quality, onBack }) {
 
         {articleItems.length > 0 && (
           <>
-            {/* รายการที่มีรูปภาพ -> แสดงเป็นการ์ดรูปภาพ (แกลเลอรี) */}
+            {/* รายการที่มีรูปภาพ -> แสดงเป็นการ์ดรูปภาพ (แกลเลอรี) จัดกลุ่มตามหมวดหมู่ถ้ามี */}
             {articleItems.some((item) => item.img) && (
-              <div className="mb-5 grid grid-cols-3 gap-4 max-[640px]:grid-cols-2">
-                {articleItems
-                  .filter((item) => item.img)
-                  .map((item) => {
-                    const link = resolveLink(item)
-                    const imgSrc = getFileUrl(item.img)
-                    const cardInner = (
-                      <>
-                        <div className="aspect-[4/3] w-full overflow-hidden rounded-md border border-line bg-paper">
-                          <img
-                            src={imgSrc}
-                            alt={item.label}
-                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                          />
-                        </div>
-                        <div className="mt-2 flex items-center gap-1.5">
-                          <span className="text-[13.5px] font-bold text-navy-900">{item.label}</span>
-                          {item.isNew && (
-                            <span className="rounded bg-coral-tint px-1.5 py-0.5 text-[9.5px] font-bold text-coral">
-                              NEW
-                            </span>
-                          )}
-                        </div>
-                        {item.sub && (
-                          <p className="mt-0.5 text-[12px] text-ink-soft">{item.sub}</p>
-                        )}
-                        {item.tag && (
-                          <span className="mt-1.5 inline-block rounded bg-blue-tint px-2 py-0.5 text-[10.5px] font-semibold text-blue-700">
-                            {item.tag}
-                          </span>
-                        )}
-                      </>
-                    )
-                    return link ? (
-                      <a
-                        key={item.label}
-                        href={link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group block no-underline"
-                      >
-                        {cardInner}
-                      </a>
-                    ) : (
-                      <div key={item.label} className="group">
-                        {cardInner}
+              <div className="mb-5 flex flex-col gap-6">
+                {groupByCategory(articleItems.filter((item) => item.img)).map((group) => (
+                  <div key={group.category || '__none__'} className="flex flex-col gap-3">
+                    {group.category && (
+                      <div className="flex items-center gap-2 border-b border-line pb-1.5">
+                        <h4 className="text-[13.5px] font-bold text-navy-900">{group.category}</h4>
+                        <span className="text-[11px] text-ink-soft/70">{group.items.length} รายการ</span>
                       </div>
-                    )
-                  })}
+                    )}
+                    <div className="grid grid-cols-5 gap-4 max-[900px]:grid-cols-3 max-[640px]:grid-cols-2">
+                      {group.items.map((item) => (
+                        <DiseaseCard key={item.label} item={item} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
