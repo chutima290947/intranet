@@ -8,6 +8,21 @@ function getFileUrl(url) {
   return `${API_URL}${url}`
 }
 
+function getFileUrl(url) {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+
+  const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`
+  return `${API_URL}${url}`
+}
+
+// เพิ่มฟังก์ชันนี้ — เดิมหายไป ทำให้เกิด "resolveLink is not defined"
+function resolveLink(item) {
+  if (item?.href) return item.href
+  if (item?.file?.url) return getFileUrl(item.file.url)
+  return null
+}
+
 function groupByCategory(items) {
   const order = []
   const map = new Map()
