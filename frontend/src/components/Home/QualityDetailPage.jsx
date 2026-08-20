@@ -87,14 +87,22 @@ export function QualityDetailPage({ quality, onBack }) {
                             className="h-full w-full object-cover transition-transform group-hover:scale-105"
                           />
                         </div>
-                        <div className="mt-1.5 flex items-center gap-1.5">
-                          <span className="text-[12px] font-medium text-ink">{item.label}</span>
+                        <div className="mt-2 flex items-center gap-1.5">
+                          <span className="text-[13.5px] font-bold text-navy-900">{item.label}</span>
                           {item.isNew && (
                             <span className="rounded bg-coral-tint px-1.5 py-0.5 text-[9.5px] font-bold text-coral">
                               NEW
                             </span>
                           )}
                         </div>
+                        {item.sub && (
+                          <p className="mt-0.5 text-[12px] text-ink-soft">{item.sub}</p>
+                        )}
+                        {item.tag && (
+                          <span className="mt-1.5 inline-block rounded bg-blue-tint px-2 py-0.5 text-[10.5px] font-semibold text-blue-700">
+                            {item.tag}
+                          </span>
+                        )}
                       </>
                     )
                     return link ? (
