@@ -303,7 +303,7 @@ export const ADMIN_SCHEMAS = [
             fields: [
               {
                 key: 'label',
-                label: 'ข้อความ',
+                label: 'หัวข้อ (เช่น โรคฝีดาษลิง)',
                 type: 'text',
               },
               {
@@ -312,6 +312,18 @@ export const ADMIN_SCHEMAS = [
                   'รูปภาพประกอบ (ถ้าใส่ จะแสดงเป็นการ์ดรูปภาพแทนข้อความธรรมดา)',
                 type: 'image',
                 uploadFolder: 'hr',
+              },
+              {
+                key: 'sub',
+                label:
+                  'คำอธิบายย่อย (เช่น Monkeypox) — ใช้เมื่อมีรูปภาพประกอบเท่านั้น',
+                type: 'text',
+              },
+              {
+                key: 'tag',
+                label:
+                  'ป้ายหมวดหมู่ (เช่น ไวรัส, แบคทีเรีย, สัตว์สู่คน) — ใช้เมื่อมีรูปภาพประกอบเท่านั้น',
+                type: 'text',
               },
               {
                 key: 'isNew',
