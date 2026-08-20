@@ -69,40 +69,93 @@ export function QualityDetailPage({ quality, onBack }) {
         )}
 
         {articleItems.length > 0 && (
-          <ul className="flex flex-col gap-2.5">
-            {articleItems.map((item) => {
-              const link = resolveLink(item)
-              return (
-                <li key={item.label} className="flex items-start gap-2">
-                  <i className="ti ti-point-filled mt-[3px] flex-shrink-0 text-[10px] text-blue-500" />
-                  {link ? (
-                    <a
-                      href={link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex flex-1 items-center gap-2 text-[13.5px] text-blue-600 hover:underline"
-                    >
-                      <span>{item.label}</span>
-                      {item.isNew && (
-                        <span className="rounded bg-coral-tint px-1.5 py-0.5 text-[9.5px] font-bold text-coral">
-                          NEW
-                        </span>
-                      )}
-                    </a>
-                  ) : (
-                    <span className="flex flex-1 items-center gap-2 text-[13.5px] text-ink">
-                      <span>{item.label}</span>
-                      {item.isNew && (
-                        <span className="rounded bg-coral-tint px-1.5 py-0.5 text-[9.5px] font-bold text-coral">
-                          NEW
-                        </span>
-                      )}
-                    </span>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
+          <>
+            {/* รายการที่มีรูปภาพ -> แสดงเป็นการ์ดรูปภาพ (แกลเลอรี) */}
+            {articleItems.some((item) => item.img) && (
+              <div className="mb-5 grid grid-cols-3 gap-4 max-[640px]:grid-cols-2">
+                {articleItems
+                  .filter((item) => item.img)
+                  .map((item) => {
+                    const link = resolveLink(item)
+                    const imgSrc = getFileUrl(item.img)
+                    const cardInner = (
+                      <>
+                        <div className="aspect-[4/3] w-full overflow-hidden rounded-md border border-line bg-paper">
+                          <img
+                            src={imgSrc}
+                            alt={item.label}
+                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                          />
+                        </div>
+                        <div className="mt-1.5 flex items-center gap-1.5">
+                          <span className="text-[12px] font-medium text-ink">{item.label}</span>
+                          {item.isNew && (
+                            <span className="rounded bg-coral-tint px-1.5 py-0.5 text-[9.5px] font-bold text-coral">
+                              NEW
+                            </span>
+                          )}
+                        </div>
+                      </>
+                    )
+                    return link ? (
+                      <a
+                        key={item.label}
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group block no-underline"
+                      >
+                        {cardInner}
+                      </a>
+                    ) : (
+                      <div key={item.label} className="group">
+                        {cardInner}
+                      </div>
+                    )
+                  })}
+              </div>
+            )}
+
+            {/* รายการที่ไม่มีรูปภาพ -> แสดงเป็นลิสต์ข้อความแบบเดิม */}
+            {articleItems.some((item) => !item.img) && (
+              <ul className="flex flex-col gap-2.5">
+                {articleItems
+                  .filter((item) => !item.img)
+                  .map((item) => {
+                    const link = resolveLink(item)
+                    return (
+                      <li key={item.label} className="flex items-start gap-2">
+                        <i className="ti ti-point-filled mt-[3px] flex-shrink-0 text-[10px] text-blue-500" />
+                        {link ? (
+                          <a
+                            href={link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex flex-1 items-center gap-2 text-[13.5px] text-blue-600 hover:underline"
+                          >
+                            <span>{item.label}</span>
+                            {item.isNew && (
+                              <span className="rounded bg-coral-tint px-1.5 py-0.5 text-[9.5px] font-bold text-coral">
+                                NEW
+                              </span>
+                            )}
+                          </a>
+                        ) : (
+                          <span className="flex flex-1 items-center gap-2 text-[13.5px] text-ink">
+                            <span>{item.label}</span>
+                            {item.isNew && (
+                              <span className="rounded bg-coral-tint px-1.5 py-0.5 text-[9.5px] font-bold text-coral">
+                                NEW
+                              </span>
+                            )}
+                          </span>
+                        )}
+                      </li>
+                    )
+                  })}
+              </ul>
+            )}
+          </>
         )}
 
         {articleItems.length === 0 && !quality.intro && (
