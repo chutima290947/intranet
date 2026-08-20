@@ -297,38 +297,65 @@ export const ADMIN_SCHEMAS = [
             type: 'textarea',
           },
           {
+            key: 'sections',
+            label:
+              'จัดกลุ่มหัวข้อ (เช่น KEY DATA, REPORT) — ใส่ชื่อหัวข้อกลุ่มก่อน แล้วค่อยเพิ่มรายการย่อยข้างในแต่ละกลุ่ม',
+            type: 'sublist',
+            fields: [
+              {
+                key: 'title',
+                label: 'ชื่อหัวข้อกลุ่ม (เช่น KEY DATA, REPORT)',
+                type: 'text',
+              },
+              {
+                key: 'items',
+                label: 'รายการในหัวข้อนี้',
+                type: 'sublist',
+                fields: [
+                  {
+                    key: 'label',
+                    label: 'ชื่อรายการ',
+                    type: 'text',
+                  },
+                  {
+                    key: 'img',
+                    label:
+                      'รูปภาพ — ถ้าใส่รูป จะแสดงเป็นการ์ดรูปภาพ (เหมาะกับ REPORT) ถ้าเว้นว่างไว้ จะแสดงเป็นปุ่มสี+ไอคอนแทน (เหมาะกับ KEY DATA)',
+                    type: 'image',
+                  },
+                  {
+                    key: 'icon',
+                    label: 'ไอคอน — ใช้เมื่อไม่ได้ใส่รูปภาพด้านบน',
+                    type: 'icon',
+                  },
+                  {
+                    key: 'color',
+                    label: 'สีปุ่ม — ใช้เมื่อไม่ได้ใส่รูปภาพด้านบน',
+                    type: 'color',
+                  },
+                  {
+                    key: 'href',
+                    label: 'ลิงก์ (URL)',
+                    type: 'url',
+                  },
+                  {
+                    key: 'file',
+                    label: 'หรือแนบไฟล์ (PDF/รูปภาพ/Office)',
+                    type: 'file',
+                    uploadFolder: 'hr',
+                  },
+                ],
+              },
+            ],
+          },
+          {
             key: 'articleItems',
-            label: 'รายการเอกสาร/ลิงก์ในหน้าเนื้อหา',
+            label: 'รายการเอกสาร/ลิงก์แบบข้อความล้วน (ไม่มีหัวข้อกลุ่ม/รูปภาพ)',
             type: 'sublist',
             fields: [
               {
                 key: 'label',
-                label: 'หัวข้อ (เช่น โรคฝีดาษลิง)',
-                type: 'text',
-              },
-              {
-                key: 'img',
-                label:
-                  'รูปภาพประกอบ (ถ้าใส่ จะแสดงเป็นการ์ดรูปภาพแทนข้อความธรรมดา)',
-                type: 'image',
-                uploadFolder: 'hr',
-              },
-              {
-                key: 'sub',
-                label:
-                  'คำอธิบายย่อย (เช่น Monkeypox) — ใช้เมื่อมีรูปภาพประกอบเท่านั้น',
-                type: 'text',
-              },
-              {
-                key: 'tag',
-                label:
-                  'ป้ายหมวดหมู่ (เช่น ไวรัส, แบคทีเรีย, สัตว์สู่คน) — ใช้เมื่อมีรูปภาพประกอบเท่านั้น',
-                type: 'text',
-              },
-              {
-                key: 'category',
-                label:
-                  'หมวดหมู่ (เช่น ไวรัส, แบคทีเรีย) — ใส่เพื่อจัดกลุ่มพร้อมหัวข้อคั่น เว้นว่างได้ถ้าไม่ต้องการแบ่งหมวด — ใช้เมื่อมีรูปภาพประกอบเท่านั้น',
+                label: 'ข้อความ',
                 type: 'text',
               },
               {
@@ -721,8 +748,7 @@ export const ADMIN_SCHEMAS = [
               },
               {
                 key: 'href',
-                label:
-                  'ลิงก์ (URL) — ใช้เมื่อไม่มีรายการย่อยด้านล่าง',
+                label: 'ลิงก์ (URL)',
                 type: 'url',
               },
               {
@@ -731,30 +757,6 @@ export const ADMIN_SCHEMAS = [
                   'โลโก้ระบบ',
                 type: 'image',
                 uploadFolder: 'mservice',
-              },
-              {
-                key: 'subItems',
-                label:
-                  'รายการย่อย (เช่น Sale, Cashier, Admin, Report) — ถ้าใส่ คลิกที่ระบบนี้จะเปิดหน้ารายการย่อยแทนการเปิดลิงก์ตรง',
-                type: 'sublist',
-                fields: [
-                  {
-                    key: 'label',
-                    label: 'ชื่อรายการย่อย',
-                    type: 'text',
-                  },
-                  {
-                    key: 'href',
-                    label: 'ลิงก์ (URL)',
-                    type: 'url',
-                  },
-                  {
-                    key: 'file',
-                    label: 'หรือแนบไฟล์ PDF',
-                    type: 'file',
-                    uploadFolder: 'mservice',
-                  },
-                ],
               },
             ],
           },
