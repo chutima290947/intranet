@@ -92,7 +92,7 @@ export function QualityDetailPage({ quality, onBack }) {
         <i className="ti ti-arrow-left text-base" />กลับหน้าหลัก
       </button>
 
-      <div className="rounded-lg border border-line bg-white px-7 py-7">
+      <div className="px-1 py-2">
         <p className="mb-1.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-soft/60">
           {content.SITE?.name || 'Articles'}
         </p>

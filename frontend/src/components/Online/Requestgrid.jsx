@@ -42,9 +42,10 @@ function getInitials(name) {
   return (words[0][0] + words[words.length - 1][0]).toUpperCase()
 }
 
-function AppCard({ item, accent }) {
+function AppCard({ item, accent, onOpenItem }) {
   // ลำดับความสำคัญ: รูปที่อัปโหลดผ่านแอดมิน > ไฟล์ในโฟลเดอร์ assets/logos > ตัวอักษรย่อ
   const logoUrl = getFileUrl(item.img) || LOGOS[slugify(item.name)]
+  const hasSubItems = Array.isArray(item.subItems) && item.subItems.length > 0
 
   const cardContent = (
     <>
@@ -79,6 +80,20 @@ function AppCard({ item, accent }) {
   const cardClasses =
     'group flex aspect-square flex-col items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white p-5 text-center transition-colors hover:border-gray-300 hover:bg-gray-50'
 
+  // มีรายการย่อย -> คลิกเปิดหน้ารายการย่อย (การ์ดแบบเดียวกับตารางแพทย์)
+  if (hasSubItems) {
+    return (
+      <button
+        type="button"
+        data-card
+        onClick={() => onOpenItem?.(item)}
+        className={`${cardClasses} cursor-pointer`}
+      >
+        {cardContent}
+      </button>
+    )
+  }
+
   // มีลิงก์ (item.href) -> เปิดแท็บใหม่
   // ไม่มี -> ปุ่มเฉยๆ กดไม่ได้ (กันพัง เผื่อยังไม่ได้กรอก href ในแผงควบคุม)
   return item.href ? (
@@ -98,7 +113,7 @@ function AppCard({ item, accent }) {
   )
 }
 
-function CategorySection({ category }) {
+function CategorySection({ category, onOpenItem }) {
   const accent = { from: category.accentFrom, to: category.accentTo }
 
   return (
@@ -116,14 +131,14 @@ function CategorySection({ category }) {
 
       <div className="grid grid-cols-8 gap-3 max-[900px]:grid-cols-3 max-[560px]:grid-cols-2">
         {category.items.map((item) => (
-          <AppCard key={item.name} item={item} accent={accent} />
+          <AppCard key={item.name} item={item} accent={accent} onOpenItem={onOpenItem} />
         ))}
       </div>
     </section>
   )
 }
 
-export function RequestGrid({ searchQuery = '' }) {
+export function RequestGrid({ searchQuery = '', onOpenItem }) {
   const { content } = useContent()
   const CATEGORIES = content.REQUEST_CATEGORIES
   const [query, setQuery] = useState(searchQuery)
@@ -148,7 +163,7 @@ export function RequestGrid({ searchQuery = '' }) {
 
       <div className="flex flex-col gap-7">
         {filtered.map((category) => (
-          <CategorySection key={category.id} category={category} />
+          <CategorySection key={category.id} category={category} onOpenItem={onOpenItem} />
         ))}
         {filtered.length === 0 && (
           <p className="py-10 text-center text-[13px] text-gray-400">ไม่พบระบบที่ค้นหา</p>

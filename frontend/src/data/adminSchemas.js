@@ -721,7 +721,8 @@ export const ADMIN_SCHEMAS = [
               },
               {
                 key: 'href',
-                label: 'ลิงก์ (URL)',
+                label:
+                  'ลิงก์ (URL) — ใช้เมื่อไม่มีรายการย่อยด้านล่าง',
                 type: 'url',
               },
               {
@@ -730,6 +731,30 @@ export const ADMIN_SCHEMAS = [
                   'โลโก้ระบบ',
                 type: 'image',
                 uploadFolder: 'mservice',
+              },
+              {
+                key: 'subItems',
+                label:
+                  'รายการย่อย (เช่น Sale, Cashier, Admin, Report) — ถ้าใส่ คลิกที่ระบบนี้จะเปิดหน้ารายการย่อยแทนการเปิดลิงก์ตรง',
+                type: 'sublist',
+                fields: [
+                  {
+                    key: 'label',
+                    label: 'ชื่อรายการย่อย',
+                    type: 'text',
+                  },
+                  {
+                    key: 'href',
+                    label: 'ลิงก์ (URL)',
+                    type: 'url',
+                  },
+                  {
+                    key: 'file',
+                    label: 'หรือแนบไฟล์ PDF',
+                    type: 'file',
+                    uploadFolder: 'mservice',
+                  },
+                ],
               },
             ],
           },

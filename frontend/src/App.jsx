@@ -32,6 +32,7 @@ import { DivisionGrid } from './components/Division/DivisionGrid'
 import { ReportGrid } from './components/Report/Reportgrid'
 import { DoctorSchedulePage } from './components/Home/DoctorSchedulePage'
 import { RequestGrid } from './components/Online/Requestgrid'
+import { RequestItemDetailPage } from './components/Online/RequestItemDetailPage'
 import { AdminLayout } from './components/Admin/AdminLayout'
 import { SetupPasswordPage } from './components/Auth/SetupPasswordPage'
 
@@ -49,6 +50,7 @@ function loadStoredPage() {
         selectedServiceLabel: null,
         selectedQualityLabel: null,
         selectedNewsTitle: null,
+        selectedRequestItemName: null,
       }
     }
     const parsed = JSON.parse(raw)
@@ -60,6 +62,7 @@ function loadStoredPage() {
       selectedServiceLabel: parsed.selectedServiceLabel ?? null,
       selectedQualityLabel: parsed.selectedQualityLabel ?? null,
       selectedNewsTitle: parsed.selectedNewsTitle ?? null,
+      selectedRequestItemName: parsed.selectedRequestItemName ?? null,
     }
   } catch {
     return {
@@ -70,6 +73,7 @@ function loadStoredPage() {
       selectedServiceLabel: null,
       selectedQualityLabel: null,
       selectedNewsTitle: null,
+      selectedRequestItemName: null,
     }
   }
 }
@@ -102,7 +106,7 @@ function AppInner() {
   const { isAuthenticated } = useAuth()
 
   const initial = loadStoredPage()
-  const [page, setPage] = useState(initial.page) // 'home' | 'division' | 'report' | 'doctor' | 'online' | 'partner' | 'quality' | 'admin'
+  const [page, setPage] = useState(initial.page) // 'home' | 'division' | 'report' | 'doctor' | 'online' | 'request-item' | 'partner' | 'quality' | 'admin'
   const [activeSection, setActiveSection] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDivisionId, setSelectedDivisionId] = useState(initial.selectedDivisionId)
@@ -111,6 +115,7 @@ function AppInner() {
   const [selectedServiceLabel, setSelectedServiceLabel] = useState(initial.selectedServiceLabel)
   const [selectedNewsTitle, setSelectedNewsTitle] = useState(initial.selectedNewsTitle)
   const [selectedQualityLabel, setSelectedQualityLabel] = useState(initial.selectedQualityLabel)
+  const [selectedRequestItemName, setSelectedRequestItemName] = useState(initial.selectedRequestItemName)
   const [pendingScrollId, setPendingScrollId] = useState(null)
   const quicknavRef = useRef(null)
 
@@ -131,6 +136,7 @@ function AppInner() {
           selectedServiceLabel,
           selectedQualityLabel,
           selectedNewsTitle,
+          selectedRequestItemName,
         })
       )
     } catch {
@@ -144,6 +150,7 @@ function AppInner() {
     selectedServiceLabel,
     selectedQualityLabel,
     selectedNewsTitle,
+    selectedRequestItemName,
   ])
 
   // กันไม่ให้เข้าหน้า admin ได้ถ้ายังไม่ login (กันไว้เผื่อ state หลุด เช่น logout จากแท็บอื่น)
@@ -202,6 +209,9 @@ function AppInner() {
     }
     if (target === 'quality') {
       setSelectedQualityLabel(payload || null)
+    }
+    if (target === 'request-item') {
+      setSelectedRequestItemName(payload || null)
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })
     if (target === 'news') {
@@ -347,7 +357,12 @@ function AppInner() {
         <ReportGrid searchQuery={searchQuery} initialActiveId={selectedReportId} />
       )}
 
-      {page === 'online' && <RequestGrid searchQuery={searchQuery} />}
+      {page === 'online' && (
+        <RequestGrid
+          searchQuery={searchQuery}
+          onOpenItem={(item) => goTo('request-item', item.name)}
+        />
+      )}
 
       {page === 'partner' && (
         <PartnerDetailPage
@@ -374,6 +389,15 @@ function AppInner() {
         <QualityDetailPage
           quality={content.QUALITY.find((q) => q.label === selectedQualityLabel)}
           onBack={() => goTo('home')}
+        />
+      )}
+
+      {page === 'request-item' && (
+        <RequestItemDetailPage
+          item={content.REQUEST_CATEGORIES.flatMap((c) => c.items).find(
+            (i) => i.name === selectedRequestItemName
+          )}
+          onBack={() => goTo('online')}
         />
       )}
 
