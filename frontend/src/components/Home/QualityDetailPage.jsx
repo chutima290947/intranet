@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import { useContent } from '../../context/ContentContext'
 
 function getFileUrl(url) {
@@ -22,25 +21,122 @@ function resolveImageUrl(img) {
   return raw ? getFileUrl(raw) : null
 }
 
-// เช็คว่า tree นี้ซ้อนลึกเกิน 2 ชั้นไหม (มีหลานอยู่ใต้ลูกอีกที)
-// ถ้าไม่มี -> ใช้โหมด "แสดงหมวดหมู่ทั้งหมดพร้อมกัน" (flat mode)
-// ถ้ามี -> ใช้โหมดคลิกเข้าไปทีละชั้นแบบเดิม (สำหรับเมนูอื่นที่ซ้อนลึกกว่านี้)
-function hasGrandchildren(nodes) {
+// ============================================================
+// Recursive tree renderer
+// - node ที่มีลูกซึ่ง "มีหลาน" ต่อ -> ถือเป็นหมวดหมู่ ให้ขึ้นหัวข้อแล้ว recurse เป็น section ของตัวเอง
+// - node ที่ไม่มีลูก -> ถือเป็น "การ์ด" (รูปภาพ/ลิงก์)
+// การ์ดที่อยู่ "ระดับเดียวกัน" ติดกันจะถูกรวมเป็น grid เดียวกันเสมอ แม้จะสลับกับหมวดหมู่อื่นอยู่
+// ไม่มีการคลิกไล่ชั้นอีกต่อไป — ทุกชั้นถูกกางออกมาให้เห็นพร้อมกันในหน้าเดียว
+// ============================================================
+
+// แบ่ง children ของ node หนึ่งๆ ออกเป็น "ช่วง" (block) ตามลำดับที่ปรากฏ:
+// - block การ์ด (leafGroup): รวม node ที่ไม่มีลูกที่อยู่ติดกันเป็น grid เดียว
+// - block หมวดหมู่ (section): node ที่มีลูก แยกเป็น section ของตัวเอง
+function groupChildren(nodes) {
   const list = Array.isArray(nodes) ? nodes : []
-  return list.some((node) => Array.isArray(node.children) && node.children.some((c) => Array.isArray(c.children) && c.children.length > 0))
+  const blocks = []
+  let leafRun = []
+
+  list.forEach((node) => {
+    const isSection = Array.isArray(node.children) && node.children.length > 0
+
+    if (isSection) {
+      if (leafRun.length > 0) {
+        blocks.push({ type: 'leafGroup', items: leafRun })
+        leafRun = []
+      }
+      blocks.push({ type: 'section', node })
+    } else {
+      leafRun.push(node)
+    }
+  })
+
+  if (leafRun.length > 0) {
+    blocks.push({ type: 'leafGroup', items: leafRun })
+  }
+
+  return blocks
+}
+
+function TreeLeafGrid({ items }) {
+  const list = Array.isArray(items) ? items : []
+
+  return (
+    <div className="grid grid-cols-3 gap-4 max-[768px]:grid-cols-2 max-[480px]:grid-cols-1">
+      {list.map((child, i) => {
+        const link = resolveLink(child)
+        const imgUrl = resolveImageUrl(child.img)
+        const CardTag = link ? 'a' : 'div'
+
+        return (
+          <CardTag
+            key={i}
+            {...(link && { href: link, target: '_blank', rel: 'noopener noreferrer' })}
+            className="group flex flex-col overflow-hidden rounded-xl border border-line bg-white no-underline shadow-[0_1px_2px_rgba(11,40,80,.04)] transition-all hover:-translate-y-0.5 hover:border-blue-400/50 hover:shadow-[0_6px_16px_rgba(11,40,80,.08)]"
+          >
+            <div className="aspect-[4/3] w-full flex-shrink-0 overflow-hidden bg-slate-50">
+              {imgUrl ? (
+                <img
+                  src={imgUrl}
+                  alt={child.label}
+                  className="h-full w-full object-contain p-2 transition-transform duration-200 group-hover:scale-[1.04]"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center">
+                  <i className={`ti ${child.icon || 'ti-file-text'} text-3xl text-blue-500`} />
+                </div>
+              )}
+            </div>
+            <div className="flex min-h-[2.75rem] items-center justify-center px-3.5 py-2.5">
+              <span className="text-center text-[12.5px] font-medium leading-snug text-ink">
+                {child.label || 'ไม่มีชื่อ'}
+              </span>
+            </div>
+          </CardTag>
+        )
+      })}
+
+      {list.length === 0 && (
+        <p className="col-span-full py-4 text-center text-[12px] text-ink-soft">
+          ยังไม่มีรายการในหมวดนี้
+        </p>
+      )}
+    </div>
+  )
+}
+
+function TreeSection({ node, depth }) {
+  const blocks = groupChildren(node.children)
+  if (blocks.length === 0) return null
+
+  return (
+    <div className={depth === 0 ? 'mb-8' : 'mb-6'}>
+      <h2
+        className={
+          depth === 0
+            ? 'mb-3 flex items-center gap-2 text-[14px] font-bold text-navy-900'
+            : 'mb-2.5 flex items-center gap-1.5 text-[12.5px] font-bold text-ink-soft'
+        }
+      >
+        <i className={`ti ${node.icon || 'ti-folder'} text-base text-blue-600`} />
+        {node.label}
+      </h2>
+
+      <div className="flex flex-col gap-5">
+        {blocks.map((block, i) =>
+          block.type === 'section' ? (
+            <TreeSection key={i} node={block.node} depth={depth + 1} />
+          ) : (
+            <TreeLeafGrid key={i} items={block.items} />
+          )
+        )}
+      </div>
+    </div>
+  )
 }
 
 export function QualityDetailPage({ quality, onBack }) {
   const { content } = useContent()
-
-  // stack ของเมนูต้นไม้ที่กำลังดูอยู่ — เหมือน DigitalServicePage.jsx
-  // แต่ละชั้นเก็บ { label, items } เพื่อใช้ทำ breadcrumb
-  // ใช้เฉพาะโหมด "คลิกเข้าไปทีละชั้น" (เมื่อ tree ซ้อนลึกกว่า 2 ชั้น) เท่านั้น
-  const [stack, setStack] = useState([])
-
-  useEffect(() => {
-    setStack([])
-  }, [quality])
 
   if (!quality) {
     return (
@@ -57,39 +153,32 @@ export function QualityDetailPage({ quality, onBack }) {
   }
 
   const articleItems = Array.isArray(quality.articleItems) ? quality.articleItems : []
-  const rootTree = Array.isArray(quality.tree) ? quality.tree : []
+  let rootTree = Array.isArray(quality.tree) ? quality.tree : []
+
+  // ถ้า root มี node เดียวและชื่อซ้ำกับหัวข้อหน้า (label/articleTitle) -> เป็น wrapper ที่ไม่จำเป็น
+  // ข้ามหัวข้อนั้นไปเลย ใช้ลูกของมันเป็น root แทน กันหัวข้อซ้ำซ้อน (เช่น "Quality Center" ขึ้นซ้ำ 2 รอบ)
+  if (rootTree.length === 1) {
+    const only = rootTree[0]
+    const onlyHasChildren = Array.isArray(only.children) && only.children.length > 0
+    const sameLabel =
+      only.label && (only.label === quality.label || only.label === quality.articleTitle)
+
+    if (onlyHasChildren && sameLabel) {
+      rootTree = only.children
+    }
+  }
+
   const hasTree = rootTree.length > 0
-
-  // โหมด flat: ทุกหมวดหมู่หลัก (เช่น quality / keydata / report) แสดงพร้อมกันหมด
-  // ใต้แต่ละหมวดเป็นการ์ดรูปภาพ+ลิงก์ของรายการลูก ไม่ต้องคลิกเข้าไปทีละชั้น
-  const flatMode = hasTree && !hasGrandchildren(rootTree)
-
-  const currentItems = stack.length === 0 ? rootTree : stack[stack.length - 1].items
-
-  const enter = (node) => {
-    if (node.children && node.children.length > 0) {
-      setStack([...stack, { label: node.label, items: node.children }])
-    }
-  }
-  const goBackTree = () => setStack(stack.slice(0, -1))
-  const goToCrumb = (index) => setStack(index < 0 ? [] : stack.slice(0, index + 1))
-
-  const handleTopBack = () => {
-    if (stack.length > 0) {
-      goBackTree()
-    } else {
-      onBack()
-    }
-  }
+  const rootBlocks = hasTree ? groupChildren(rootTree) : []
 
   return (
     <div className="mx-auto max-w-[900px] px-8 pb-[60px] pt-[22px]">
       <button
-        onClick={handleTopBack}
+        onClick={onBack}
         className="mb-5 flex items-center gap-1.5 rounded-lg border-none bg-transparent text-[13px] font-medium text-blue-600"
       >
         <i className="ti ti-arrow-left text-base" />
-        {stack.length > 0 ? stack[stack.length - 1].label : 'กลับหน้าหลัก'}
+        กลับหน้าหลัก
       </button>
 
       <div className="rounded-lg border border-line bg-white px-7 py-7">
@@ -118,140 +207,18 @@ export function QualityDetailPage({ quality, onBack }) {
           <p className="mb-4 text-[13.5px] leading-relaxed text-ink">{quality.intro}</p>
         )}
 
-        {hasTree && flatMode && (
-          <div className="flex flex-col gap-7">
-            {rootTree.map((category, ci) => {
-              const children = Array.isArray(category.children) ? category.children : []
-
-              return (
-                <div key={ci}>
-                  <h2 className="mb-3 flex items-center gap-2 text-[14px] font-bold text-navy-900">
-                    <i className={`ti ${category.icon || 'ti-folder'} text-base text-blue-600`} />
-                    {category.label}
-                  </h2>
-
-                  <div className="grid grid-cols-3 gap-3 max-[640px]:grid-cols-2">
-                    {children.map((child, i) => {
-                      const link = resolveLink(child)
-                      const imgUrl = resolveImageUrl(child.img)
-                      const CardTag = link ? 'a' : 'div'
-
-                      return (
-                        <CardTag
-                          key={i}
-                          {...(link && { href: link, target: '_blank', rel: 'noopener noreferrer' })}
-                          className="flex flex-col overflow-hidden rounded-lg border border-line bg-white no-underline transition-colors hover:border-blue-500/40 hover:bg-blue-tint"
-                        >
-                          {imgUrl ? (
-                            <img
-                              src={imgUrl}
-                              alt={child.label}
-                              className="h-28 w-full flex-shrink-0 object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-28 w-full flex-shrink-0 items-center justify-center bg-blue-tint">
-                              <i className={`ti ${child.icon || 'ti-file-text'} text-2xl text-blue-600`} />
-                            </div>
-                          )}
-                          <span className="px-3 py-2.5 text-[12.5px] leading-tight text-ink">
-                            {child.label}
-                          </span>
-                        </CardTag>
-                      )
-                    })}
-
-                    {children.length === 0 && (
-                      <p className="col-span-full py-4 text-center text-[12px] text-ink-soft">
-                        ยังไม่มีรายการในหมวดนี้
-                      </p>
-                    )}
-                  </div>
+        {hasTree && (
+          <div className="flex flex-col gap-2">
+            {rootBlocks.map((block, i) =>
+              block.type === 'section' ? (
+                <TreeSection key={i} node={block.node} depth={0} />
+              ) : (
+                <div key={i} className="mb-8">
+                  <TreeLeafGrid items={block.items} />
                 </div>
               )
-            })}
-          </div>
-        )}
-
-        {hasTree && !flatMode && (
-          <>
-            {/* breadcrumb — โชว์เมื่อเข้าไปดูหัวข้อย่อยแล้วเท่านั้น */}
-            {stack.length > 0 && (
-              <div className="mb-4 flex flex-wrap items-center gap-1.5 rounded-lg bg-blue-tint/40 px-3.5 py-2 text-[12px] font-semibold text-ink-soft">
-                <button
-                  type="button"
-                  onClick={goBackTree}
-                  className="flex items-center gap-1 rounded-md px-1.5 py-1 text-blue-600 hover:bg-blue-100"
-                >
-                  <i className="ti ti-chevron-left text-sm" />
-                  ย้อนกลับ
-                </button>
-                <span className="text-line">|</span>
-                <button
-                  type="button"
-                  onClick={() => goToCrumb(-1)}
-                  className="rounded px-1 hover:bg-blue-100 hover:text-blue-600"
-                >
-                  {quality.articleTitle || quality.label}
-                </button>
-                {stack.map((s, i) => (
-                  <span key={i} className="flex items-center gap-1.5">
-                    <i className="ti ti-chevron-right text-[10px]" />
-                    <button
-                      type="button"
-                      onClick={() => goToCrumb(i)}
-                      className="rounded px-1 hover:bg-blue-100 hover:text-blue-600"
-                    >
-                      {s.label}
-                    </button>
-                  </span>
-                ))}
-              </div>
             )}
-
-            <div className="mb-6 grid grid-cols-2 gap-3">
-              {currentItems.map((node, i) => {
-                const hasChildren = node.children && node.children.length > 0
-
-                if (hasChildren) {
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => enter(node)}
-                      className="flex w-full items-center gap-3 rounded-lg border border-line bg-white px-4 py-3.5 text-left transition-colors hover:border-blue-500/40 hover:bg-blue-tint"
-                    >
-                      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-blue-tint">
-                        <i className={`ti ${node.icon || 'ti-folder'} text-base text-blue-600`} />
-                      </div>
-                      <span className="flex-1 text-[13px] leading-tight text-ink">{node.label}</span>
-                      <i className="ti ti-chevron-right flex-shrink-0 text-sm text-ink-soft/60" />
-                    </button>
-                  )
-                }
-
-                const link = resolveLink(node)
-                return (
-                  <a
-                    key={i}
-                    href={link || '#'}
-                    {...(link && { target: '_blank', rel: 'noopener noreferrer' })}
-                    className="flex w-full items-center gap-3 rounded-lg border border-line bg-white px-4 py-3.5 no-underline transition-colors hover:border-blue-500/40 hover:bg-blue-tint"
-                  >
-                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-blue-tint">
-                      <i className={`ti ${node.icon || 'ti-file-text'} text-base text-blue-600`} />
-                    </div>
-                    <span className="flex-1 text-[13px] leading-tight text-ink">{node.label}</span>
-                  </a>
-                )
-              })}
-
-              {currentItems.length === 0 && (
-                <p className="col-span-full py-6 text-center text-[13px] text-ink-soft">
-                  ยังไม่มีรายการในหัวข้อนี้
-                </p>
-              )}
-            </div>
-          </>
+          </div>
         )}
 
         {!hasTree && articleItems.length > 0 && (
