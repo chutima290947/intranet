@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useContent } from '../../context/ContentContext'
 
 function getFileUrl(url) {
@@ -17,6 +18,14 @@ function resolveLink(item) {
 export function QualityDetailPage({ quality, onBack }) {
   const { content } = useContent()
 
+  // stack ของเมนูต้นไม้ที่กำลังดูอยู่ — เหมือน DigitalServicePage.jsx
+  // แต่ละชั้นเก็บ { label, items } เพื่อใช้ทำ breadcrumb
+  const [stack, setStack] = useState([])
+
+  useEffect(() => {
+    setStack([])
+  }, [quality])
+
   if (!quality) {
     return (
       <div className="mx-auto max-w-[900px] px-8 py-16 text-center">
@@ -32,15 +41,35 @@ export function QualityDetailPage({ quality, onBack }) {
   }
 
   const articleItems = Array.isArray(quality.articleItems) ? quality.articleItems : []
-  const sections = Array.isArray(quality.sections) ? quality.sections : []
+  const rootTree = Array.isArray(quality.tree) ? quality.tree : []
+  const hasTree = rootTree.length > 0
+
+  const currentItems = stack.length === 0 ? rootTree : stack[stack.length - 1].items
+
+  const enter = (node) => {
+    if (node.children && node.children.length > 0) {
+      setStack([...stack, { label: node.label, items: node.children }])
+    }
+  }
+  const goBackTree = () => setStack(stack.slice(0, -1))
+  const goToCrumb = (index) => setStack(index < 0 ? [] : stack.slice(0, index + 1))
+
+  const handleTopBack = () => {
+    if (stack.length > 0) {
+      goBackTree()
+    } else {
+      onBack()
+    }
+  }
 
   return (
     <div className="mx-auto max-w-[900px] px-8 pb-[60px] pt-[22px]">
       <button
-        onClick={onBack}
+        onClick={handleTopBack}
         className="mb-5 flex items-center gap-1.5 rounded-lg border-none bg-transparent text-[13px] font-medium text-blue-600"
       >
-        <i className="ti ti-arrow-left text-base" />กลับหน้าหลัก
+        <i className="ti ti-arrow-left text-base" />
+        {stack.length > 0 ? stack[stack.length - 1].label : 'กลับหน้าหลัก'}
       </button>
 
       <div className="rounded-lg border border-line bg-white px-7 py-7">
@@ -69,67 +98,89 @@ export function QualityDetailPage({ quality, onBack }) {
           <p className="mb-4 text-[13.5px] leading-relaxed text-ink">{quality.intro}</p>
         )}
 
-        {sections.length > 0 && (
-          <div className="mb-6 flex flex-col gap-6">
-            {sections.map((sec, si) => {
-              const secItems = Array.isArray(sec.items) ? sec.items : []
-              if (!sec.title && secItems.length === 0) return null
+        {hasTree && (
+          <>
+            {/* breadcrumb — โชว์เมื่อเข้าไปดูหัวข้อย่อยแล้วเท่านั้น */}
+            {stack.length > 0 && (
+              <div className="mb-4 flex flex-wrap items-center gap-1.5 rounded-lg bg-blue-tint/40 px-3.5 py-2 text-[12px] font-semibold text-ink-soft">
+                <button
+                  type="button"
+                  onClick={goBackTree}
+                  className="flex items-center gap-1 rounded-md px-1.5 py-1 text-blue-600 hover:bg-blue-100"
+                >
+                  <i className="ti ti-chevron-left text-sm" />
+                  ย้อนกลับ
+                </button>
+                <span className="text-line">|</span>
+                <button
+                  type="button"
+                  onClick={() => goToCrumb(-1)}
+                  className="rounded px-1 hover:bg-blue-100 hover:text-blue-600"
+                >
+                  {quality.articleTitle || quality.label}
+                </button>
+                {stack.map((s, i) => (
+                  <span key={i} className="flex items-center gap-1.5">
+                    <i className="ti ti-chevron-right text-[10px]" />
+                    <button
+                      type="button"
+                      onClick={() => goToCrumb(i)}
+                      className="rounded px-1 hover:bg-blue-100 hover:text-blue-600"
+                    >
+                      {s.label}
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
 
-              return (
-                <div key={si}>
-                  {sec.title && (
-                    <h2 className="mb-3 text-[12px] font-bold uppercase tracking-wide text-blue-700">
-                      {sec.title}
-                    </h2>
-                  )}
+            <div className="mb-6 grid grid-cols-2 gap-3">
+              {currentItems.map((node, i) => {
+                const hasChildren = node.children && node.children.length > 0
 
-                  <div className="grid grid-cols-4 gap-3 max-[700px]:grid-cols-2">
-                    {secItems.map((it, ii) => {
-                      const link = resolveLink(it)
-                      const imgUrl = getFileUrl(it.img)
+                if (hasChildren) {
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => enter(node)}
+                      className="flex w-full items-center gap-3 rounded-lg border border-line bg-white px-4 py-3.5 text-left transition-colors hover:border-blue-500/40 hover:bg-blue-tint"
+                    >
+                      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-blue-tint">
+                        <i className={`ti ${node.icon || 'ti-folder'} text-base text-blue-600`} />
+                      </div>
+                      <span className="flex-1 text-[13px] leading-tight text-ink">{node.label}</span>
+                      <i className="ti ti-chevron-right flex-shrink-0 text-sm text-ink-soft/60" />
+                    </button>
+                  )
+                }
 
-                      const cardInner = imgUrl ? (
-                        <div className="overflow-hidden rounded-lg border border-line bg-white transition-colors hover:border-blue-500/40">
-                          <div
-                            className="h-[86px] w-full bg-cover bg-center"
-                            style={{ backgroundImage: `url(${imgUrl})` }}
-                          />
-                          <div className="px-2.5 py-2 text-center text-[11px] font-semibold leading-tight text-navy-900">
-                            {it.label}
-                          </div>
-                        </div>
-                      ) : (
-                        <div
-                          className="flex h-full items-center gap-2 rounded-lg px-3 py-3 text-[11.5px] font-bold leading-tight text-white"
-                          style={{ background: it.color || '#1B3A6B' }}
-                        >
-                          <i className={`ti ${it.icon || 'ti-file-text'} flex-shrink-0 text-lg`} />
-                          <span>{it.label}</span>
-                        </div>
-                      )
+                const link = resolveLink(node)
+                return (
+                  <a
+                    key={i}
+                    href={link || '#'}
+                    {...(link && { target: '_blank', rel: 'noopener noreferrer' })}
+                    className="flex w-full items-center gap-3 rounded-lg border border-line bg-white px-4 py-3.5 no-underline transition-colors hover:border-blue-500/40 hover:bg-blue-tint"
+                  >
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-blue-tint">
+                      <i className={`ti ${node.icon || 'ti-file-text'} text-base text-blue-600`} />
+                    </div>
+                    <span className="flex-1 text-[13px] leading-tight text-ink">{node.label}</span>
+                  </a>
+                )
+              })}
 
-                      return link ? (
-                        <a
-                          key={ii}
-                          href={link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="no-underline"
-                        >
-                          {cardInner}
-                        </a>
-                      ) : (
-                        <div key={ii}>{cardInner}</div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+              {currentItems.length === 0 && (
+                <p className="col-span-full py-6 text-center text-[13px] text-ink-soft">
+                  ยังไม่มีรายการในหัวข้อนี้
+                </p>
+              )}
+            </div>
+          </>
         )}
 
-        {articleItems.length > 0 && (
+        {!hasTree && articleItems.length > 0 && (
           <ul className="flex flex-col gap-2.5">
             {articleItems.map((item) => {
               const link = resolveLink(item)
@@ -166,7 +217,7 @@ export function QualityDetailPage({ quality, onBack }) {
           </ul>
         )}
 
-        {articleItems.length === 0 && sections.length === 0 && !quality.intro && (
+        {!hasTree && articleItems.length === 0 && !quality.intro && (
           <p className="text-[13px] text-ink-soft">ยังไม่มีเนื้อหา</p>
         )}
       </div>

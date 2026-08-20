@@ -297,56 +297,10 @@ export const ADMIN_SCHEMAS = [
             type: 'textarea',
           },
           {
-            key: 'sections',
+            key: 'tree',
             label:
-              'จัดกลุ่มหัวข้อ (เช่น KEY DATA, REPORT) — ใส่ชื่อหัวข้อกลุ่มก่อน แล้วค่อยเพิ่มรายการย่อยข้างในแต่ละกลุ่ม',
-            type: 'sublist',
-            fields: [
-              {
-                key: 'title',
-                label: 'ชื่อหัวข้อกลุ่ม (เช่น KEY DATA, REPORT)',
-                type: 'text',
-              },
-              {
-                key: 'items',
-                label: 'รายการในหัวข้อนี้',
-                type: 'sublist',
-                fields: [
-                  {
-                    key: 'label',
-                    label: 'ชื่อรายการ',
-                    type: 'text',
-                  },
-                  {
-                    key: 'img',
-                    label:
-                      'รูปภาพ — ถ้าใส่รูป จะแสดงเป็นการ์ดรูปภาพ (เหมาะกับ REPORT) ถ้าเว้นว่างไว้ จะแสดงเป็นปุ่มสี+ไอคอนแทน (เหมาะกับ KEY DATA)',
-                    type: 'image',
-                  },
-                  {
-                    key: 'icon',
-                    label: 'ไอคอน — ใช้เมื่อไม่ได้ใส่รูปภาพด้านบน',
-                    type: 'icon',
-                  },
-                  {
-                    key: 'color',
-                    label: 'สีปุ่ม — ใช้เมื่อไม่ได้ใส่รูปภาพด้านบน',
-                    type: 'color',
-                  },
-                  {
-                    key: 'href',
-                    label: 'ลิงก์ (URL)',
-                    type: 'url',
-                  },
-                  {
-                    key: 'file',
-                    label: 'หรือแนบไฟล์ (PDF/รูปภาพ/Office)',
-                    type: 'file',
-                    uploadFolder: 'hr',
-                  },
-                ],
-              },
-            ],
+              'เมนูต้นไม้ซ้อนหลายชั้น (tree) — เช่น KEY DATA > กรอกฟอร์ม Close Chart, REPORT > Medical Record Audit ฯลฯ ซ้อนกี่ชั้นก็ได้',
+            type: 'tree',
           },
           {
             key: 'articleItems',
