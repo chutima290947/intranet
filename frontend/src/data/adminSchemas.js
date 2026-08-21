@@ -271,6 +271,20 @@ export const ADMIN_SCHEMAS = [
             type: 'boolean',
           },
           {
+            key: 'author',
+            label:
+              'เขียนโดย (แสดงในหน้ารายละเอียดว่า "เขียนโดย ...") — เว้นว่างได้ถ้าไม่ต้องการแสดง',
+            type: 'text',
+            showIf: (item) => item.kind !== 'print_form',
+          },
+          {
+            key: 'updatedAt',
+            label:
+              'วันที่อัปเดตล่าสุด (แสดงในหน้ารายละเอียดว่า "อัปเดตล่าสุด ...") — เว้นว่างได้ถ้าไม่ต้องการแสดง',
+            type: 'date',
+            showIf: (item) => item.kind !== 'print_form',
+          },
+          {
             key: 'href',
             label: 'ลิงก์ (URL)',
             type: 'url',
@@ -405,8 +419,22 @@ export const ADMIN_SCHEMAS = [
                     type: 'text',
                   },
                   {
+                    key: 'href',
+                    label:
+                      'ลิงก์ (URL ภายนอก) — ใส่ตรงนี้ถ้าอยากให้กดที่ตัวหัวข้อแล้วเปิดลิงก์ได้เลย โดยไม่ต้องมีรายการย่อยด้านล่างก็ได้',
+                    type: 'url',
+                  },
+                  {
+                    key: 'file',
+                    label:
+                      'หรือแนบไฟล์ PDF — ใช้แทนลิงก์ด้านบนได้ กดที่ตัวหัวข้อจะเปิดไฟล์นี้แทน',
+                    type: 'file',
+                    uploadFolder: 'hr',
+                  },
+                  {
                     key: 'items',
-                    label: 'รายการย่อยในหัวข้อนี้',
+                    label:
+                      'รายการย่อยในหัวข้อนี้ — เว้นว่างได้ถ้าใส่ลิงก์/ไฟล์ที่ตัวหัวข้อไปแล้วด้านบน',
                     type: 'sublist',
                     fields: [
                       {
