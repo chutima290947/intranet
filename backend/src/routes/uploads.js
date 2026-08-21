@@ -35,6 +35,22 @@ const ALLOWED_FOLDERS = new Set([
 ])
 
 // ---------------------------------------------------------
+// Helper: แก้ปัญหาชื่อไฟล์ภาษาไทย/ตัวอักษร multi-byte เพี้ยน
+// multer (busboy) จะอ่านชื่อไฟล์จาก multipart header เป็น
+// latin1 เสมอ ไม่ว่า client จะส่ง header เป็น utf-8 หรือไม่
+// ภาษาอังกฤษ (ASCII) จึงไม่เพี้ยน แต่ภาษาไทย (multi-byte) เพี้ยน
+// ต้อง decode กลับเป็น utf8 ก่อนใช้งาน/บันทึกลง DB
+// ---------------------------------------------------------
+function fixOriginalName(name) {
+  if (!name) return name
+  try {
+    return Buffer.from(name, 'latin1').toString('utf8')
+  } catch {
+    return name
+  }
+}
+
+// ---------------------------------------------------------
 // POST /api/uploads
 // multipart/form-data
 // field: file
@@ -59,8 +75,11 @@ uploadsRouter.post('/', upload.single('file'), async (req, res) => {
       })
     }
 
-    // นามสกุลไฟล์เดิม
-    const ext = path.extname(file.originalname)
+    // แก้ชื่อไฟล์ภาษาไทย/multi-byte ที่เพี้ยนจาก multer/busboy
+    const originalName = fixOriginalName(file.originalname)
+
+    // นามสกุลไฟล์เดิม (ใช้ชื่อที่ decode แล้ว)
+    const ext = path.extname(originalName)
 
     // สร้างชื่อไฟล์ใหม่ไม่ซ้ำกัน
     const storedName = `${crypto.randomUUID()}${ext}`
@@ -87,7 +106,7 @@ uploadsRouter.post('/', upload.single('file'), async (req, res) => {
       `,
       [
         folder,
-        file.originalname,
+        originalName,
         storedName,
         '',
         file.mimetype,
@@ -210,9 +229,11 @@ uploadsRouter.get('/:id/download', async (req, res) => {
       file.mime_type || 'application/octet-stream',
     )
 
+    // ใช้ RFC 5987 (filename*=UTF-8''...) เพื่อรองรับชื่อไฟล์ภาษาไทย
+    // ในทุกเบราว์เซอร์อย่างถูกต้อง (filename= เดิมรองรับแค่ ASCII เต็มรูปแบบ)
     res.setHeader(
       'Content-Disposition',
-      `inline; filename="${encodeURIComponent(file.original_name)}"`,
+      `inline; filename*=UTF-8''${encodeURIComponent(file.original_name)}`,
     )
 
     return res.send(file.data)
