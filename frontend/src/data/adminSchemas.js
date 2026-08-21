@@ -339,6 +339,11 @@ export const ADMIN_SCHEMAS = [
                 uploadFolder: 'hr',
               },
               {
+                key: 'href',
+                label: 'ลิงก์ (URL)',
+                type: 'url',
+              },
+              {
                 key: 'badge',
                 label: 'ป้ายข้อความ (เช่น เฝ้าระวัง, ระบาด) — เว้นว่างได้',
                 type: 'text',
