@@ -70,7 +70,7 @@ export function JsonEditor({ schema }) {
         className="h-[520px] w-full rounded-md border border-line bg-[#0d1520] p-3 font-mono text-[11.5px] leading-relaxed text-[#d4e0f0] outline-none disabled:opacity-60"
       />
       {error && <p className="mt-2 text-[12px] font-semibold text-coral">{error}</p>}
-      <div className="mt-3 flex items-center gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={handleSave}

@@ -8,7 +8,7 @@ export const QuickNav = forwardRef(function QuickNav({ active, onNavClick }, ref
 
   return (
     <div
-      className="sticky top-0 z-[200] flex flex-col items-center gap-2.5 border-b border-line bg-white/92 px-6 pt-4 pb-3.5 shadow-[0_2px_14px_rgba(11,40,80,.06)] backdrop-blur-md"
+      className="sticky top-0 z-[200] flex flex-col items-center gap-2.5 border-b border-line bg-white/92 px-3 pt-3 pb-3 shadow-[0_2px_14px_rgba(11,40,80,.06)] backdrop-blur-md sm:px-6 sm:pt-4 sm:pb-3.5"
       ref={ref}
       onClick={onNavClick}
     >

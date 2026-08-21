@@ -104,7 +104,7 @@ function ItemsEditor({ section, canCreate, canUpdate, canDelete }) {
                 )}
               </div>
               {isOpen && (
-                <fieldset disabled={!canUpdate} className="grid grid-cols-2 gap-2 border-t border-line bg-paper/30 p-2.5 disabled:opacity-60">
+                <fieldset disabled={!canUpdate} className="grid grid-cols-1 gap-2 border-t border-line bg-paper/30 p-2.5 disabled:opacity-60 sm:grid-cols-2">
                   {/* ---------- แบบ list ---------- */}
                   {template === 'list' && (
                     <>
@@ -264,7 +264,7 @@ export function CustomSectionsPanel() {
 
               {isOpen && (
                 <div className="border-t border-line bg-paper/30 px-4 py-4">
-                  <fieldset disabled={!canUpdate} className="grid grid-cols-4 gap-2.5 disabled:opacity-60">
+                  <fieldset disabled={!canUpdate} className="grid grid-cols-2 gap-2.5 disabled:opacity-60 sm:grid-cols-4">
                     <div>
                       <label className="mb-1 block text-[10px] font-bold text-ink-soft">ชื่อ Section</label>
                       <input value={s.label} onChange={(e) => updateCustomSectionMeta(s.id, { label: e.target.value })} className="w-full rounded-md border border-line px-2.5 py-1.5 text-[12px]" />

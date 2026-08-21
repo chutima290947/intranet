@@ -1,7 +1,7 @@
 export function Footer() {
   return (
     <footer className="bg-navy-900 text-white">
-      <div className="mx-auto max-w-[1680px] px-8 py-10">
+      <div className="mx-auto max-w-[1680px] px-4 py-8 sm:px-8 sm:py-10">
         <div className="grid grid-cols-[1.8fr_1fr_1fr] gap-10 max-[900px]:grid-cols-1">
           {/* Hospital info */}
           <div>
@@ -64,7 +64,7 @@ export function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-[1680px] flex-col items-center justify-between gap-2 px-8 py-4 text-[11px] text-white/40 min-[600px]:flex-row">
+        <div className="mx-auto flex max-w-[1680px] flex-col items-center justify-between gap-2 px-4 py-4 text-center text-[11px] text-white/40 min-[600px]:flex-row min-[600px]:text-left sm:px-8">
           <span>© 2568 โรงพยาบาลกรุงเทพสิริโรจน์ - สงวนลิขสิทธิ์</span>
           <div className="flex items-center gap-4">
             <a href="#" className="hover:text-white/70">

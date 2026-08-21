@@ -20,8 +20,8 @@ export function StatsBar() {
       .catch(() => setIp('ไม่สามารถดึง IP ได้'))
   }, [])
   return (
-    <div className="flex flex-wrap items-center justify-center gap-0 bg-gradient-to-r from-navy-950 via-navy-900 to-navy-950 px-8 py-3.5">
-      <div className="flex items-center gap-3 border-r border-white/[0.12] px-[34px] py-1">
+    <div className="flex flex-wrap items-center justify-center gap-0 bg-gradient-to-r from-navy-950 via-navy-900 to-navy-950 px-4 py-3 sm:px-8 sm:py-3.5">
+      <div className="flex items-center gap-3 border-r border-white/[0.12] px-4 py-1 sm:px-[34px]">
         <div className="flex h-[38px] w-[38px] items-center justify-center rounded-[10px] bg-coral/[0.18]">
           <i className="ti ti-router text-lg text-coral" />
         </div>
@@ -39,7 +39,7 @@ export function StatsBar() {
           </span>
         </div>
         </div>
-      <div className="flex items-center gap-3 border-r border-white/[0.12] px-[34px] py-1">
+      <div className="flex items-center gap-3 border-r border-white/[0.12] px-4 py-1 sm:px-[34px]">
         <div className="flex h-[38px] w-[38px] items-center justify-center rounded-[10px] bg-coral/[0.18]">
           <i className="ti ti-clock text-lg text-coral" />
         </div>
@@ -48,7 +48,7 @@ export function StatsBar() {
           <span className="font-mono text-[17px] font-bold text-white">{time}</span>
         </div>
       </div>
-      <div className="flex items-center gap-3 px-[34px] py-1">
+      <div className="flex items-center gap-3 px-4 py-1 sm:px-[34px]">
         <div className="flex h-[38px] w-[38px] items-center justify-center rounded-[10px] bg-coral/[0.18]">
           <i className="ti ti-plug-connected text-lg text-coral" />
         </div>

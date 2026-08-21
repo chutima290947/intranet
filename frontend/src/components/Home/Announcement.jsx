@@ -48,7 +48,7 @@ export function Announcement({ onOpenNews }) {
 
       {pinned && (
         <div
-          className="relative flex min-h-[176px] flex-col justify-end overflow-hidden rounded-lg bg-gradient-to-tr from-navy-950 to-blue-600 p-6"
+          className="relative flex min-h-[176px] flex-col justify-end overflow-hidden rounded-lg bg-gradient-to-tr from-navy-950 to-blue-600 p-4 sm:p-6"
           style={
             bannerImg
               ? {
@@ -65,9 +65,9 @@ export function Announcement({ onOpenNews }) {
               {pinned.badge}
             </span>
           )}
-          <div className="mb-[5px] max-w-[80%] font-display text-lg font-semibold text-white">{pinned.title}</div>
-          <div className="mb-4 max-w-[75%] text-[11.5px] leading-[1.5] text-white/62">{pinned.sub}</div>
-          <div className="flex items-center gap-[9px]">
+          <div className="mb-[5px] max-w-full font-display text-lg font-semibold text-white sm:max-w-[80%]">{pinned.title}</div>
+          <div className="mb-4 max-w-full text-[11.5px] leading-[1.5] text-white/62 sm:max-w-[75%]">{pinned.sub}</div>
+          <div className="flex flex-wrap items-center gap-[9px]">
             {pinnedLink && (
               <a
                 href={pinnedLink}

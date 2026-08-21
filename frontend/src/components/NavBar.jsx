@@ -117,7 +117,7 @@ export function NavBar({ page, onNavigate, onSearch }) {
           </a>
 
           {openMenu === 'division' && (
-            <div className="absolute left-0 top-full z-40 w-[300px] rounded-md border border-line bg-white p-2 shadow-xl">
+            <div className="absolute left-0 top-full z-40 w-[min(300px,calc(100vw-2rem))] rounded-md border border-line bg-white p-2 shadow-xl">
               <div className="flex flex-col gap-0.5">
                 {DIVISIONS.map((d) => {
                   const hasSub = d.subItems?.length > 0
@@ -171,7 +171,7 @@ export function NavBar({ page, onNavigate, onSearch }) {
           </a>
 
           {openMenu === 'report' && (
-            <div className="absolute left-0 top-full z-40 w-[260px] rounded-md border border-line bg-white p-2 shadow-xl">
+            <div className="absolute left-0 top-full z-40 w-[min(260px,calc(100vw-2rem))] rounded-md border border-line bg-white p-2 shadow-xl">
               <div className="flex flex-col gap-0.5">
                 {REPORTS.map((r) => (
                   <button
@@ -202,7 +202,7 @@ export function NavBar({ page, onNavigate, onSearch }) {
         </a>
       </nav>
 
-      <div className="flex min-w-[200px] items-center gap-[9px] rounded-3xl border border-line bg-paper px-[18px] py-2.5">
+      <div className="flex min-w-0 flex-1 items-center gap-[9px] rounded-3xl border border-line bg-paper px-[18px] py-2.5 max-[900px]:w-full max-[900px]:flex-none sm:min-w-[200px] sm:flex-none">
         <button
           type="button"
           onClick={() => runSearch(searchQuery)}
@@ -217,7 +217,7 @@ export function NavBar({ page, onNavigate, onSearch }) {
           value={searchQuery}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          className="w-[150px] border-none bg-transparent font-body text-sm outline-none"
+          className="w-full min-w-0 border-none bg-transparent font-body text-sm outline-none sm:w-[150px]"
         />
         {searchQuery && (
           <button
