@@ -2,6 +2,16 @@ import { useEffect, useState } from 'react'
 import { api } from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
 
+// โดเมนจริงของเว็บที่ deploy ไว้ (เช่น https://intranet-front.onrender.com)
+// ต้องใช้ค่าคงที่นี้แทน window.location.origin เพราะลิงก์ตั้งรหัสผ่านต้องส่งให้คนอื่นเปิด
+// ถ้าใช้ window.location.origin ตรงๆ แล้วแอดมินเผลอสร้างบัญชีจากเครื่อง dev (localhost)
+// ลิงก์ที่ได้จะกลายเป็น localhost ซึ่งเปิดจากเครื่องอื่นไม่ได้ (not found)
+// ตั้งค่า VITE_SITE_URL ใน Render > frontend > Environment ให้เป็นโดเมนจริงเสมอ
+// ถ้าไม่ได้ตั้งไว้ (เช่นตอน dev ในเครื่อง) จะ fallback ไปใช้ window.location.origin ตามเดิม
+function getSiteUrl() {
+  return import.meta.env.VITE_SITE_URL || window.location.origin
+}
+
 function CreateUserForm({ roles, onCreated }) {
   const [username, setUsername] = useState('')
   const [displayName, setDisplayName] = useState('')
@@ -16,7 +26,7 @@ function CreateUserForm({ roles, onCreated }) {
     setError('')
     try {
       const res = await api.createUser(username, displayName, roleId)
-      const fullLink = `${window.location.origin}${import.meta.env.BASE_URL}setup-password/${res.setupToken}`
+      const fullLink = `${getSiteUrl()}${import.meta.env.BASE_URL}setup-password/${res.setupToken}`
       setCreatedLink(fullLink)
       setUsername('')
       setDisplayName('')
@@ -31,7 +41,7 @@ function CreateUserForm({ roles, onCreated }) {
   return (
     <div className="rounded-xl border border-line bg-white p-4">
       <h3 className="mb-3 text-[13px] font-bold text-navy-900">+ สร้างบัญชีผู้ใช้ใหม่</h3>
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+      <form onSubmit={handleSubmit} className="grid grid-cols-3 gap-2.5">
         <div>
           <label className="mb-1 block text-[10px] font-bold text-ink-soft">Username</label>
           <input
@@ -108,7 +118,7 @@ function ResetPasswordButton({ user }) {
     setError('')
     try {
       const res = await api.resetUserPassword(user.id)
-      const fullLink = `${window.location.origin}${import.meta.env.BASE_URL}setup-password/${res.setupToken}`
+      const fullLink = `${getSiteUrl()}${import.meta.env.BASE_URL}setup-password/${res.setupToken}`
       setLink(fullLink)
     } catch (err) {
       setError(err.message || 'ทำรายการไม่สำเร็จ')
@@ -161,9 +171,8 @@ function UsersTable({ users, roles, onChanged }) {
 
   return (
     <div className="mt-4 overflow-hidden rounded-xl border border-line bg-white">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] text-[12px]">
-          <thead>
+      <table className="w-full text-[12px]">
+        <thead>
           <tr className="border-b border-line bg-paper/50 text-left text-[10.5px] font-bold text-ink-soft">
             <th className="px-3.5 py-2.5">Username</th>
             <th className="px-3.5 py-2.5">ชื่อที่แสดง</th>
@@ -223,8 +232,7 @@ function UsersTable({ users, roles, onChanged }) {
             </tr>
           )}
         </tbody>
-        </table>
-      </div>
+      </table>
     </div>
   )
 }
