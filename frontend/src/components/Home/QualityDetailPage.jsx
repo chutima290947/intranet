@@ -169,6 +169,8 @@ function TreeSection({ node, depth, index }) {
 // ============================================================
 // Disease grid + disease detail (หมวด "โรคติดต่อ")
 // - การ์ดโรค: รูปภาพสี่เหลี่ยมจัตุรัส + badge มุมซ้ายบน + ชื่อใต้รูป (สไตล์เดียวกับ TreeLeafGrid)
+//   ถ้าการ์ดมีลิงก์ตรง (href หรือไฟล์แนบ) -> กดแล้วเปิดลิงก์นั้นเลย (แท็บใหม่) ไม่เข้าไปหน้ารายละเอียด
+//   ถ้าไม่มีลิงก์ตรง -> กดแล้วเข้าไปหน้ารายละเอียดโรค (มีรูป/หัวข้อ/รายการย่อยในตัว) ตามปกติ
 // - หน้ารายละเอียดโรค: รูปแบนเนอร์ใหญ่เต็มความกว้าง (กดลิงก์ได้ถ้าตั้งไว้) + หัวข้อมีเลขกำกับพร้อมลิงก์ย่อยซ้อนชั้นได้ (ใช้ tree เดิม)
 // การ์ดโรคใช้ object-cover (รูปเต็มกรอบเสมอ) จึงไม่มีปัญหาช่องว่างเหมือน TreeLeafGrid
 // แต่ยังคงกล่องรูปเป็น aspect-square ได้ตามเดิม เพราะรูปเต็มกรอบพอดีทุกใบอยู่แล้ว
@@ -181,9 +183,16 @@ function DiseaseGrid({ diseases, onOpenDisease }) {
     <div className={GRID_COLS}>
       {list.map((d, i) => {
         const imgUrl = resolveImageUrl(d.img)
+        // มีลิงก์ตรง (href หรือไฟล์แนบ) -> การ์ดนี้เป็นลิงก์ล้วนๆ ไม่มีหน้ารายละเอียด กดแล้วออกลิงก์ทันที
+        // ไม่มีลิงก์ตรง -> การ์ดนี้มีหน้าความรู้/แนวทางของตัวเอง กดแล้วเข้าไปดูรายละเอียด
+        const link = resolveLink(d)
+        const CardTag = link ? 'a' : 'button'
+        const cardExtraProps = link
+          ? { href: link, target: '_blank', rel: 'noopener noreferrer' }
+          : { type: 'button', onClick: () => onOpenDisease(d) }
 
         return (
-          <button key={i} type="button" onClick={() => onOpenDisease(d)} className={`${CARD_BASE} text-left`}>
+          <CardTag key={i} {...cardExtraProps} className={`${CARD_BASE} text-left`}>
             <div className="relative aspect-square w-full flex-shrink-0 overflow-hidden bg-slate-50">
               {imgUrl ? (
                 <img
@@ -207,7 +216,7 @@ function DiseaseGrid({ diseases, onOpenDisease }) {
             <div className={CARD_TITLE_BOX}>
               <span className={CARD_TITLE_TEXT}>{d.label || 'ไม่มีชื่อ'}</span>
             </div>
-          </button>
+          </CardTag>
         )
       })}
 
@@ -260,13 +269,27 @@ function DiseaseBanners({ banners }) {
 // ตรงกับของเก่าที่แสดง "2. ความรู้เกี่ยวกับโรค...", "3. เอกสาร/ฟอร์มที่เกี่ยวข้อง" ฯลฯ
 function DiseaseSection({ section, index }) {
   const items = Array.isArray(section.items) ? section.items : []
-  if (!section.title && items.length === 0) return null
+  // หัวข้อเองก็ผูกลิงก์/ไฟล์ตรงๆ ได้ (ไม่ต้องมีรายการย่อยเสมอไป) — ใช้ resolveLink ตัวเดียวกับที่การ์ดอื่นๆ ใช้
+  const link = resolveLink(section)
+  if (!section.title && items.length === 0 && !link) return null
 
   return (
     <div className="mb-7">
       {section.title && (
         <h2 className="mb-2.5 text-[14.5px] font-bold text-navy-900">
-          <span className="text-blue-600">{index}.</span> {section.title}
+          <span className="text-blue-600">{index}.</span>{' '}
+          {link ? (
+            <a
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-navy-900 hover:text-blue-600 hover:underline"
+            >
+              {section.title}
+            </a>
+          ) : (
+            section.title
+          )}
         </h2>
       )}
 
