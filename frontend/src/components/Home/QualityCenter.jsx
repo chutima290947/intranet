@@ -30,7 +30,10 @@ export function QualityCenter({ onOpenQuality }) {
       <div className="px-[18px] py-4">
         <div className="grid grid-cols-3 gap-[9px] max-[560px]:grid-cols-2">
           {QUALITY.map(q => {
-            const hasArticle = Boolean(q.articleTitle)
+            // มีหัวข้อบทความ หรือมีการ์ดโรคติดต่อ (diseases) -> ทั้งคู่ต้องพาไปหน้าเนื้อหาภายในเว็บ (QualityDetailPage)
+            // ไม่ใช่แค่เช็ค articleTitle อย่างเดียว เพราะหมวด "โรคติดต่อ" อาจไม่มีการกรอกหัวข้อบทความไว้เลย
+            const hasDiseases = Array.isArray(q.diseases) && q.diseases.length > 0
+            const hasArticle = Boolean(q.articleTitle) || hasDiseases
             const link = resolveLink(q)
             const cellClasses =
               'flex flex-col items-center gap-[7px] rounded-md border border-line bg-white px-2 py-3 text-center transition-colors hover:border-blue-500/40'
@@ -43,7 +46,7 @@ export function QualityCenter({ onOpenQuality }) {
               </>
             )
 
-            // มีหัวข้อบทความ -> ไปหน้าเนื้อหาภายในเว็บ
+            // มีหัวข้อบทความ หรือมี diseases -> ไปหน้าเนื้อหาภายในเว็บ
             // ใช้ cellClasses เดียวกับการ์ดอื่นทุกอัน (มีกรอบ+พื้นขาว) ต่างกันแค่ tag เป็น <button> เพราะไม่มี href
             if (hasArticle) {
               return (

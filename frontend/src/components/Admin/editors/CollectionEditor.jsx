@@ -13,6 +13,54 @@ import {
 // Sub List Editor
 // ============================================================
 
+// ชื่อหัวข้อของแต่ละรายการใน sublist ต้อง "อ่านออก" — ห้ามหยิบฟิลด์แรกมาโชว์ตรงๆ
+// เพราะฟิลด์แรกอาจเป็นรูปภาพ/ไฟล์/ลิงก์ (ค่าเป็น URL ยาวๆ ไม่มีความหมาย เช่น "/api/uploads/154/download")
+// ลำดับการหาชื่อหัวข้อ:
+//   1) ฟิลด์ข้อความอ่านง่าย (text/textarea/select/icon) ที่มีค่าจริง -> ใช้อันนั้นก่อนเสมอ
+//   2) ไม่มี -> ลองดึง "ชื่อไฟล์รูป" จากฟิลด์ภาพที่แนบไว้ (decode URL ให้อ่านออก ตัดนามสกุลไฟล์ทิ้ง)
+//   3) ไม่มีรูป -> ถ้ามีฟิลด์ url ก็ดึงมาตัดให้สั้นแทนที่จะโชว์เต็ม
+const READABLE_TITLE_TYPES = ['text', 'textarea', 'select', 'icon']
+
+// ดึงชื่อไฟล์ที่อ่านง่ายจาก URL (decode URI, ตัด query/hash, ตัดนามสกุลไฟล์ทิ้ง)
+function filenameFromUrl(url) {
+  if (!url) return null
+
+  try {
+    const clean = url.split('?')[0].split('#')[0]
+    const last = clean.substring(clean.lastIndexOf('/') + 1)
+    const decoded = decodeURIComponent(last)
+    const withoutExt = decoded.replace(/\.[a-zA-Z0-9]+$/, '')
+    return withoutExt || null
+  } catch {
+    return null
+  }
+}
+
+function getSubItemTitle(item, fields) {
+  // 1) มีฟิลด์ข้อความอ่านง่ายที่กรอกไว้ -> ใช้อันนั้นก่อนเสมอ
+  const textField = fields.find(
+    (f) => READABLE_TITLE_TYPES.includes(f.type) && item?.[f.key]
+  )
+  if (textField) return item[textField.key]
+
+  // 2) ไม่มี -> ลองดึงชื่อไฟล์จากรูปภาพที่แนบไว้
+  const imageField = fields.find((f) => f.type === 'image' && item?.[f.key])
+  if (imageField) {
+    const raw = item[imageField.key]
+    const url = typeof raw === 'string' ? raw : raw?.url
+    const name = filenameFromUrl(url)
+    if (name) return name
+  }
+
+  // 3) ไม่มีรูป -> ถ้ามี url ก็ดึงมาตัดให้สั้นแทนที่จะโชว์เต็ม
+  const urlField = fields.find((f) => f.type === 'url' && item?.[f.key])
+  if (urlField) {
+    return filenameFromUrl(item[urlField.key]) || item[urlField.key]
+  }
+
+  return null
+}
+
 function SubListEditor({ field, items, onChange }) {
   const list = Array.isArray(items) ? items : []
   const [primaryField, ...restFields] = field.fields
@@ -62,6 +110,13 @@ function SubListEditor({ field, items, onChange }) {
       <div className="flex flex-col gap-2">
         {list.map((item, idx) => {
           const isOpen = openIdx === idx
+          // ซ่อนฟิลด์ที่ไม่เกี่ยวกับรายการนี้ออก (ตาม field.showIf(item) ถ้ามีกำหนดไว้)
+          // ป้องกันฟอร์มรกด้วยช่องที่ไม่ได้ใช้จริงสำหรับรายการประเภทนั้นๆ
+          const visibleRestFields = restFields.filter(
+            (f) => !f.showIf || f.showIf(item)
+          )
+
+          const title = getSubItemTitle(item, field.fields)
 
           return (
             <div
@@ -83,9 +138,7 @@ function SubListEditor({ field, items, onChange }) {
                   className="flex flex-1 items-center gap-1.5 overflow-hidden border-none bg-transparent text-left"
                 >
                   <span className="truncate text-[12px] font-semibold text-navy-900">
-                    {primaryField
-                      ? item[primaryField.key] || '(ยังไม่ตั้งชื่อ)'
-                      : `รายการที่ ${idx + 1}`}
+                    {title || '(ยังไม่ตั้งชื่อ)'}
                   </span>
 
                   {restFields.length > 0 && (
@@ -121,9 +174,9 @@ function SubListEditor({ field, items, onChange }) {
                     </div>
                   )}
 
-                  {restFields.length > 0 && (
+                  {visibleRestFields.length > 0 && (
                     <div className="grid grid-cols-2 gap-2">
-                      {restFields.map((f) => (
+                      {visibleRestFields.map((f) => (
                         <div
                           key={f.key}
                           className={
@@ -146,6 +199,13 @@ function SubListEditor({ field, items, onChange }) {
                               items={item[f.key]}
                               onChange={(v) => updateItem(idx, f.key, v)}
                             />
+                          ) : f.type === 'tree' ? (
+                            <div className="rounded-xl border border-line bg-paper/40 p-3">
+                              <TreeEditor
+                                nodes={item[f.key]}
+                                onChange={(v) => updateItem(idx, f.key, v)}
+                              />
+                            </div>
                           ) : (
                             <FieldInput
                               field={f}
@@ -651,9 +711,10 @@ export function CollectionEditor({ schema }) {
     })
   }
 
-  // ก่อนบันทึกจริง: stamp field ประเภท datetime-auto ("วันที่อัปเดตล่าสุด")
+  // ก่อนบันทึกจริง: stamp field ประเภท datetime-auto ("วันที่อัปเดตล่าสุด" แบบอัตโนมัติเดิม ถ้ามี)
   // ให้เป็นเวลาปัจจุบัน เฉพาะรายการที่มีการแก้ไขจริง (เทียบกับของที่บันทึกไว้ล่าสุด)
   // รายการที่ไม่ได้แตะเลยจะไม่ถูก stamp ซ้ำ ป้องกัน "วันที่อัปเดตล่าสุด" ขยับทั้งที่ไม่ได้แก้
+  // หมายเหตุ: field ประเภท 'date' (เลือกเองผ่านปฏิทิน) จะไม่ถูกแตะต้องตรงนี้ เพราะเป็นค่าที่ผู้ใช้กรอกเองล้วนๆ
   const handleSave = async () => {
     try {
       setSaving(true)
@@ -744,6 +805,12 @@ export function CollectionEditor({ schema }) {
             ? schema.itemLabel(item)
             : item.label || item.name || item.title || `รายการที่ ${idx + 1}`
 
+          // ซ่อนฟิลด์ที่ไม่เกี่ยวกับรายการนี้ออก (ตาม field.showIf(item) ถ้ามีกำหนดไว้)
+          // เช่น QUALITY: เลือก "ประเภทเนื้อหา" แล้วให้เหลือแค่ฟิลด์ของประเภทนั้นๆ
+          const visibleFields = schema.fields.filter(
+            (f) => !f.showIf || f.showIf(item)
+          )
+
           return (
             <div
               key={idx}
@@ -787,7 +854,7 @@ export function CollectionEditor({ schema }) {
               {isOpen && (
                 <div className="border-t border-line bg-paper/30 px-4 py-4">
                   <fieldset disabled={!canUpdate} className="grid grid-cols-2 gap-3.5 disabled:opacity-60">
-                    {schema.fields.map((f) => (
+                    {visibleFields.map((f) => (
                       <div
                         key={f.key}
                         className={
