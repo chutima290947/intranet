@@ -29,14 +29,14 @@ export function AdminLayout({ onExit }) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-paper max-[900px]:flex-col min-[901px]:flex-row">
-      <aside className="flex w-[270px] flex-shrink-0 flex-col border-r border-line bg-white max-[900px]:w-full max-[900px]:border-b max-[900px]:border-r-0 min-[901px]:max-h-screen min-[901px]:overflow-y-auto">
+    <div className="flex h-screen overflow-hidden bg-paper">
+      <aside className="flex h-full w-[270px] flex-shrink-0 flex-col border-r border-line bg-white">
         <div className="border-b border-line px-5 py-4">
           <div className="text-[13px] font-bold text-navy-900">แผงควบคุมเนื้อหา</div>
           <div className="text-[10.5px] text-ink-soft">แก้ไขข้อมูลต่างๆ บนเว็บไซต์</div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-3 max-[900px]:max-h-[45vh]">
+        <nav className="flex-1 overflow-y-auto px-3 py-3">
           {ADMIN_SCHEMAS.map((group) => {
             // ซ่อนรายการที่ user ไม่มีสิทธิ์ "ดู" resource นั้นๆ
             const visibleItems = group.items.filter((item) => can(item.key, 'view'))
@@ -123,7 +123,7 @@ export function AdminLayout({ onExit }) {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-8 sm:py-7">
+      <main className="h-full flex-1 overflow-y-auto px-8 py-7">
         {isCustomSectionsPage && <CustomSectionsPanel />}
         {isUserRolePage && <UserRolePanel />}
         {!isCustomSectionsPage && !isUserRolePage && activeSchema && !can(activeSchema.key, 'view') && (
