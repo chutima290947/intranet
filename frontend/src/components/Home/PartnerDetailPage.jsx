@@ -219,7 +219,7 @@ export function PartnerDetailPage({ partner, onBack }) {
 
   if (!partner) {
     return (
-      <div className="mx-auto max-w-[900px] px-6 py-10">
+      <div className="mx-auto max-w-[900px] px-4 py-8 sm:px-6 sm:py-10">
         <button
           onClick={onBack}
           className="flex items-center gap-1.5 text-sm font-semibold text-blue-600"
@@ -235,7 +235,7 @@ export function PartnerDetailPage({ partner, onBack }) {
   }
 
   return (
-    <div className="mx-auto max-w-[900px] px-6 pb-16 pt-6">
+    <div className="mx-auto max-w-[900px] px-4 pb-16 pt-6 sm:px-6">
       <button
         onClick={onBack}
         className="mb-4 flex items-center gap-1.5 text-[13px] font-semibold text-blue-600"

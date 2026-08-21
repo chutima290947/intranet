@@ -31,7 +31,7 @@ function CreateUserForm({ roles, onCreated }) {
   return (
     <div className="rounded-xl border border-line bg-white p-4">
       <h3 className="mb-3 text-[13px] font-bold text-navy-900">+ สร้างบัญชีผู้ใช้ใหม่</h3>
-      <form onSubmit={handleSubmit} className="grid grid-cols-3 gap-2.5">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
         <div>
           <label className="mb-1 block text-[10px] font-bold text-ink-soft">Username</label>
           <input
@@ -161,8 +161,9 @@ function UsersTable({ users, roles, onChanged }) {
 
   return (
     <div className="mt-4 overflow-hidden rounded-xl border border-line bg-white">
-      <table className="w-full text-[12px]">
-        <thead>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px] text-[12px]">
+          <thead>
           <tr className="border-b border-line bg-paper/50 text-left text-[10.5px] font-bold text-ink-soft">
             <th className="px-3.5 py-2.5">Username</th>
             <th className="px-3.5 py-2.5">ชื่อที่แสดง</th>
@@ -222,7 +223,8 @@ function UsersTable({ users, roles, onChanged }) {
             </tr>
           )}
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   )
 }

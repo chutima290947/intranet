@@ -15,7 +15,7 @@ export function ReportGrid({ searchQuery = '' }) {
     : REPORTS
 
   return (
-    <div className="mx-auto max-w-[1680px] px-8 pb-[70px] pt-[22px]">
+    <div className="mx-auto max-w-[1680px] px-4 pb-[70px] pt-[22px] sm:px-8">
       <div className="mb-10 flex items-start gap-3">
         <span className="mt-1 h-6 w-1 rounded-full bg-navy-900" />
         <div>
