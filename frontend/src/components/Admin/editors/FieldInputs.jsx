@@ -250,7 +250,7 @@ function ImageFieldInput({ value, onChange }) {
 }
 
 // ============================================================
-// PDF / Image / Office File Field
+// PDF / Image / Office / Web Archive File Field
 // ============================================================
 
 const ALLOWED_FILE_TYPES = [
@@ -264,9 +264,14 @@ const ALLOWED_FILE_TYPES = [
   'application/msword',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.ms-excel',
+  // ไฟล์ Web Archive (.mht/.mhtml) — เบราว์เซอร์แต่ละตัวรายงาน mimetype ไม่ตรงกัน
+  // (บางทีก็ว่างเปล่า) จึงใส่ไว้ทุกแบบที่เจอได้ พร้อมพึ่งการเช็คนามสกุลไฟล์เป็นหลัก
+  'application/x-mimearchive',
+  'message/rfc822',
+  'multipart/related',
 ]
 const ALLOWED_FILE_ACCEPT =
-  '.pdf,.jpg,.jpeg,.png,.webp,.pptx,.ppt,.docx,.doc,.xlsx,.xls'
+  '.pdf,.jpg,.jpeg,.png,.webp,.pptx,.ppt,.docx,.doc,.xlsx,.xls,.mht,.mhtml'
 
 export function FileFieldInput({ value, onChange }) {
   const [error, setError] = useState('')
@@ -289,12 +294,14 @@ export function FileFieldInput({ value, onChange }) {
 
     const ext = '.' + (file.name.split('.').pop() || '').toLowerCase()
     const allowedExts = ALLOWED_FILE_ACCEPT.split(',')
+    // ไฟล์ .mht/.mhtml เบราว์เซอร์มักรายงาน file.type ว่างหรือไม่ตรงกัน
+    // จึงเช็คจากนามสกุลไฟล์เป็นหลักสำหรับกรณีนี้ (allowedExts ครอบคลุมอยู่แล้ว)
     const isAllowed =
       ALLOWED_FILE_TYPES.includes(file.type) || allowedExts.includes(ext)
 
     if (!isAllowed) {
       setError(
-        'รองรับเฉพาะไฟล์ PDF, รูปภาพ (JPG/PNG/WEBP), PowerPoint, Word หรือ Excel เท่านั้น'
+        'รองรับเฉพาะไฟล์ PDF, รูปภาพ (JPG/PNG/WEBP), PowerPoint, Word, Excel หรือ Web Archive (MHT) เท่านั้น'
       )
       return
     }
@@ -369,7 +376,7 @@ export function FileFieldInput({ value, onChange }) {
             {uploading
               ? 'กำลังอัปโหลด...'
               : selectedFolder
-                ? 'เลือกไฟล์ PDF, รูปภาพ, PowerPoint, Word หรือ Excel'
+                ? 'เลือกไฟล์ PDF, รูปภาพ, PowerPoint, Word, Excel หรือ MHT'
                 : 'กรุณาเลือกโฟลเดอร์ก่อน'}
 
             <input
