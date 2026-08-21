@@ -238,7 +238,7 @@ export const ADMIN_SCHEMAS = [
         key: 'QUALITY',
         label: 'ศูนย์รวมระบบคุณภาพและความปลอดภัย',
         description:
-          'ถ้าใส่ "หัวข้อบทความ" ด้านล่าง คลิกไอคอนนี้จะพาไปหน้าเนื้อหาแทนการเปิดลิงก์ตรง — ถ้าเว้นว่างไว้ จะใช้ลิงก์/ไฟล์แนบด้านบนตามปกติ',
+          'เลือก "ประเภทเนื้อหา" ก่อน เพื่อให้ฟอร์มแสดงเฉพาะช่องที่ใช้จริงสำหรับหมวดนั้นๆ',
         type: 'list',
         itemLabel: (i) => i.label,
         fields: [
@@ -253,59 +253,49 @@ export const ADMIN_SCHEMAS = [
             type: 'icon',
           },
           {
+            key: 'kind',
+            label: 'ประเภทเนื้อหา',
+            type: 'select',
+            options: [
+              { value: 'document', label: 'Document Management' },
+              { value: 'quality_center', label: 'Quality Center' },
+              { value: 'print_form', label: 'Print Form' },
+              { value: 'occupational_health', label: 'Occupational Health' },
+              { value: 'occurrence_online', label: 'Occurrence Online' },
+              { value: 'infectious_disease', label: 'โรคติดต่อ' },
+            ],
+          },
+          {
             key: 'warn',
             label: 'ใช้สีแดง (เตือน) แทนสีเขียวปกติ',
             type: 'boolean',
           },
           {
             key: 'href',
-            label:
-              'ลิงก์ (URL) — ใช้เมื่อไม่มี "หัวข้อบทความ" ด้านล่าง',
+            label: 'ลิงก์ (URL)',
             type: 'url',
           },
           {
             key: 'file',
-            label:
-              'หรือแนบไฟล์ PDF — ใช้เมื่อไม่มี "หัวข้อบทความ" ด้านล่าง',
+            label: 'หรือแนบไฟล์ PDF',
             type: 'file',
             uploadFolder: 'hr',
-          },
-          {
-            key: 'articleTitle',
-            label:
-              'หัวข้อบทความ (หน้าเนื้อหา) — กรอกช่องนี้เพื่อเปิดใช้หน้าเนื้อหา',
-            type: 'text',
-          },
-          {
-            key: 'author',
-            label: 'ผู้เขียน/ผู้เผยแพร่',
-            type: 'text',
-          },
-          {
-            key: 'publishedAt',
-            label: 'วันที่เผยแพร่ (อัตโนมัติ)',
-            type: 'readonly-datetime', // แสดงผลอย่างเดียว แก้ไม่ได้
-          },
-          {
-            key: 'updatedAt',
-            label: 'วันที่อัปเดตล่าสุด (อัตโนมัติ)',
-            type: 'readonly-datetime',
-          },
-          {
-            key: 'intro',
-            label: 'คำอธิบายนำ',
-            type: 'textarea',
           },
           {
             key: 'tree',
             label:
               'เมนูต้นไม้ซ้อนหลายชั้น (tree) — เช่น KEY DATA > กรอกฟอร์ม Close Chart, REPORT > Medical Record Audit ฯลฯ ซ้อนกี่ชั้นก็ได้',
             type: 'tree',
+            showIf: (item) =>
+              item.kind === 'document' || item.kind === 'quality_center',
           },
           {
             key: 'articleItems',
-            label: 'รายการเอกสาร/ลิงก์แบบข้อความล้วน (ไม่มีหัวข้อกลุ่ม/รูปภาพ)',
+            label: 'รายการเอกสาร/ลิงก์แบบข้อความล้วน',
             type: 'sublist',
+            showIf: (item) =>
+              item.kind === 'occupational_health' ||
+              item.kind === 'occurrence_online' ,
             fields: [
               {
                 key: 'label',
@@ -335,6 +325,7 @@ export const ADMIN_SCHEMAS = [
             label:
               'การ์ดโรคติดต่อ (ใช้เมื่อเมนูนี้เป็นหมวด "โรคติดต่อ") — แต่ละการ์ดมีรูป/ป้าย/คำอธิบาย และมีหน้าความรู้+แนวทางในตัวเอง',
             type: 'sublist',
+            showIf: (item) => item.kind === 'infectious_disease',
             fields: [
               {
                 key: 'label',
@@ -353,13 +344,8 @@ export const ADMIN_SCHEMAS = [
                 type: 'text',
               },
               {
-                key: 'desc',
-                label: 'คำอธิบายย่อ (แสดงบนการ์ด)',
-                type: 'textarea',
-              },
-              {
                 key: 'intro',
-                label: 'ความรู้เกี่ยวกับโรค (เนื้อหาหลักในหน้ารายละเอียด)',
+                label: 'คำนำ (ข้อความเกริ่นก่อนรูปภาพในหน้ารายละเอียด) — เว้นว่างได้',
                 type: 'textarea',
               },
               {
@@ -369,34 +355,77 @@ export const ADMIN_SCHEMAS = [
               },
               {
                 key: 'publishedAt',
-                label: 'วันที่เผยแพร่ (อัตโนมัติ)',
-                type: 'readonly-datetime',
+                label: 'วันที่เผยแพร่',
+                type: 'date',
               },
               {
                 key: 'updatedAt',
-                label: 'วันที่อัปเดตล่าสุด (อัตโนมัติ)',
-                type: 'readonly-datetime',
+                label: 'วันที่อัปเดตล่าสุด',
+                type: 'date',
               },
               {
-                key: 'guidelines',
-                label: 'แนวทางปฏิบัติ (แสดงด้านล่างเนื้อหาความรู้ — ใส่ลิงก์ได้)',
+                key: 'banners',
+                label:
+                  'รูปภาพหัวเรื่อง (ใส่ได้หลายรูป แสดงเรียงกันด้านบนสุดของหน้ารายละเอียด — แต่ละรูปกำหนดลิงก์ของตัวเองได้ กดแล้วเปิดลิงก์นั้น)',
                 type: 'sublist',
                 fields: [
                   {
-                    key: 'label',
-                    label: 'ข้อความ',
-                    type: 'text',
+                    key: 'img',
+                    label: 'รูปภาพ',
+                    type: 'image',
+                    uploadFolder: 'hr',
                   },
                   {
                     key: 'href',
-                    label: 'ลิงก์ (URL)',
+                    label:
+                      'ลิงก์เมื่อกดรูปนี้ (เว้นว่างได้ถ้าไม่ต้องการให้กดได้)',
                     type: 'url',
                   },
                   {
-                    key: 'file',
-                    label: 'หรือแนบไฟล์ PDF',
-                    type: 'file',
-                    uploadFolder: 'hr',
+                    key: 'label',
+                    label: 'คำอธิบายรูป (alt text) — เว้นว่างได้',
+                    type: 'text',
+                  },
+                ],
+              },
+              {
+                key: 'sections',
+                label:
+                  'หัวข้อเนื้อหา (ใส่ได้หลายหัวข้อ แต่ละหัวข้อมีรายการย่อยที่เชื่อมลิงก์ได้ — ระบบใส่เลขนำหน้าหัวข้อให้อัตโนมัติ เช่น "2. ความรู้เกี่ยวกับโรค...")',
+                type: 'sublist',
+                fields: [
+                  {
+                    key: 'title',
+                    label: 'ชื่อหัวข้อ (เช่น ความรู้เกี่ยวกับโรคฝีดาษลิง)',
+                    type: 'text',
+                  },
+                  {
+                    key: 'items',
+                    label: 'รายการย่อยในหัวข้อนี้',
+                    type: 'sublist',
+                    fields: [
+                      {
+                        key: 'label',
+                        label: 'ข้อความ',
+                        type: 'text',
+                      },
+                      {
+                        key: 'href',
+                        label: 'ลิงก์ (URL ภายนอก)',
+                        type: 'url',
+                      },
+                      {
+                        key: 'file',
+                        label: 'หรือแนบไฟล์ PDF',
+                        type: 'file',
+                        uploadFolder: 'hr',
+                      },
+                      {
+                        key: 'badge',
+                        label: 'ป้ายข้อความ (เช่น ใหม่) — เว้นว่างได้',
+                        type: 'text',
+                      },
+                    ],
                   },
                 ],
               },
