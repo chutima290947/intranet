@@ -16,6 +16,7 @@ const AUTO_SLIDE_INTERVAL = 5000
 // รองรับหลายรายการพร้อมกัน แสดงเป็นสไลด์เลื่อนดูได้ (ลูกศร / จุดบอกตำแหน่ง / ปัดนิ้ว)
 // เลื่อนสไลด์อัตโนมัติทุก 5 วินาที และพักออโต้เลื่อนเมื่อเมาส์ชี้อยู่ที่ป๊อปอัพ
 // รีเซ็ตตัวจับเวลาใหม่ทุกครั้งที่ index เปลี่ยน (ไม่ว่าจะจากออโต้หรือผู้ใช้เลื่อนเอง)
+// รูปภาพแสดงเต็มภาพเสมอ (object-contain) กล่องป๊อปอัพจะปรับขนาดตามสัดส่วนรูปที่อัปโหลด ไม่ถูกครอปตัด
 // ดีไซน์แต่ละสไลด์: รูปภาพด้านบน -> ป้ายหมวดหมู่ + เวลา -> หัวข้อ -> เนื้อหา -> ปุ่ม CTA (ถ้าเปิดใช้งาน)
 // เนื้อหาทั้งหมดแก้ไขได้จาก Admin > ป๊อปอัพโฆษณา (schema key: POPUP_ADS)
 // ============================================================
@@ -137,7 +138,7 @@ export function PopupAd() {
           <img
             src={getFileUrl(ad.img)}
             alt={ad.title || ad.label || ''}
-            className="block max-h-[320px] w-full select-none object-cover"
+            className="block max-h-[70vh] w-full select-none object-contain"
             draggable={false}
           />
 
@@ -187,50 +188,54 @@ export function PopupAd() {
           )}
         </div>
 
-        {/* เนื้อหา: ป้ายหมวดหมู่ + เวลา / หัวข้อ / เนื้อหา / ปุ่ม CTA */}
-        <div className="overflow-y-auto px-6 py-5">
-          {(ad.badge || ad.timeLabel) && (
-            <div className="mb-2 flex flex-wrap items-center gap-2 text-[12px] font-semibold">
-              {ad.badge && (
-                <span className="flex items-center gap-1.5 uppercase tracking-wide text-blue-600">
-                  <i className="ti ti-speakerphone text-[14px]" />
-                  {ad.badge}
-                </span>
-              )}
-              {ad.badge && ad.timeLabel && (
-                <span className="text-ink-soft/40">•</span>
-              )}
-              {ad.timeLabel && (
-                <span className="font-medium text-ink-soft">{ad.timeLabel}</span>
-              )}
-            </div>
-          )}
+        {/* เนื้อหา: ป้ายหมวดหมู่ + เวลา / หัวข้อ / เนื้อหา / ปุ่ม CTA
+            แสดงส่วนนี้ก็ต่อเมื่อมีอย่างน้อย 1 อย่างจริงๆ (badge/timeLabel/title/description/CTA)
+            ถ้าแอดมินเว้นว่างทุกช่อง (ใช้แต่รูปภาพเต็มใบ) ส่วนนี้จะไม่แสดงเลย ไม่มีที่ว่างเกินมา */}
+        {(ad.badge || ad.timeLabel || ad.title || ad.description || hasCta) && (
+          <div className="overflow-y-auto px-6 py-5">
+            {(ad.badge || ad.timeLabel) && (
+              <div className="mb-2 flex flex-wrap items-center gap-2 text-[12px] font-semibold">
+                {ad.badge && (
+                  <span className="flex items-center gap-1.5 uppercase tracking-wide text-blue-600">
+                    <i className="ti ti-speakerphone text-[14px]" />
+                    {ad.badge}
+                  </span>
+                )}
+                {ad.badge && ad.timeLabel && (
+                  <span className="text-ink-soft/40">•</span>
+                )}
+                {ad.timeLabel && (
+                  <span className="font-medium text-ink-soft">{ad.timeLabel}</span>
+                )}
+              </div>
+            )}
 
-          {ad.title && (
-            <h3 className="mb-2 text-[19px] font-bold leading-snug text-navy-900">
-              {ad.title}
-            </h3>
-          )}
+            {ad.title && (
+              <h3 className="mb-2 text-[19px] font-bold leading-snug text-navy-900">
+                {ad.title}
+              </h3>
+            )}
 
-          {ad.description && (
-            <p className="whitespace-pre-line text-[13.5px] leading-relaxed text-ink-soft">
-              {ad.description}
-            </p>
-          )}
+            {ad.description && (
+              <p className="whitespace-pre-line text-[13.5px] leading-relaxed text-ink-soft">
+                {ad.description}
+              </p>
+            )}
 
-          {hasCta && (
-            <div className="mt-5 flex justify-end">
-              <button
-                type="button"
-                onClick={handleCtaClick}
-                className="flex items-center gap-1.5 rounded-lg border-none bg-navy-900 px-4 py-2.5 text-[13px] font-bold text-white hover:bg-navy-800"
-              >
-                {ad.ctaLabel || 'ดูรายละเอียดเพิ่มเติม'}
-                <i className="ti ti-arrow-right text-[15px]" />
-              </button>
-            </div>
-          )}
-        </div>
+            {hasCta && (
+              <div className="mt-5 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleCtaClick}
+                  className="flex items-center gap-1.5 rounded-lg border-none bg-navy-900 px-4 py-2.5 text-[13px] font-bold text-white hover:bg-navy-800"
+                >
+                  {ad.ctaLabel || 'ดูรายละเอียดเพิ่มเติม'}
+                  <i className="ti ti-arrow-right text-[15px]" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
