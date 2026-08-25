@@ -28,6 +28,7 @@ import { ExpandableCards } from './components/Home/ExpandableCards'
 import { GenericListSection } from './components/Home/GenericListSection'
 import { GenericGridSection } from './components/Home/GenericGridSection'
 import { GenericExpandableSection } from './components/Home/GenericExpandableSection'
+import { PopupAd } from './components/Home/PopupAd'
 import { DivisionGrid } from './components/Division/DivisionGrid'
 import { ReportGrid } from './components/Report/Reportgrid'
 import { DoctorSchedulePage } from './components/Home/DoctorSchedulePage'
@@ -119,11 +120,7 @@ function AppInner() {
   const [pendingScrollId, setPendingScrollId] = useState(null)
   const quicknavRef = useRef(null)
 
-  // จำหน้าล่าสุดไว้ใน sessionStorage เผื่อรีเฟรชหน้า (ยกเว้นหน้า admin จะไม่จำไว้
-  // เพื่อไม่ให้ค้างอยู่หน้า admin ถ้า session การ login หมดอายุไปแล้วตอนรีเฟรช)
-  // สำคัญ: ต้องจำ selectedServiceLabel / selectedQualityLabel / selectedNewsTitle ไว้ด้วย
-  // ไม่งั้นรีเฟรชหน้า service/quality/news แล้ว page จะถูกต้อง แต่ id ของหัวข้อที่เปิดอยู่หาย
-  // ทำให้ content.QUALITY.find(...) หรือเทียบเท่าหาไม่เจอ กลายเป็นหน้า "ไม่พบเนื้อหานี้"
+
   useEffect(() => {
     try {
       sessionStorage.setItem(
@@ -299,6 +296,10 @@ function AppInner() {
 
   return (
     <>
+      {/* ป๊อปอัพโฆษณา — แสดงทับหน้าเว็บก่อนเห็นหน้า Home จริง เฉพาะตอนอยู่หน้า Home
+          ปิดได้ (ปุ่ม X หรือกดพื้นหลัง), เนื้อหาแก้ไขได้จาก Admin > ป๊อปอัพโฆษณา */}
+      {page === 'home' && <PopupAd />}
+
       <TopBar />
       <NavBar page={page} onNavigate={goTo} onSearch={handleSearch} />
       <Hero onLoginSuccess={() => goTo('admin')} />
