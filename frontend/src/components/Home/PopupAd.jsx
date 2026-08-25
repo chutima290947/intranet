@@ -57,6 +57,18 @@ export function PopupAd() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setKey, alwaysShow, ads.length])
 
+  // โหลดรูปทุกสไลด์ล่วงหน้าตั้งแต่ป๊อปอัพเปิด (แอบโหลดเงียบๆ ผ่าน Image object ที่ไม่ได้ต่อกับหน้าจอ)
+  // เพื่อให้ browser cache รูปไว้ก่อน — ไม่งั้นตอนเลื่อนไปสไลด์ที่ยังไม่เคยแสดง browser จะเพิ่งเริ่ม
+  // ดาวน์โหลด/ถอดรหัสรูปตอนนั้นเลย ทำให้ระหว่างรอ หน้าจอค้างโชว์รูปเก่าไว้ก่อน ดูเหมือนภาพเปลี่ยนช้า
+  useEffect(() => {
+    if (!visible || ads.length === 0) return
+
+    ads.forEach((a) => {
+      const img = new Image()
+      img.src = getFileUrl(a.img)
+    })
+  }, [visible, ads])
+
   // ออโต้เลื่อนสไลด์ทุก AUTO_SLIDE_INTERVAL — หยุดเมื่อ: ป๊อปอัพไม่แสดง, มีรายการเดียว,
   // หรือเมาส์กำลังชี้อยู่ที่ป๊อปอัพ (isHovering) — ตัวจับเวลาจะถูกสร้างใหม่ทุกครั้งที่ index เปลี่ยน
   // (ไม่ว่าจะเปลี่ยนจากออโต้เองหรือผู้ใช้เลื่อนเอง) เพราะ index อยู่ใน dependency array
