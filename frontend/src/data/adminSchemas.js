@@ -1,5 +1,80 @@
 export const ADMIN_SCHEMAS = [
   {
+    group: 'ป๊อปอัพโฆษณา',
+    items: [
+      {
+        key: 'POPUP_ADS',
+        label: 'ป๊อปอัพโฆษณาก่อนเข้าหน้าเว็บ',
+        description:
+          'แสดงเป็นหน้าต่างป๊อปอัพทับหน้าเว็บก่อนเข้าสู่หน้าอินทราเน็ตจริง (เฉพาะหน้าแรก) ผู้ใช้กดปุ่ม X หรือกดพื้นหลังเพื่อปิดได้ — ถ้ามีหลายรายการที่ "เปิดใช้งาน" พร้อมกัน จะแสดงเป็นสไลด์เลื่อนดูได้ทีละรายการ (มีลูกศร/จุดบอกตำแหน่ง/ปัดนิ้วได้) — เปิด "ปุ่มดูรายละเอียดเพิ่มเติม" เฉพาะรายการที่ต้องการให้กดไปหน้าอื่นได้',
+        type: 'list',
+        itemLabel: (i) => i.title || i.label,
+        fields: [
+          {
+            key: 'enabled',
+            label: 'เปิดใช้งานป๊อปอัพนี้',
+            type: 'boolean',
+          },
+          {
+            key: 'img',
+            label: 'รูปภาพด้านบน (แสดงเต็มความกว้างของการ์ด)',
+            type: 'image',
+            uploadFolder: 'marketing',
+          },
+          {
+            key: 'badge',
+            label:
+              'ป้ายหมวดหมู่ (เช่น ANNOUNCEMENT, ประกาศ) — เว้นว่างได้ถ้าไม่ต้องการแสดง',
+            type: 'text',
+          },
+          {
+            key: 'timeLabel',
+            label:
+              'ข้อความเวลา/วันที่ (พิมพ์เองอิสระ เช่น "วันนี้ 09:00 น." หรือ "15 ก.ค. 2567") — เว้นว่างได้ถ้าไม่ต้องการแสดง',
+            type: 'text',
+          },
+          {
+            key: 'title',
+            label: 'หัวข้อประกาศ',
+            type: 'text',
+          },
+          {
+            key: 'description',
+            label: 'เนื้อหารายละเอียด (ขึ้นบรรทัดใหม่ได้)',
+            type: 'textarea',
+          },
+          {
+            key: 'ctaEnabled',
+            label: 'เปิดใช้งานปุ่ม "ดูรายละเอียดเพิ่มเติม"',
+            type: 'boolean',
+          },
+          {
+            key: 'href',
+            label:
+              'ลิงก์เมื่อกดปุ่ม (ใช้เมื่อไม่มีไฟล์แนบด้านล่าง)',
+            type: 'url',
+            showIf: (item) => item.ctaEnabled,
+          },
+          {
+            key: 'file',
+            label:
+              'หรือแนบไฟล์ PDF เมื่อกดปุ่ม (ใช้เมื่อไม่มีลิงก์ด้านบน)',
+            type: 'file',
+            uploadFolder: 'marketing',
+            showIf: (item) => item.ctaEnabled,
+          },
+          {
+            key: 'showEveryTime',
+            label:
+              'แสดงทุกครั้งที่เข้าเว็บ (ถ้าไม่เปิด จะแสดงให้ผู้ใช้แต่ละคนเห็นแค่ครั้งแรกต่อ session เท่านั้น)',
+            type: 'boolean',
+          },
+        ],
+      },
+    ],
+  },
+
+  {
     group: 'หน้า Home',
     items: [
       {
@@ -836,7 +911,7 @@ export const ADMIN_SCHEMAS = [
               },
               {
                 key: 'href',
-                label: 'ลิงก์ (URL) — ใช้เมื่อไม่มีรายการย่อยด้านล่าง',
+                label: 'ลิงก์ (URL)',
                 type: 'url',
               },
               {
@@ -845,30 +920,6 @@ export const ADMIN_SCHEMAS = [
                   'โลโก้ระบบ',
                 type: 'image',
                 uploadFolder: 'mservice',
-              },
-              {
-                key: 'subItems',
-                label:
-                  'รายการย่อย (เช่น Sale, Cashier, Admin, Report) — ถ้าใส่ คลิกที่ระบบนี้จะเปิดหน้ารายการย่อยแทนการเปิดลิงก์ตรง',
-                type: 'sublist',
-                fields: [
-                  {
-                    key: 'label',
-                    label: 'ชื่อรายการย่อย',
-                    type: 'text',
-                  },
-                  {
-                    key: 'href',
-                    label: 'ลิงก์ (URL)',
-                    type: 'url',
-                  },
-                  {
-                    key: 'file',
-                    label: 'หรือแนบไฟล์ PDF',
-                    type: 'file',
-                    uploadFolder: 'mservice',
-                  },
-                ],
               },
             ],
           },
