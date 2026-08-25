@@ -10,13 +10,23 @@ const SESSION_KEY = 'intranet:popup-ad-shown'
 // ระยะเวลาเลื่อนสไลด์อัตโนมัติ (มิลลิวินาที)
 const AUTO_SLIDE_INTERVAL = 5000
 
+// ความกว้างกรอบป๊อปอัพ: สูงสุด / ต่ำสุด (px) — กันไม่ให้กว้างเกินไปตอนรูป landscape มากๆ
+// และกันไม่ให้แคบเกินไปจนอ่านข้อความ/กดปุ่มลำบากตอนรูปเป็นไอคอนเล็กๆ
+const MAX_CARD_WIDTH = 560
+const MIN_CARD_WIDTH = 300
+// ความสูงของรูปสูงสุด (คิดเป็น % ของความสูงจอ) — ใช้คำนวณย่อขนาดรูปแนวตั้งที่สูงมากๆ
+const MAX_IMG_HEIGHT_RATIO = 0.7
+// ระยะขอบจอที่กันไว้ไม่ให้กรอบชนขอบซ้ายขวา (px, รวม 2 ฝั่ง)
+const VIEWPORT_PADDING = 32
+
 // ============================================================
 // PopupAd
 // แสดงทับหน้าเว็บก่อนเข้าสู่หน้า Home จริง — ปิดได้ (ปุ่ม X หรือกดพื้นหลัง)
 // รองรับหลายรายการพร้อมกัน แสดงเป็นสไลด์เลื่อนดูได้ (ลูกศร / จุดบอกตำแหน่ง / ปัดนิ้ว)
 // เลื่อนสไลด์อัตโนมัติทุก 5 วินาที และพักออโต้เลื่อนเมื่อเมาส์ชี้อยู่ที่ป๊อปอัพ
-// รีเซ็ตตัวจับเวลาใหม่ทุกครั้งที่ index เปลี่ยน (ไม่ว่าจะจากออโต้หรือผู้ใช้เลื่อนเอง)
-// รูปภาพแสดงเต็มภาพเสมอ (object-contain) กล่องป๊อปอัพจะปรับขนาดตามสัดส่วนรูปที่อัปโหลด ไม่ถูกครอปตัด
+//
+// ความกว้างของกรอบป๊อปอัพคำนวณจากขนาดจริงของรูปภาพแต่ละสไลด์เสมอ (ไม่ใช่ค่าตายตัว)
+// เพื่อไม่ให้เกิดขอบขาวข้างรูปเวลารูปเป็นแนวตั้ง/สัดส่วนแปลกๆ — ดูฟังก์ชัน computeCardWidth
 // ดีไซน์แต่ละสไลด์: รูปภาพด้านบน -> ป้ายหมวดหมู่ + เวลา -> หัวข้อ -> เนื้อหา -> ปุ่ม CTA (ถ้าเปิดใช้งาน)
 // เนื้อหาทั้งหมดแก้ไขได้จาก Admin > ป๊อปอัพโฆษณา (schema key: POPUP_ADS)
 // ============================================================
@@ -27,6 +37,11 @@ export function PopupAd() {
   const [visible, setVisible] = useState(false)
   const [index, setIndex] = useState(0)
   const [isHovering, setIsHovering] = useState(false)
+  const [imgDims, setImgDims] = useState({}) // { [index]: { w, h } } ขนาดจริงของรูปแต่ละสไลด์ (px)
+  const [viewport, setViewport] = useState(() => ({
+    w: typeof window !== 'undefined' ? window.innerWidth : 1024,
+    h: typeof window !== 'undefined' ? window.innerHeight : 768,
+  }))
   const touchStartX = useRef(null)
 
   // key เฉพาะของ "ชุด" โฆษณาที่เปิดใช้งานอยู่ตอนนี้ + เช็คว่ามีรายการไหนติ๊ก "แสดงทุกครั้ง" บ้าง
@@ -36,6 +51,7 @@ export function PopupAd() {
 
   useEffect(() => {
     setIndex(0)
+    setImgDims({})
 
     if (ads.length === 0) {
       setVisible(false)
@@ -57,21 +73,32 @@ export function PopupAd() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setKey, alwaysShow, ads.length])
 
-  // โหลดรูปทุกสไลด์ล่วงหน้าตั้งแต่ป๊อปอัพเปิด (แอบโหลดเงียบๆ ผ่าน Image object ที่ไม่ได้ต่อกับหน้าจอ)
-  // เพื่อให้ browser cache รูปไว้ก่อน — ไม่งั้นตอนเลื่อนไปสไลด์ที่ยังไม่เคยแสดง browser จะเพิ่งเริ่ม
-  // ดาวน์โหลด/ถอดรหัสรูปตอนนั้นเลย ทำให้ระหว่างรอ หน้าจอค้างโชว์รูปเก่าไว้ก่อน ดูเหมือนภาพเปลี่ยนช้า
+  // อัปเดตขนาดจอเมื่อ resize เพื่อคำนวณความกว้างกรอบป๊อปอัพใหม่ให้ถูกต้องเสมอ
+  useEffect(() => {
+    const onResize = () => setViewport({ w: window.innerWidth, h: window.innerHeight })
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  // โหลดรูปทุกสไลด์ล่วงหน้าตั้งแต่ป๊อปอัพเปิด พร้อมจับขนาดจริง (naturalWidth/Height) ของแต่ละรูป
+  // เก็บไว้ใน imgDims เพื่อใช้คำนวณความกว้างกรอบป๊อปอัพให้พอดีกับรูปเสมอ ไม่มีขอบขาวเกิน
   useEffect(() => {
     if (!visible || ads.length === 0) return
 
-    ads.forEach((a) => {
+    ads.forEach((a, i) => {
       const img = new Image()
+      img.onload = () => {
+        setImgDims((prev) =>
+          prev[i] ? prev : { ...prev, [i]: { w: img.naturalWidth, h: img.naturalHeight } }
+        )
+      }
       img.src = getFileUrl(a.img)
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, ads])
 
   // ออโต้เลื่อนสไลด์ทุก AUTO_SLIDE_INTERVAL — หยุดเมื่อ: ป๊อปอัพไม่แสดง, มีรายการเดียว,
   // หรือเมาส์กำลังชี้อยู่ที่ป๊อปอัพ (isHovering) — ตัวจับเวลาจะถูกสร้างใหม่ทุกครั้งที่ index เปลี่ยน
-  // (ไม่ว่าจะเปลี่ยนจากออโต้เองหรือผู้ใช้เลื่อนเอง) เพราะ index อยู่ใน dependency array
   useEffect(() => {
     if (!visible || ads.length <= 1 || isHovering) return
 
@@ -85,6 +112,27 @@ export function PopupAd() {
   if (ads.length === 0 || !visible) return null
 
   const ad = ads[index]
+
+  // คำนวณความกว้างกรอบป๊อปอัพจากขนาดจริงของรูปสไลด์ปัจจุบัน (ถ้ายังโหลดไม่เสร็จ ใช้ค่าสูงสุดไปก่อน
+  // แล้วจะปรับให้พอดีทันทีที่รู้ขนาดจริง) — ผลลัพธ์คือกรอบจะพอดีตัวกับรูปเสมอ ไม่ว่ารูปจะสัดส่วนอะไร
+  const maxWidthPx = Math.min(MAX_CARD_WIDTH, viewport.w - VIEWPORT_PADDING)
+  const maxHeightPx = viewport.h * MAX_IMG_HEIGHT_RATIO
+  const dims = imgDims[index]
+
+  let cardWidth = maxWidthPx
+  if (dims && dims.w > 0 && dims.h > 0) {
+    let renderW = dims.w
+    let renderH = dims.h
+
+    // ถ้ารูปสูงเกิน maxHeightPx (เช่น โปสเตอร์แนวตั้งยาวๆ) -> ย่อลงตามสัดส่วน
+    if (renderH > maxHeightPx) {
+      renderW = renderW * (maxHeightPx / renderH)
+      renderH = maxHeightPx
+    }
+
+    cardWidth = Math.min(renderW, maxWidthPx)
+    cardWidth = Math.max(cardWidth, Math.min(MIN_CARD_WIDTH, maxWidthPx))
+  }
 
   const close = () => {
     setVisible(false)
@@ -136,7 +184,8 @@ export function PopupAd() {
       aria-label={ad.title || ad.label || 'ป๊อปอัพประกาศ'}
     >
       <div
-        className="relative flex max-h-[90vh] w-full max-w-[560px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+        className="relative flex max-h-[90vh] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-[width] duration-150"
+        style={{ width: cardWidth }}
         onClick={(e) => e.stopPropagation()}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
