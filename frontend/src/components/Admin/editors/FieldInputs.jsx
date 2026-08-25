@@ -3,8 +3,6 @@ import { UPLOAD_FOLDERS } from '../../../config/uploadFolders'
 
 // ============================================================
 // Datetime formatting (ใช้ format แบบ "FRIDAY, 17 APRIL 2026 15:25")
-// ยังเก็บไว้เผื่อมี field ประเภท datetime-auto / datetime-auto-once ในอนาคต
-// (ปัจจุบันไม่มี schema ไหนใช้แล้ว — publishedAt/updatedAt ย้ายไปใช้ type 'date' แทน)
 // ============================================================
 
 function formatAutoDatetime(iso) {
@@ -27,11 +25,10 @@ function formatAutoDatetime(iso) {
 }
 
 // สร้างค่าเริ่มต้นของ field ทั้งหมดในรายการใหม่
-// - datetime-auto / datetime-auto-once: stamp เวลาปัจจุบันทันทีตอนสร้างรายการ (ISO เต็ม)
-// - date: ตั้งค่าเริ่มต้นเป็น "วันนี้" (YYYY-MM-DD) ให้พอดีกับ input[type=date] — ผู้ใช้แก้ไขเองทีหลังได้อิสระ
+// - datetime-auto / datetime-auto-once: stamp เวลาปัจจุบันทันทีตอนสร้างรายการ
 // - sublist / tree: array ว่าง
 // - boolean: false
-// - อื่นๆ (รวมถึง select): string ว่าง
+// - อื่นๆ: string ว่าง
 export function emptyFromFields(fields) {
   const obj = {}
   const now = new Date().toISOString()
@@ -43,8 +40,6 @@ export function emptyFromFields(fields) {
       obj[f.key] = false
     } else if (f.type === 'datetime-auto' || f.type === 'datetime-auto-once') {
       obj[f.key] = now
-    } else if (f.type === 'date') {
-      obj[f.key] = now.slice(0, 10)
     } else {
       obj[f.key] = ''
     }
@@ -53,10 +48,8 @@ export function emptyFromFields(fields) {
   return obj
 }
 
-// อัปเดตค่า field ประเภท datetime-auto (ไม่รวม datetime-auto-once และไม่รวม date)
-// ให้เป็นเวลาปัจจุบัน ใช้ตอนกด "บันทึกการเปลี่ยนแปลง"
-// หมายเหตุ: field ประเภท 'date' (เช่น วันที่เผยแพร่/วันที่อัปเดตล่าสุด) เป็นการกรอกเองของผู้ใช้
-// ผ่านปฏิทินแล้ว จึงไม่ต้องถูก stamp ทับตรงนี้อีก
+// อัปเดตค่า field ประเภท datetime-auto (ไม่รวม datetime-auto-once) ให้เป็นเวลาปัจจุบัน
+// ใช้ตอนกด "บันทึกการเปลี่ยนแปลง" เพื่อ stamp "วันที่อัปเดตล่าสุด" อัตโนมัติ
 export function stampAutoDatetime(item, fields) {
   const next = { ...item }
   const now = new Date().toISOString()
@@ -177,8 +170,8 @@ function ImageFieldInput({ value, onChange }) {
       return
     }
 
-    if (file.size > 3 * 1024 * 1024) {
-      setError('ไฟล์รูปใหญ่เกินไป (จำกัด 3MB)')
+    if (file.size > 5 * 1024 * 1024) {
+      setError('ไฟล์รูปใหญ่เกินไป (จำกัด 5MB)')
       return
     }
 
@@ -250,7 +243,7 @@ function ImageFieldInput({ value, onChange }) {
 }
 
 // ============================================================
-// PDF / Image / Office / Web Archive File Field
+// PDF / Image / Office File Field
 // ============================================================
 
 const ALLOWED_FILE_TYPES = [
@@ -264,14 +257,9 @@ const ALLOWED_FILE_TYPES = [
   'application/msword',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.ms-excel',
-  // ไฟล์ Web Archive (.mht/.mhtml) — เบราว์เซอร์แต่ละตัวรายงาน mimetype ไม่ตรงกัน
-  // (บางทีก็ว่างเปล่า) จึงใส่ไว้ทุกแบบที่เจอได้ พร้อมพึ่งการเช็คนามสกุลไฟล์เป็นหลัก
-  'application/x-mimearchive',
-  'message/rfc822',
-  'multipart/related',
 ]
 const ALLOWED_FILE_ACCEPT =
-  '.pdf,.jpg,.jpeg,.png,.webp,.pptx,.ppt,.docx,.doc,.xlsx,.xls,.mht,.mhtml'
+  '.pdf,.jpg,.jpeg,.png,.webp,.pptx,.ppt,.docx,.doc,.xlsx,.xls'
 
 export function FileFieldInput({ value, onChange }) {
   const [error, setError] = useState('')
@@ -294,20 +282,25 @@ export function FileFieldInput({ value, onChange }) {
 
     const ext = '.' + (file.name.split('.').pop() || '').toLowerCase()
     const allowedExts = ALLOWED_FILE_ACCEPT.split(',')
-    // ไฟล์ .mht/.mhtml เบราว์เซอร์มักรายงาน file.type ว่างหรือไม่ตรงกัน
-    // จึงเช็คจากนามสกุลไฟล์เป็นหลักสำหรับกรณีนี้ (allowedExts ครอบคลุมอยู่แล้ว)
     const isAllowed =
       ALLOWED_FILE_TYPES.includes(file.type) || allowedExts.includes(ext)
 
     if (!isAllowed) {
       setError(
-        'รองรับเฉพาะไฟล์ PDF, รูปภาพ (JPG/PNG/WEBP), PowerPoint, Word, Excel หรือ Web Archive (MHT) เท่านั้น'
+        'รองรับเฉพาะไฟล์ PDF, รูปภาพ (JPG/PNG/WEBP), PowerPoint, Word หรือ Excel เท่านั้น'
       )
       return
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      setError('ไฟล์ใหญ่เกินไป (จำกัด 10MB)')
+    const isImage = file.type.startsWith('image/')
+    const maxSize = isImage ? 5 * 1024 * 1024 : 10 * 1024 * 1024
+
+    if (file.size > maxSize) {
+      setError(
+        isImage
+          ? 'รูปภาพใหญ่เกินไป (จำกัด 5MB)'
+          : 'ไฟล์ใหญ่เกินไป (จำกัด 10MB)'
+      )
       return
     }
 
@@ -376,7 +369,7 @@ export function FileFieldInput({ value, onChange }) {
             {uploading
               ? 'กำลังอัปโหลด...'
               : selectedFolder
-                ? 'เลือกไฟล์ PDF, รูปภาพ, PowerPoint, Word, Excel หรือ MHT'
+                ? 'เลือกไฟล์ PDF, รูปภาพ, PowerPoint, Word หรือ Excel'
                 : 'กรุณาเลือกโฟลเดอร์ก่อน'}
 
             <input
@@ -395,64 +388,6 @@ export function FileFieldInput({ value, onChange }) {
           {error}
         </p>
       )}
-    </div>
-  )
-}
-
-// ============================================================
-// Select Field (dropdown) — ใช้เลือก "ประเภทเนื้อหา" เพื่อซ่อน/แสดงฟิลด์อื่นตามเงื่อนไข (showIf)
-// field.options: [{ value, label }]
-// ============================================================
-
-function SelectFieldInput({ field, value, onChange }) {
-  const options = Array.isArray(field.options) ? field.options : []
-
-  return (
-    <select
-      value={value || ''}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-md border border-line bg-white px-3 py-2 text-[12.5px] outline-none focus:border-blue-500"
-    >
-      <option value="">-- กรุณาเลือก --</option>
-
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </select>
-  )
-}
-
-// ============================================================
-// Date Field — ใช้ input[type=date] ของเบราว์เซอร์จริงๆ กดไอคอนปฏิทินเลือกวันที่ได้เลย
-// ไม่ต้องพิมพ์เอง กะทัดรัดกว่ากล่องข้อความยาวๆ แบบเดิมมาก
-// รองรับค่าเดิมที่อาจเป็น ISO datetime เต็ม (เช่นจากของเก่า) โดยแปลงเป็น YYYY-MM-DD ให้อัตโนมัติ
-// ============================================================
-
-function toDateInputValue(value) {
-  if (!value) return ''
-
-  // เป็น YYYY-MM-DD อยู่แล้ว ใช้ได้เลย
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value
-
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return ''
-
-  return d.toISOString().slice(0, 10)
-}
-
-function DateFieldInput({ value, onChange }) {
-  return (
-    <div className="relative">
-      <i className="ti ti-calendar-event pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[13px] text-ink-soft/50" />
-
-      <input
-        type="date"
-        value={toDateInputValue(value)}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md border border-line py-2 pl-8 pr-2 text-[12.5px] outline-none focus:border-blue-500"
-      />
     </div>
   )
 }
@@ -488,10 +423,6 @@ export function FieldInput({ field, value, onChange }) {
         </span>
       </label>
     )
-  }
-
-  if (field.type === 'select') {
-    return <SelectFieldInput field={field} value={value} onChange={onChange} />
   }
 
   if (field.type === 'icon') {
@@ -537,13 +468,7 @@ export function FieldInput({ field, value, onChange }) {
     )
   }
 
-  // วันที่ (เลือกได้เองผ่านปฏิทิน) — ใช้กับ "วันที่เผยแพร่" / "วันที่อัปเดตล่าสุด" เป็นต้น
-  // ค่าเริ่มต้นตอนสร้างรายการใหม่จะถูกตั้งเป็นวันนี้ให้อัตโนมัติ (ดู emptyFromFields) แต่แก้ไขเองได้เสมอ
-  if (field.type === 'date') {
-    return <DateFieldInput value={value} onChange={onChange} />
-  }
-
-  // เก็บไว้เผื่อ schema เก่า/อนาคตต้องการฟิลด์ที่ stamp อัตโนมัติแบบแก้ไขเองไม่ได้จริงๆ
+  // วันที่อัปเดตล่าสุด — stamp อัตโนมัติทุกครั้งที่บันทึก, แก้ไขเองไม่ได้
   if (field.type === 'datetime-auto') {
     return (
       <div className="flex items-center gap-2 rounded-md border border-line bg-paper/50 px-3 py-2 text-[12.5px] text-ink-soft">
@@ -553,6 +478,7 @@ export function FieldInput({ field, value, onChange }) {
     )
   }
 
+  // วันที่เผยแพร่ — stamp ครั้งเดียวตอนสร้างรายการ, แก้ไขเองไม่ได้
   if (field.type === 'datetime-auto-once') {
     return (
       <div className="flex items-center gap-2 rounded-md border border-line bg-paper/50 px-3 py-2 text-[12.5px] text-ink-soft">

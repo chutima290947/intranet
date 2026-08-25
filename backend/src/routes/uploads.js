@@ -7,8 +7,9 @@ import { requireAuth } from '../middleware/auth.js'
 
 export const uploadsRouter = Router()
 
-// จำกัดขนาดไฟล์ 25 MB
+// จำกัดขนาดไฟล์ทั่วไป (PDF ฯลฯ) 25 MB / รูปภาพ 5 MB
 const MAX_SIZE = 25 * 1024 * 1024
+const IMAGE_MAX_SIZE = 5 * 1024 * 1024
 
 // เก็บไฟล์ไว้ใน memory ก่อนบันทึกลง PostgreSQL
 const upload = multer({
@@ -17,6 +18,20 @@ const upload = multer({
     fileSize: MAX_SIZE,
   },
 })
+
+// ครอบ multer ด้วย middleware เพื่อโชว์ error ที่อ่านง่ายขึ้น
+// (ถ้าไม่ครอบไว้ ไฟล์เกิน 25MB จะโดน Express ปัดตกแบบข้อความไม่เป็นมิตร)
+function uploadSingle(req, res, next) {
+  upload.single('file')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 25MB)' })
+      }
+      return res.status(400).json({ error: err.message || 'อัปโหลดไฟล์ไม่สำเร็จ' })
+    }
+    next()
+  })
+}
 
 // โฟลเดอร์ที่อนุญาตให้อัปโหลด
 const ALLOWED_FOLDERS = new Set([
@@ -35,28 +50,12 @@ const ALLOWED_FOLDERS = new Set([
 ])
 
 // ---------------------------------------------------------
-// Helper: แก้ปัญหาชื่อไฟล์ภาษาไทย/ตัวอักษร multi-byte เพี้ยน
-// multer (busboy) จะอ่านชื่อไฟล์จาก multipart header เป็น
-// latin1 เสมอ ไม่ว่า client จะส่ง header เป็น utf-8 หรือไม่
-// ภาษาอังกฤษ (ASCII) จึงไม่เพี้ยน แต่ภาษาไทย (multi-byte) เพี้ยน
-// ต้อง decode กลับเป็น utf8 ก่อนใช้งาน/บันทึกลง DB
-// ---------------------------------------------------------
-function fixOriginalName(name) {
-  if (!name) return name
-  try {
-    return Buffer.from(name, 'latin1').toString('utf8')
-  } catch {
-    return name
-  }
-}
-
-// ---------------------------------------------------------
 // POST /api/uploads
 // multipart/form-data
 // field: file
 // field: folder
 // ---------------------------------------------------------
-uploadsRouter.post('/', upload.single('file'), async (req, res) => {
+uploadsRouter.post('/', uploadSingle, async (req, res) => {
   try {
     const { folder } = req.body || {}
     const file = req.file
@@ -75,11 +74,15 @@ uploadsRouter.post('/', upload.single('file'), async (req, res) => {
       })
     }
 
-    // แก้ชื่อไฟล์ภาษาไทย/multi-byte ที่เพี้ยนจาก multer/busboy
-    const originalName = fixOriginalName(file.originalname)
+    // รูปภาพจำกัดขนาดแยกต่างหาก (5MB) เข้มกว่าไฟล์ทั่วไป (25MB)
+    if (file.mimetype.startsWith('image/') && file.size > IMAGE_MAX_SIZE) {
+      return res.status(400).json({
+        error: 'รูปภาพมีขนาดใหญ่เกินไป (สูงสุด 5MB)',
+      })
+    }
 
-    // นามสกุลไฟล์เดิม (ใช้ชื่อที่ decode แล้ว)
-    const ext = path.extname(originalName)
+    // นามสกุลไฟล์เดิม
+    const ext = path.extname(file.originalname)
 
     // สร้างชื่อไฟล์ใหม่ไม่ซ้ำกัน
     const storedName = `${crypto.randomUUID()}${ext}`
@@ -106,7 +109,7 @@ uploadsRouter.post('/', upload.single('file'), async (req, res) => {
       `,
       [
         folder,
-        originalName,
+        file.originalname,
         storedName,
         '',
         file.mimetype,
@@ -229,11 +232,9 @@ uploadsRouter.get('/:id/download', async (req, res) => {
       file.mime_type || 'application/octet-stream',
     )
 
-    // ใช้ RFC 5987 (filename*=UTF-8''...) เพื่อรองรับชื่อไฟล์ภาษาไทย
-    // ในทุกเบราว์เซอร์อย่างถูกต้อง (filename= เดิมรองรับแค่ ASCII เต็มรูปแบบ)
     res.setHeader(
       'Content-Disposition',
-      `inline; filename*=UTF-8''${encodeURIComponent(file.original_name)}`,
+      `inline; filename="${encodeURIComponent(file.original_name)}"`,
     )
 
     return res.send(file.data)
