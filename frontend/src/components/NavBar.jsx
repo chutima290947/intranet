@@ -319,7 +319,12 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
                   </button>
                 </div>
               ) : (
-                <form className="flex flex-col gap-4" onSubmit={handleLoginSubmit}>
+                <form
+                  key={loginOpen ? `login-form-${loginOpen}` : 'login-form-closed'}
+                  className="flex flex-col gap-4"
+                  onSubmit={handleLoginSubmit}
+                  autoComplete="off"
+                >
                   <div className="mb-1 flex items-center justify-between text-[13px] font-bold tracking-wide text-ink-soft uppercase">
                     Login form<i className="ti ti-lock text-base text-coral" />
                     <button
@@ -331,9 +336,12 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
                       <i className="ti ti-x text-lg" />
                     </button>
                   </div>
+                  {/* input ล่อ (ซ่อนไว้) ให้เบราว์เซอร์ autofill ไปเติมตรงนี้แทนช่องจริง */}
+                  <input type="text" name="fake-username" autoComplete="username" className="hidden" tabIndex={-1} />
+                  <input type="password" name="fake-password" autoComplete="new-password" className="hidden" tabIndex={-1} />
                   <input
                     type="text"
-                    name="username"
+                    name="admin-login-user"
                     placeholder="User Name"
                     autoComplete="off"
                     autoFocus
@@ -343,9 +351,9 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
                   />
                   <input
                     type="password"
-                    name="password"
+                    name="admin-login-pass"
                     placeholder="Password"
-                    autoComplete="off"
+                    autoComplete="new-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full rounded-md border border-line bg-paper px-4 py-3 text-[15px] focus:bg-white focus:outline-2 focus:outline-offset-1 focus:outline-blue-500"
