@@ -1,15 +1,35 @@
 import { useState, useRef } from 'react'
 import { useContent } from '../context/ContentContext'
+import { useAuth } from '../context/AuthContext'
 import logo from '../assets/logo.png'
 
-export function NavBar({ page, onNavigate, onSearch }) {
+export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
   const { content } = useContent()
   const { DIVISIONS, REPORTS, SITE } = content
+  const { login, logout, error, isAuthenticated } = useAuth()
 
   const [searchQuery, setSearchQuery] = useState('')
   const debounceRef = useRef(null)
   const [openMenu, setOpenMenu] = useState(null) // 'division' | 'report' | null
   const [expandedId, setExpandedId] = useState(null)
+
+  // ---- Login widget (ไอคอนเล็กๆ ข้างช่องค้นหา -> กดแล้วเด้ง modal กลางจอ) ----
+  const [loginOpen, setLoginOpen] = useState(false)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    const ok = await login(username, password)
+    setIsSubmitting(false)
+    if (ok) {
+      setPassword('')
+      setLoginOpen(false)
+      onLoginSuccess?.()
+    }
+  }
 
   const linkClass = (isActive) =>
     `flex items-center gap-[7px] whitespace-nowrap rounded-xs px-4 py-[11px] text-sm no-underline ${
@@ -202,7 +222,7 @@ export function NavBar({ page, onNavigate, onSearch }) {
         </a>
       </nav>
 
-      <div className="flex min-w-0 flex-1 items-center gap-[9px] rounded-3xl border border-line bg-paper px-[18px] py-2.5 max-[900px]:w-full max-[900px]:flex-none sm:min-w-[200px] sm:flex-none">
+      <div className="flex min-w-0 flex-1 items-center gap-[9px] rounded-3xl border border-line bg-paper px-[18px] py-2.5 max-[900px]:w-full max-[900px]:flex-none sm:min-w-[280px] sm:flex-none">
         <button
           type="button"
           onClick={() => runSearch(searchQuery)}
@@ -217,7 +237,7 @@ export function NavBar({ page, onNavigate, onSearch }) {
           value={searchQuery}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          className="w-full min-w-0 border-none bg-transparent font-body text-sm outline-none sm:w-[150px]"
+          className="w-full min-w-0 border-none bg-transparent font-body text-sm outline-none sm:w-[240px]"
         />
         {searchQuery && (
           <button
@@ -228,6 +248,113 @@ export function NavBar({ page, onNavigate, onSearch }) {
           >
             <i className="ti ti-x" />
           </button>
+        )}
+      </div>
+
+      {/* ไอคอน Login เล็กๆ ข้างช่องค้นหา -> กดแล้วเด้ง modal กลางจอ
+          ถ้า login อยู่แล้ว ไอคอนจะเปลี่ยนสี + modal แสดงทางลัดไปแผงควบคุมแทนฟอร์ม
+          z-[9999] เพื่อให้อยู่เหนือ QuickNav (sticky z-[200]) ไม่งั้นแถบเมนูจะซ้อนทับบังฟอร์ม */}
+      <div className="ml-2.5 flex-shrink-0">
+        <button
+          type="button"
+          onClick={() => setLoginOpen(true)}
+          aria-label={isAuthenticated ? 'บัญชีผู้ดูแลระบบ' : 'เข้าสู่ระบบผู้ดูแล'}
+          className={`flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${
+            isAuthenticated
+              ? 'border-teal/30 bg-teal/10 text-teal hover:bg-teal/15'
+              : 'border-line bg-white text-ink-soft hover:bg-paper hover:text-blue-600'
+          }`}
+        >
+          <i className={`ti ${isAuthenticated ? 'ti-shield-check' : 'ti-user-circle'} text-lg`} />
+        </button>
+
+        {loginOpen && (
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 px-4"
+            onClick={() => setLoginOpen(false)}
+          >
+            <div
+              className="w-full max-w-[420px] rounded-xl bg-white p-8 shadow-[0_20px_44px_rgba(4,16,36,.35)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {isAuthenticated ? (
+                <div className="flex flex-col gap-3 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setLoginOpen(false)}
+                    aria-label="ปิด"
+                    className="ml-auto rounded-xs border-none bg-transparent p-1 text-ink-soft hover:text-ink"
+                  >
+                    <i className="ti ti-x text-lg" />
+                  </button>
+                  <i className="ti ti-shield-check mx-auto text-3xl text-teal" />
+                  <p className="text-[15px] font-semibold text-ink">เข้าสู่ระบบผู้ดูแลแล้ว</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginOpen(false)
+                      onLoginSuccess?.()
+                    }}
+                    className="rounded-md border-none bg-navy-900 p-3.5 text-[15px] font-bold text-white"
+                  >
+                    ไปที่แผงควบคุมเนื้อหา
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      logout()
+                      setLoginOpen(false)
+                    }}
+                    className="rounded-md border border-line bg-white p-3 text-[13px] font-semibold text-ink-soft"
+                  >
+                    ออกจากระบบ
+                  </button>
+                </div>
+              ) : (
+                <form className="flex flex-col gap-4" onSubmit={handleLoginSubmit}>
+                  <div className="mb-1 flex items-center justify-between text-[13px] font-bold tracking-wide text-ink-soft uppercase">
+                    Login form<i className="ti ti-lock text-base text-coral" />
+                    <button
+                      type="button"
+                      onClick={() => setLoginOpen(false)}
+                      aria-label="ปิด"
+                      className="rounded-xs border-none bg-transparent p-1 text-ink-soft hover:text-ink"
+                    >
+                      <i className="ti ti-x text-lg" />
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    name="username"
+                    placeholder="User Name"
+                    autoComplete="off"
+                    autoFocus
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full rounded-md border border-line bg-paper px-4 py-3 text-[15px] focus:bg-white focus:outline-2 focus:outline-offset-1 focus:outline-blue-500"
+                  />
+                  <input
+                    type="password"
+                    name="password"
+                    placeholder="Password"
+                    autoComplete="off"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full rounded-md border border-line bg-paper px-4 py-3 text-[15px] focus:bg-white focus:outline-2 focus:outline-offset-1 focus:outline-blue-500"
+                  />
+                  {error && <p className="text-[12px] font-semibold text-coral">{error}</p>}
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full rounded-md border-none bg-coral p-3.5 text-[15px] font-bold text-white hover:bg-[#C13E27] disabled:opacity-60"
+                  >
+                    {isSubmitting ? 'กำลังเข้าสู่ระบบ...' : 'Login'}
+                  </button>
+                  <div className="text-[11px] text-ink-soft/60">* สำหรับเจ้าหน้าที่ผู้ดูแลระบบเท่านั้น</div>
+                </form>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>
