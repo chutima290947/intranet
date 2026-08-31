@@ -301,8 +301,8 @@ function AppInner() {
       {page === 'home' && <PopupAd />}
 
       <TopBar />
-      <NavBar page={page} onNavigate={goTo} onSearch={handleSearch} />
-      <Hero onLoginSuccess={() => goTo('admin')} />
+      <NavBar page={page} onNavigate={goTo} onSearch={handleSearch} onLoginSuccess={() => goTo('admin')} />
+      <Hero />
       <StatsBar />
 
       {page === 'home' && (
