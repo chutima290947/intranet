@@ -19,12 +19,20 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // เคลียร์ username/password ทุกครั้งที่ปิด modal เพื่อไม่ให้ค่าเก่าค้าง
+  const closeLoginModal = () => {
+    setLoginOpen(false)
+    setUsername('')
+    setPassword('')
+  }
+
   const handleLoginSubmit = async (e) => {
     e.preventDefault()
     setIsSubmitting(true)
     const ok = await login(username, password)
     setIsSubmitting(false)
     if (ok) {
+      setUsername('')
       setPassword('')
       setLoginOpen(false)
       onLoginSuccess?.()
@@ -271,7 +279,7 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
         {loginOpen && (
           <div
             className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 px-4"
-            onClick={() => setLoginOpen(false)}
+            onClick={closeLoginModal}
           >
             <div
               className="w-full max-w-[420px] rounded-xl bg-white p-8 shadow-[0_20px_44px_rgba(4,16,36,.35)]"
@@ -281,7 +289,7 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
                 <div className="flex flex-col gap-3 text-center">
                   <button
                     type="button"
-                    onClick={() => setLoginOpen(false)}
+                    onClick={closeLoginModal}
                     aria-label="ปิด"
                     className="ml-auto rounded-xs border-none bg-transparent p-1 text-ink-soft hover:text-ink"
                   >
@@ -292,7 +300,7 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
                   <button
                     type="button"
                     onClick={() => {
-                      setLoginOpen(false)
+                      closeLoginModal()
                       onLoginSuccess?.()
                     }}
                     className="rounded-md border-none bg-navy-900 p-3.5 text-[15px] font-bold text-white"
@@ -303,7 +311,7 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
                     type="button"
                     onClick={() => {
                       logout()
-                      setLoginOpen(false)
+                      closeLoginModal()
                     }}
                     className="rounded-md border border-line bg-white p-3 text-[13px] font-semibold text-ink-soft"
                   >
@@ -316,7 +324,7 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
                     Login form<i className="ti ti-lock text-base text-coral" />
                     <button
                       type="button"
-                      onClick={() => setLoginOpen(false)}
+                      onClick={closeLoginModal}
                       aria-label="ปิด"
                       className="rounded-xs border-none bg-transparent p-1 text-ink-soft hover:text-ink"
                     >
