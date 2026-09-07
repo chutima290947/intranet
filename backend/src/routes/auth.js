@@ -113,6 +113,27 @@ authRouter.get('/setup-password/:token', async (req, res) => {
 })
 
 authRouter.get('/me', requireAuth, async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT u.username, r.name as role_name, r.label as role_label
+     FROM admin_users u
+     LEFT JOIN roles r ON r.id = u.role_id
+     WHERE u.id = $1`,
+    [req.user.sub]
+  )
+  const user = rows[0]
+  if (!user) return res.status(401).json({ error: 'ไม่พบผู้ใช้นี้แล้ว' })
+
+  const permissions = await getPermissionsForRole(
+    (await pool.query('SELECT role_id FROM admin_users WHERE id = $1', [req.user.sub])).rows[0]?.role_id
+  )
+
+  res.json({
+    username: user.username,
+    role: user.role_name,
+    roleLabel: user.role_label,
+    permissions,
+  })
+})
 
 // เปลี่ยนรหัสผ่านของตัวเอง (ต้อง login อยู่แล้ว + ยืนยันรหัสเก่าให้ถูกก่อน)
 authRouter.post('/change-password', requireAuth, async (req, res) => {
@@ -145,28 +166,6 @@ authRouter.post('/change-password', requireAuth, async (req, res) => {
   await pool.query(`UPDATE admin_users SET password_hash = $1 WHERE id = $2`, [hash, user.id])
 
   res.json({ ok: true })
-})
-
-  const { rows } = await pool.query(
-    `SELECT u.username, r.name as role_name, r.label as role_label
-     FROM admin_users u
-     LEFT JOIN roles r ON r.id = u.role_id
-     WHERE u.id = $1`,
-    [req.user.sub]
-  )
-  const user = rows[0]
-  if (!user) return res.status(401).json({ error: 'ไม่พบผู้ใช้นี้แล้ว' })
-
-  const permissions = await getPermissionsForRole(
-    (await pool.query('SELECT role_id FROM admin_users WHERE id = $1', [req.user.sub])).rows[0]?.role_id
-  )
-
-  res.json({
-    username: user.username,
-    role: user.role_name,
-    roleLabel: user.role_label,
-    permissions,
-  })
 })
 
 export function generateSetupToken() {
