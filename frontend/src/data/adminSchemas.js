@@ -261,7 +261,7 @@ export const ADMIN_SCHEMAS = [
         ],
       },
 
-      {
+            {
         key: 'PROMOS',
         label: 'โปรโมชันและแพ็กเกจสุขภาพ',
         type: 'list',
@@ -276,6 +276,11 @@ export const ADMIN_SCHEMAS = [
             key: 'tag',
             label: 'ป้ายหมวด (เช่น หมวด A)',
             type: 'text',
+          },
+          {
+            key: 'color',
+            label: 'สีป้ายหมวด (เว้นว่างได้ จะใช้สีน้ำเงินเข้ม)',
+            type: 'color',
           },
           {
             key: 'img',
@@ -579,8 +584,9 @@ export const ADMIN_SCHEMAS = [
               {
                 key: 'expiry',
                 label:
-                  'วันหมดอายุสัญญา (เช่น Exp.31/12/2570)',
-                type: 'text',
+                  'วันหมดอายุสัญญา (พิมพ์ตัวเลข เช่น 31122570 หรือกดเลือกจากปฏิทิน)',
+                type: 'date',
+                prefix: 'EXP.',
               },
               {
                 key: 'payorCode',

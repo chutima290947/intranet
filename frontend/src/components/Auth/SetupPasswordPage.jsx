@@ -58,7 +58,7 @@ export function SetupPasswordPage({ token }) {
 
         {status === 'ready' && (
           <>
-            <h1 className="mb-1 text-[16px] font-bold text-navy-900">ตั้งรหัสผ่านครั้งแรก</h1>
+            <h1 className="mb-1 text-[16px] font-bold text-navy-900">ตั้งรหัสผ่านใหม่</h1>
             <p className="mb-4 text-[12px] text-ink-soft">
               บัญชี: <span className="font-semibold text-navy-900">{userInfo?.username}</span>
             </p>

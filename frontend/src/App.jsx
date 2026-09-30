@@ -104,7 +104,7 @@ const scrollToSectionRef = { current: () => {} }
 
 function AppInner() {
   const { content, customSections, isLoading } = useContent()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, checkingSession } = useAuth()
 
   const initial = loadStoredPage()
   const [page, setPage] = useState(initial.page) // 'home' | 'division' | 'report' | 'doctor' | 'online' | 'request-item' | 'partner' | 'quality' | 'admin'
@@ -126,7 +126,7 @@ function AppInner() {
       sessionStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
-          page: page === 'admin' ? 'home' : page,
+          page,
           selectedDivisionId,
           selectedReportId,
           selectedPartnerName,
@@ -152,10 +152,12 @@ function AppInner() {
 
   // กันไม่ให้เข้าหน้า admin ได้ถ้ายังไม่ login (กันไว้เผื่อ state หลุด เช่น logout จากแท็บอื่น)
   useEffect(() => {
+    // ต้องรอให้เช็ค session (token ใน sessionStorage) เสร็จก่อน ไม่งั้น Refresh แล้วจะเด้งออกทันที
+    if (checkingSession) return
     if (page === 'admin' && !isAuthenticated) {
       setPage('home')
     }
-  }, [page, isAuthenticated])
+  }, [page, isAuthenticated, checkingSession])
 
   useEffect(() => {
     if (page !== 'home') return
@@ -286,7 +288,7 @@ function AppInner() {
   // เก่าที่ import ไว้ใน data.js) ไปก่อนชั่วขณะ แล้วค่อยสลับเป็นข้อมูล
   // จริงทีหลัง ทำให้เห็นรูปเก่ากระพริบก่อนรูปที่อัปโหลดจริงจะขึ้น
   // -----------------------------------------------------------
-  if (isLoading) {
+  if (isLoading || (page === 'admin' && checkingSession)) {
     return <LoadingScreen />
   }
 

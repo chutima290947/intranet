@@ -64,7 +64,14 @@ export function Promo() {
                     )
                   )}
                 </div>
-                <span className="relative top-0 left-0 m-1.5 inline-block rounded-[20px] px-2.5 py-[3px] text-[8px] font-bold text-white" style={{ background: p.color }}>{p.tag}</span>
+                {p.tag && (
+                  <span
+                    className="relative top-0 left-0 m-1.5 inline-block rounded-[20px] px-2.5 py-[3px] text-[8px] font-bold text-white"
+                    style={{ background: p.color || 'var(--color-navy-900)' }}
+                  >
+                    {p.tag}
+                  </span>
+                )}
                 <div className="bg-white px-[9px] py-2 text-[10.5px] leading-[1.35] font-bold text-navy-900">{p.name}</div>
               </button>
             )

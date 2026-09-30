@@ -47,6 +47,13 @@
 
   a { color: inherit; }
   button { font-family: inherit; cursor: pointer; }
+
+  /* ช่องกรอกข้อมูลทุกช่องพื้นหลังสีขาว (ยกเว้น checkbox/radio/color/range/file) */
+  input:not([type='checkbox']):not([type='radio']):not([type='color']):not([type='range']):not([type='file']),
+  textarea,
+  select {
+    background-color: #fff;
+  }
 }
 
 /* Dynamic-DOM highlight: App.jsx adds/removes this class via classList,

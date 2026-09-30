@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useContent } from '../../../context/ContentContext'
 import { useAuth } from '../../../context/AuthContext'
 import {
@@ -8,6 +9,78 @@ import {
   FileFieldInput,
   RowActions,
 } from './FieldInputs'
+
+// ============================================================
+// Confirm Dialog (Popup ยืนยัน)
+// ============================================================
+
+function ConfirmDialog({
+  open,
+  title = 'ยืนยันการลบ',
+  icon = 'ti-trash',
+  message,
+  detail,
+  confirmLabel = 'ยืนยัน',
+  cancelLabel = 'ยกเลิก',
+  onConfirm,
+  onCancel,
+}) {
+  // กด Esc เพื่อยกเลิก
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e) => {
+      if (e.key === 'Escape') onCancel()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, onCancel])
+
+  if (!open) return null
+
+  // ใช้ portal ให้ popup ลอยอยู่เหนือทุกอย่าง ไม่ถูก overflow / fieldset ของ parent บัง
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-navy-950/40 p-4"
+      onClick={onCancel}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="w-full max-w-[380px] rounded-xl bg-white p-5 shadow-[0_12px_40px_rgba(11,40,80,.25)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 flex items-center gap-2.5">
+          <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-coral-tint text-coral">
+            <i className={`ti ${icon} text-lg`} />
+          </span>
+          <h3 className="text-[15px] font-bold text-navy-900">{title}</h3>
+        </div>
+
+        <p className="break-words text-[13px] text-ink">{message}</p>
+        {detail && <p className="mt-1 text-[12px] text-ink-soft">{detail}</p>}
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            autoFocus
+            onClick={onCancel}
+            className="rounded-lg border border-line bg-white px-4 py-2 text-[12px] font-semibold text-ink-soft hover:bg-paper"
+          >
+            {cancelLabel}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="rounded-lg border-none bg-coral px-4 py-2 text-[12px] font-bold text-white hover:opacity-90"
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  )
+}
 
 // ============================================================
 // Sub List Editor
@@ -65,6 +138,8 @@ function SubListEditor({ field, items, onChange }) {
   const list = Array.isArray(items) ? items : []
   const [primaryField, ...restFields] = field.fields
   const [openIdx, setOpenIdx] = useState(null)
+  // index ของรายการที่รอการยืนยันลบ (null = ไม่มี popup)
+  const [pendingDelete, setPendingDelete] = useState(null)
 
   const updateItem = (idx, key, value) => {
     onChange(list.map((it, i) => (i === idx ? { ...it, [key]: value } : it)))
@@ -80,6 +155,11 @@ function SubListEditor({ field, items, onChange }) {
     setOpenIdx(null)
   }
 
+  const confirmRemove = () => {
+    if (pendingDelete !== null) removeItem(pendingDelete)
+    setPendingDelete(null)
+  }
+
   const moveItem = (idx, dir) => {
     const target = idx + dir
     if (target < 0 || target >= list.length) return
@@ -89,8 +169,21 @@ function SubListEditor({ field, items, onChange }) {
     onChange(next)
   }
 
+  const pendingTitle =
+    pendingDelete !== null
+      ? getSubItemTitle(list[pendingDelete], field.fields) ||
+        `รายการที่ ${pendingDelete + 1}`
+      : ''
+
   return (
     <div className="rounded-xl border border-line bg-white p-3">
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        message={`ต้องการลบ "${pendingTitle}" ใช่หรือไม่?`}
+        onConfirm={confirmRemove}
+        onCancel={() => setPendingDelete(null)}
+      />
+
       <div className="mb-3 flex items-center justify-between">
         <div>
           <p className="text-[12px] font-bold text-navy-900">{field.label}</p>
@@ -154,12 +247,12 @@ function SubListEditor({ field, items, onChange }) {
                   size="xs"
                   onUp={() => moveItem(idx, -1)}
                   onDown={() => moveItem(idx, 1)}
-                  onDelete={() => removeItem(idx)}
+                  onDelete={() => setPendingDelete(idx)}
                 />
               </div>
 
               {isOpen && (
-                <div className="border-t border-line bg-paper/30 px-2.5 py-2.5">
+                <div className="border-t border-line bg-paper px-2.5 py-2.5">
                   {primaryField && (
                     <div className="mb-2">
                       <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-ink-soft/70">
@@ -456,13 +549,23 @@ function TreeNodeRow({
 // depth 0 ใช้ gap กว้างกว่าเล็กน้อย ให้แต่ละหัวข้อหลักแยกจากกันชัดเจน ส่วน depth ลึกกว่าใช้ gap แคบลงเพราะอยู่ในกรอบเดียวกันแล้ว
 function TreeNodeEditor({ nodes, onChange, depth = 0, path = '', expandedPaths, togglePath, expandPath, openLinkPath, toggleLinkPath }) {
   const list = Array.isArray(nodes) ? nodes : []
+  // index ของหัวข้อที่รอการยืนยันลบ (null = ไม่มี popup)
+  const [pendingDelete, setPendingDelete] = useState(null)
 
   const updateNode = (idx, patch) => {
     onChange(list.map((n, i) => (i === idx ? { ...n, ...patch } : n)))
   }
 
-  const removeNode = (idx) => {
-    onChange(list.filter((_, i) => i !== idx))
+  // กดถังขยะ -> แค่เปิด popup ยังไม่ลบจริง
+  const requestRemove = (idx) => {
+    setPendingDelete(idx)
+  }
+
+  const confirmRemove = () => {
+    if (pendingDelete !== null) {
+      onChange(list.filter((_, i) => i !== pendingDelete))
+    }
+    setPendingDelete(null)
   }
 
   const addNode = () => {
@@ -485,8 +588,19 @@ function TreeNodeEditor({ nodes, onChange, depth = 0, path = '', expandedPaths, 
     onChange(next)
   }
 
+  const pendingNode = pendingDelete !== null ? list[pendingDelete] : null
+  const pendingCount = pendingNode ? countDescendants(pendingNode.children) : 0
+
   return (
     <div className={depth > 0 ? 'mt-2 border-l-2 border-blue-100 pl-3' : ''}>
+      <ConfirmDialog
+        open={pendingNode !== null}
+        message={`ต้องการลบ "${pendingNode?.label || 'หัวข้อที่ยังไม่ตั้งชื่อ'}" ใช่หรือไม่?`}
+        detail={pendingCount > 0 ? `รวมรายการย่อยอีก ${pendingCount} รายการ` : undefined}
+        onConfirm={confirmRemove}
+        onCancel={() => setPendingDelete(null)}
+      />
+
       <div className={`flex flex-col ${depth === 0 ? 'gap-2.5' : 'gap-2'}`}>
         {list.map((node, idx) => {
           const childPath = path ? `${path}-${idx}` : `${idx}`
@@ -500,7 +614,7 @@ function TreeNodeEditor({ nodes, onChange, depth = 0, path = '', expandedPaths, 
               total={list.length}
               depth={depth}
               updateNode={updateNode}
-              removeNode={removeNode}
+              removeNode={requestRemove}
               addChild={addChild}
               moveNode={moveNode}
               expandedPaths={expandedPaths}
@@ -672,12 +786,18 @@ export function CollectionEditor({ schema }) {
   const [justSaved, setJustSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+  // index ของรายการหลักที่รอการยืนยันลบ (null = ไม่มี popup)
+  const [pendingDelete, setPendingDelete] = useState(null)
+  // popup ยืนยันการยกเลิกการแก้ไขทั้งหมด
+  const [showDiscard, setShowDiscard] = useState(false)
 
   useEffect(() => {
     setDraftItems(content[schema.key] || [])
     setOpenIdx(null)
     setJustSaved(false)
     setSaveError('')
+    setPendingDelete(null)
+    setShowDiscard(false)
   }, [schema.key, content])
 
   const isDirty = JSON.stringify(draftItems) !== JSON.stringify(savedItems)
@@ -693,11 +813,17 @@ export function CollectionEditor({ schema }) {
     setOpenIdx(draftItems.length)
   }
 
-  const removeItem = (idx) => {
-    if (!window.confirm('ยืนยันลบรายการนี้?')) return
+  // กดถังขยะ -> แค่เปิด popup ยังไม่ลบจริง
+  const requestRemove = (idx) => {
+    setPendingDelete(idx)
+  }
 
-    setDraftItems((items) => items.filter((_, i) => i !== idx))
-    setOpenIdx(null)
+  const confirmRemove = () => {
+    if (pendingDelete !== null) {
+      setDraftItems((items) => items.filter((_, i) => i !== pendingDelete))
+      setOpenIdx(null)
+    }
+    setPendingDelete(null)
   }
 
   const moveItem = (idx, dir) => {
@@ -737,16 +863,40 @@ export function CollectionEditor({ schema }) {
     }
   }
 
-  const handleDiscard = () => {
-    if (!window.confirm('ยกเลิกการแก้ไขทั้งหมดที่ยังไม่บันทึก?')) return
-
+  const confirmDiscard = () => {
     setDraftItems(savedItems)
     setOpenIdx(null)
     setSaveError('')
+    setShowDiscard(false)
   }
+
+  const pendingItem = pendingDelete !== null ? draftItems[pendingDelete] : null
+  const pendingTitle = pendingItem
+    ? (schema.itemLabel
+        ? schema.itemLabel(pendingItem)
+        : pendingItem.label || pendingItem.name || pendingItem.title) ||
+      `รายการที่ ${pendingDelete + 1}`
+    : ''
 
   return (
     <div>
+      <ConfirmDialog
+        open={pendingItem !== null}
+        message={`ต้องการลบ "${pendingTitle}" ใช่หรือไม่?`}
+        detail="การลบจะมีผลจริงเมื่อกด “บันทึกการเปลี่ยนแปลง”"
+        onConfirm={confirmRemove}
+        onCancel={() => setPendingDelete(null)}
+      />
+
+      <ConfirmDialog
+        open={showDiscard}
+        title="ยกเลิกการแก้ไข"
+        icon="ti-arrow-back-up"
+        message="ต้องการยกเลิกการแก้ไขทั้งหมดที่ยังไม่บันทึกใช่หรือไม่?"
+        onConfirm={confirmDiscard}
+        onCancel={() => setShowDiscard(false)}
+      />
+
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h2 className="text-[16px] font-bold text-navy-900">{schema.label}</h2>
@@ -760,7 +910,7 @@ export function CollectionEditor({ schema }) {
           {isDirty && (
             <button
               type="button"
-              onClick={handleDiscard}
+              onClick={() => setShowDiscard(true)}
               className="rounded-lg border border-line bg-white px-3 py-2 text-[11.5px] font-semibold text-ink-soft hover:bg-paper"
             >
               ยกเลิกการแก้ไข
@@ -845,14 +995,14 @@ export function CollectionEditor({ schema }) {
                   <RowActions
                     onUp={() => moveItem(idx, -1)}
                     onDown={() => moveItem(idx, 1)}
-                    onDelete={canDelete ? () => removeItem(idx) : undefined}
+                    onDelete={canDelete ? () => requestRemove(idx) : undefined}
                     hideDelete={!canDelete}
                   />
                 )}
               </div>
 
               {isOpen && (
-                <div className="border-t border-line bg-paper/30 px-4 py-4">
+                <div className="border-t border-line bg-paper px-4 py-4">
                   <fieldset disabled={!canUpdate} className="grid grid-cols-2 gap-3.5 disabled:opacity-60">
                     {visibleFields.map((f) => (
                       <div

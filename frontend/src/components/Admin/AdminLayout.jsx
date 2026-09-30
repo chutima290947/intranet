@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ADMIN_SCHEMAS } from '../../data/adminSchemas'
 import { CollectionEditor } from './editors/CollectionEditor'
 import { JsonEditor } from './editors/JsonEditor'
@@ -10,20 +10,50 @@ import { ChangePasswordModal } from './ChangePasswordModal'
 
 const CUSTOM_SECTIONS_KEY = '__custom_sections__'
 const USER_ROLE_KEY = '__user_role_panel__'
+const ADMIN_TAB_STORAGE_KEY = 'intranet:admin-active-key'
+
+function loadStoredAdminKey() {
+  try {
+    return sessionStorage.getItem(ADMIN_TAB_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
 
 export function AdminLayout({ onExit }) {
-  const { logout, can } = useAuth()
+  const { logout, can, username, roleLabel } = useAuth()
   const [showChangePassword, setShowChangePassword] = useState(false)
 
 
   const firstVisibleKey = ADMIN_SCHEMAS.flatMap((g) => g.items).find((s) => can(s.key, 'view'))?.key || null
-  const [activeKey, setActiveKey] = useState(firstVisibleKey)
+  // จำเมนูที่เปิดอยู่ไว้ Refresh แล้วจะอยู่เมนูเดิม (ถ้าเมนูนั้นยังมีสิทธิ์ดูอยู่)
+  const allKeys = ADMIN_SCHEMAS.flatMap((g) => g.items).filter((s) => can(s.key, 'view')).map((s) => s.key)
+  const storedKey = loadStoredAdminKey()
+  const storedKeyValid =
+    storedKey &&
+    (allKeys.includes(storedKey) ||
+      storedKey === CUSTOM_SECTIONS_KEY ||
+      (storedKey === USER_ROLE_KEY && can('USERS', 'view')))
+  const [activeKey, setActiveKey] = useState(storedKeyValid ? storedKey : firstVisibleKey)
+
+  useEffect(() => {
+    try {
+      if (activeKey) sessionStorage.setItem(ADMIN_TAB_STORAGE_KEY, activeKey)
+    } catch {
+      // ignore
+    }
+  }, [activeKey])
 
   const activeSchema = ADMIN_SCHEMAS.flatMap((g) => g.items).find((s) => s.key === activeKey)
   const isCustomSectionsPage = activeKey === CUSTOM_SECTIONS_KEY
   const isUserRolePage = activeKey === USER_ROLE_KEY
 
   const handleLogout = () => {
+    try {
+      sessionStorage.removeItem(ADMIN_TAB_STORAGE_KEY)
+    } catch {
+      // ignore
+    }
     logout()
     onExit()
   }
@@ -34,6 +64,18 @@ export function AdminLayout({ onExit }) {
         <div className="border-b border-line px-5 py-4">
           <div className="text-[13px] font-bold text-navy-900">แผงควบคุมเนื้อหา</div>
           <div className="text-[10.5px] text-ink-soft">แก้ไขข้อมูลต่างๆ บนเว็บไซต์</div>
+
+          {username && (
+            <div className="mt-2 flex items-center gap-1.5 text-[11.5px] font-semibold text-blue-600">
+              <i className="ti ti-user-circle text-[14px]" />
+              <span className="truncate">{username}</span>
+              {roleLabel && (
+                <span className="flex-shrink-0 rounded-full bg-blue-tint px-2 py-0.5 text-[10px] font-bold text-blue-600">
+                  {roleLabel}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-3">

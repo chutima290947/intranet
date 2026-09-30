@@ -82,6 +82,24 @@ rolesRouter.put('/:id/permissions', async (req, res) => {
   }
 })
 
+// PUT /api/roles/:id -> แก้ชื่อที่แสดง (label) ของ role
+// หมายเหตุ: แก้ได้แค่ "label" (ชื่อที่แสดงในหน้า UI) เท่านั้น ไม่แก้ "name" (ตัวระบุภายใน)
+// เพราะโค้ดหลายจุดเช็ค role.name === 'super_admin' อยู่ ถ้าให้แก้ name ได้จะเสี่ยงพังระบบสิทธิ์
+rolesRouter.put('/:id', async (req, res) => {
+  const { label } = req.body || {}
+  if (!label || !label.trim()) {
+    return res.status(400).json({ error: 'กรุณาระบุชื่อ role' })
+  }
+
+  const { rows } = await pool.query(
+    'UPDATE roles SET label = $1 WHERE id = $2 RETURNING id, name, label',
+    [label.trim(), req.params.id]
+  )
+  if (!rows[0]) return res.status(404).json({ error: 'ไม่พบ role นี้' })
+
+  res.json(rows[0])
+})
+
 // DELETE /api/roles/:id
 rolesRouter.delete('/:id', async (req, res) => {
   const { rows } = await pool.query('SELECT name FROM roles WHERE id = $1', [req.params.id])
