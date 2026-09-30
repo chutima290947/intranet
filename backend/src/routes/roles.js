@@ -46,6 +46,29 @@ rolesRouter.post('/', async (req, res) => {
   res.status(201).json({ ...rows[0], permissions: [] })
 })
 
+// PUT /api/roles/:id -> แก้ไขชื่อที่แสดงของ role (label)
+// แก้เฉพาะ label เท่านั้น ส่วน name (รหัสภายใน เช่น super_admin) ไม่เปลี่ยน เพราะโค้ดฝั่งระบบอ้างอิงค่านี้อยู่
+rolesRouter.put('/:id', async (req, res) => {
+  const label = String(req.body?.label ?? '').trim()
+  if (!label) return res.status(400).json({ error: 'กรุณาระบุชื่อ role' })
+  if (label.length > 60) return res.status(400).json({ error: 'ชื่อ role ยาวเกินไป (ไม่เกิน 60 ตัวอักษร)' })
+
+  // ชื่อที่แสดงต้องไม่ซ้ำกับ role อื่น กันสับสนตอนเลือก role ให้ผู้ใช้
+  const { rows: dup } = await pool.query(
+    'SELECT id FROM roles WHERE lower(label) = lower($1) AND id != $2',
+    [label, req.params.id]
+  )
+  if (dup[0]) return res.status(409).json({ error: 'มี role ชื่อนี้อยู่แล้ว' })
+
+  const { rows } = await pool.query(
+    'UPDATE roles SET label = $1 WHERE id = $2 RETURNING id, name, label',
+    [label, req.params.id]
+  )
+  if (!rows[0]) return res.status(404).json({ error: 'ไม่พบ role นี้' })
+
+  res.json(rows[0])
+})
+
 // PUT /api/roles/:id/permissions -> ตั้งค่า permission ทั้งหมดของ role นี้ (แทนที่ทั้งชุด)
 // body: { permissions: ['ANN_NEWS:view', 'ANN_NEWS:create', ...] }
 rolesRouter.put('/:id/permissions', async (req, res) => {
@@ -80,24 +103,6 @@ rolesRouter.put('/:id/permissions', async (req, res) => {
   } finally {
     client.release()
   }
-})
-
-// PUT /api/roles/:id -> แก้ชื่อที่แสดง (label) ของ role
-// หมายเหตุ: แก้ได้แค่ "label" (ชื่อที่แสดงในหน้า UI) เท่านั้น ไม่แก้ "name" (ตัวระบุภายใน)
-// เพราะโค้ดหลายจุดเช็ค role.name === 'super_admin' อยู่ ถ้าให้แก้ name ได้จะเสี่ยงพังระบบสิทธิ์
-rolesRouter.put('/:id', async (req, res) => {
-  const { label } = req.body || {}
-  if (!label || !label.trim()) {
-    return res.status(400).json({ error: 'กรุณาระบุชื่อ role' })
-  }
-
-  const { rows } = await pool.query(
-    'UPDATE roles SET label = $1 WHERE id = $2 RETURNING id, name, label',
-    [label.trim(), req.params.id]
-  )
-  if (!rows[0]) return res.status(404).json({ error: 'ไม่พบ role นี้' })
-
-  res.json(rows[0])
 })
 
 // DELETE /api/roles/:id

@@ -469,6 +469,47 @@ export function UserRolePanel() {
   const [activeRoleId, setActiveRoleId] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // แก้ไขชื่อ Role (inline บนป้าย Role)
+  const [editingRoleId, setEditingRoleId] = useState(null)
+  const [editLabel, setEditLabel] = useState('')
+  const [editError, setEditError] = useState('')
+  const [editBusy, setEditBusy] = useState(false)
+
+  const startEditRole = (role) => {
+    setEditingRoleId(role.id)
+    setEditLabel(role.label)
+    setEditError('')
+  }
+
+  const cancelEditRole = () => {
+    setEditingRoleId(null)
+    setEditError('')
+  }
+
+  const saveEditRole = async () => {
+    const next = editLabel.trim()
+    const current = roles.find((r) => r.id === editingRoleId)
+    if (!next) {
+      setEditError('กรุณาระบุชื่อ Role')
+      return
+    }
+    if (current && next === current.label) {
+      cancelEditRole()
+      return
+    }
+    setEditBusy(true)
+    setEditError('')
+    try {
+      await api.updateRole(editingRoleId, next)
+      setEditingRoleId(null)
+      await loadAll()
+    } catch (err) {
+      setEditError(err.message || 'แก้ไขชื่อ Role ไม่สำเร็จ')
+    } finally {
+      setEditBusy(false)
+    }
+  }
+
   const loadAll = async () => {
     if (isSuperAdmin) {
       const [u, r, c] = await Promise.all([api.listUsers(), api.listRoles(), api.getPermissionCatalog()])
@@ -527,32 +568,78 @@ export function UserRolePanel() {
           <div className="mb-6">
             <h3 className="mb-2.5 text-[13.5px] font-bold text-navy-900">Role ทั้งหมด</h3>
             <div className="mb-3 flex flex-wrap gap-2">
-              {roles.map((r) => (
-                <div
-                  key={r.id}
-                  className={`flex items-center gap-1.5 rounded-lg border pl-3 pr-1.5 py-1.5 text-[12px] font-semibold ${
-                    activeRoleId === r.id ? 'border-navy-900 bg-navy-900 text-white' : 'border-line bg-white text-ink'
-                  }`}
-                >
-                  <button type="button" onClick={() => setActiveRoleId(r.id)} className="border-none bg-transparent">
-                    {r.label}
-                  </button>
-                  {r.name !== 'super_admin' && (
+              {roles.map((r) =>
+                editingRoleId === r.id ? (
+                  <div key={r.id} className="flex items-center gap-1.5 rounded-lg border border-blue-500 bg-white py-1 pl-2 pr-1.5">
+                    <input
+                      value={editLabel}
+                      onChange={(e) => {
+                        setEditLabel(e.target.value)
+                        setEditError('')
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveEditRole()
+                        if (e.key === 'Escape') cancelEditRole()
+                      }}
+                      autoFocus
+                      maxLength={60}
+                      className="w-36 rounded-md border border-line px-2 py-1 text-[12px] font-semibold"
+                    />
                     <button
                       type="button"
-                      onClick={() => handleDeleteRole(r)}
-                      className={`flex h-5 w-5 items-center justify-center rounded ${
-                        activeRoleId === r.id ? 'text-white/70 hover:bg-white/20 hover:text-white' : 'text-ink-soft hover:bg-coral-tint hover:text-coral'
-                      }`}
-                      aria-label={`ลบ role ${r.label}`}
-                      title={`ลบ role ${r.label}`}
+                      onClick={saveEditRole}
+                      disabled={editBusy}
+                      className="rounded-md border-none bg-blue-600 px-2 py-1 text-[10.5px] font-bold text-white disabled:opacity-50"
                     >
-                      <i className="ti ti-x text-[11px]" />
+                      {editBusy ? '...' : 'บันทึก'}
                     </button>
-                  )}
-                </div>
-              ))}
+                    <button
+                      type="button"
+                      onClick={cancelEditRole}
+                      className="rounded-md border-none bg-transparent px-1.5 py-1 text-[10.5px] font-semibold text-ink-soft hover:text-ink"
+                    >
+                      ยกเลิก
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    key={r.id}
+                    className={`flex items-center gap-1.5 rounded-lg border pl-3 pr-1.5 py-1.5 text-[12px] font-semibold ${
+                      activeRoleId === r.id ? 'border-navy-900 bg-navy-900 text-white' : 'border-line bg-white text-ink'
+                    }`}
+                  >
+                    <button type="button" onClick={() => setActiveRoleId(r.id)} className="border-none bg-transparent">
+                      {r.label}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => startEditRole(r)}
+                      className={`flex h-5 w-5 items-center justify-center rounded ${
+                        activeRoleId === r.id ? 'text-white/70 hover:bg-white/20 hover:text-white' : 'text-ink-soft hover:bg-blue-50 hover:text-blue-600'
+                      }`}
+                      aria-label={`แก้ไขชื่อ role ${r.label}`}
+                      title="แก้ไขชื่อ Role"
+                    >
+                      <i className="ti ti-pencil text-[11px]" />
+                    </button>
+                    {r.name !== 'super_admin' && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteRole(r)}
+                        className={`flex h-5 w-5 items-center justify-center rounded ${
+                          activeRoleId === r.id ? 'text-white/70 hover:bg-white/20 hover:text-white' : 'text-ink-soft hover:bg-coral-tint hover:text-coral'
+                        }`}
+                        aria-label={`ลบ role ${r.label}`}
+                        title={`ลบ role ${r.label}`}
+                      >
+                        <i className="ti ti-x text-[11px]" />
+                      </button>
+                    )}
+                  </div>
+                )
+              )}
             </div>
+            {editError && <p className="mb-2 text-[11px] font-semibold text-coral">{editError}</p>}
             <CreateRoleForm onCreated={loadAll} />
           </div>
 
