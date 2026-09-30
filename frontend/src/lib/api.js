@@ -135,6 +135,8 @@ export const api = {
   getPermissionCatalog: () => request('/api/roles/permission-catalog'),
   createRole: (name, label) =>
     request('/api/roles', { method: 'POST', body: JSON.stringify({ name, label }) }),
+  updateRole: (id, label) =>
+    request(`/api/roles/${id}`, { method: 'PUT', body: JSON.stringify({ label }) }),
   setRolePermissions: (roleId, permissions) =>
     request(`/api/roles/${roleId}/permissions`, { method: 'PUT', body: JSON.stringify({ permissions }) }),
   deleteRole: (id) => request(`/api/roles/${id}`, { method: 'DELETE' }),
