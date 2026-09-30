@@ -22,7 +22,7 @@ usersRouter.get('/roles-assignable', requirePermission('USERS', 'view'), async (
 // GET /api/users -> รายชื่อ user ทั้งหมด พร้อม role
 usersRouter.get('/', requirePermission('USERS', 'view'), async (req, res) => {
   const { rows } = await pool.query(
-    `SELECT u.id, u.username, u.display_name, u.created_at,
+    `SELECT u.id, u.username, u.display_name, u.email, u.created_at,
             u.password_hash IS NOT NULL as has_password,
             r.id as role_id, r.name as role_name, r.label as role_label
      FROM admin_users u
@@ -35,9 +35,21 @@ usersRouter.get('/', requirePermission('USERS', 'view'), async (req, res) => {
 
 // POST /api/users -> admin สร้างบัญชีใหม่ (ยังไม่มีรหัสผ่าน) คืนลิงก์ตั้งรหัสผ่านกลับไป
 usersRouter.post('/', requirePermission('USERS', 'create'), async (req, res) => {
-  const { username, displayName, roleId } = req.body || {}
+  const { username, displayName, roleId, email } = req.body || {}
   if (!username || !roleId) {
     return res.status(400).json({ error: 'กรุณาระบุ username และ role' })
+  }
+
+  const cleanEmail = String(email || '').trim()
+  if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+    return res.status(400).json({ error: 'รูปแบบอีเมลไม่ถูกต้อง' })
+  }
+
+  if (cleanEmail) {
+    const { rows: dupEmail } = await pool.query('SELECT id FROM admin_users WHERE lower(email) = lower($1)', [cleanEmail])
+    if (dupEmail[0]) {
+      return res.status(409).json({ error: 'อีเมลนี้ถูกใช้กับบัญชีอื่นแล้ว' })
+    }
   }
 
   const { rows: existing } = await pool.query('SELECT id FROM admin_users WHERE username = $1', [username])
@@ -72,10 +84,10 @@ usersRouter.post('/', requirePermission('USERS', 'create'), async (req, res) => 
 
   const { rows } = await pool.query(
     `INSERT INTO admin_users
-      (username, display_name, role_id, setup_token, setup_token_expires)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING id, username, display_name`,
-    [username, displayName || null, roleId, setupToken, expires]
+      (username, display_name, email, role_id, setup_token, setup_token_expires)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id, username, display_name, email`,
+    [username, displayName || null, cleanEmail || null, roleId, setupToken, expires]
   )
 
   // ไม่มีระบบส่งอีเมลในโปรเจกต์นี้
@@ -124,6 +136,47 @@ usersRouter.patch('/:id', requirePermission('USERS', 'update'), async (req, res)
 
   await pool.query('UPDATE admin_users SET role_id = $1 WHERE id = $2', [roleId, req.params.id])
   res.json({ ok: true })
+})
+
+
+// PATCH /api/users/:id/email -> แก้ไข/เพิ่ม/ลบอีเมลของ user (ใช้ส่งรหัสผ่านชั่วคราวตอนลืมรหัสผ่าน)
+usersRouter.patch('/:id/email', requirePermission('USERS', 'update'), async (req, res) => {
+  const email = String(req.body?.email ?? '').trim()
+
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: 'รูปแบบอีเมลไม่ถูกต้อง' })
+  }
+
+  // กัน role อื่นที่ไม่ใช่ super_admin เปลี่ยนอีเมลของ super_admin
+  // (ไม่งั้นเปลี่ยนอีเมลเป็นของตัวเอง แล้วกด "ลืมรหัสผ่าน" เพื่อยึดบัญชี super_admin ได้)
+  if (req.user?.role !== 'super_admin') {
+    const { rows: targetCheck } = await pool.query(
+      `SELECT r.name FROM admin_users u LEFT JOIN roles r ON r.id = u.role_id WHERE u.id = $1`,
+      [req.params.id]
+    )
+    if (targetCheck[0]?.name === 'super_admin') {
+      return res.status(403).json({ error: 'เฉพาะผู้ดูแลระบบสูงสุดเท่านั้นที่แก้อีเมลนี้ได้' })
+    }
+  }
+
+  // อีเมลต้องไม่ซ้ำกับบัญชีอื่น (ไม่งั้นระบบลืมรหัสผ่านจะไม่รู้ว่าต้องส่งให้บัญชีไหน)
+  if (email) {
+    const { rows: dup } = await pool.query(
+      'SELECT id FROM admin_users WHERE lower(email) = lower($1) AND id != $2',
+      [email, req.params.id]
+    )
+    if (dup[0]) {
+      return res.status(409).json({ error: 'อีเมลนี้ถูกใช้กับบัญชีอื่นแล้ว' })
+    }
+  }
+
+  const { rows } = await pool.query(
+    'UPDATE admin_users SET email = $1 WHERE id = $2 RETURNING id, email',
+    [email || null, req.params.id]
+  )
+  if (!rows[0]) return res.status(404).json({ error: 'ไม่พบผู้ใช้นี้' })
+
+  res.json({ ok: true, email: rows[0].email })
 })
 
 

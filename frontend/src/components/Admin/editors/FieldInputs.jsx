@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { UPLOAD_FOLDERS } from '../../../config/uploadFolders'
 
 // ============================================================
@@ -393,6 +393,112 @@ export function FileFieldInput({ value, onChange }) {
 }
 
 // ============================================================
+// Date Field (พิมพ์เองแล้วใส่ "/" ให้อัตโนมัติ หรือเลือกจากปฏิทิน)
+// ============================================================
+
+// พิมพ์เลขล้วน -> ใส่ "/" ให้อัตโนมัติเป็น dd/mm/yyyy (สูงสุด 8 หลัก)
+function formatDateTyping(raw) {
+  const d = raw.replace(/\D/g, '').slice(0, 8)
+  if (d.length <= 2) return d
+  if (d.length <= 4) return `${d.slice(0, 2)}/${d.slice(2)}`
+  return `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}`
+}
+
+// ออกจากช่อง: ถ้ากรอกครบ ปรับวัน/เดือนที่เกินให้อยู่ในช่วงที่ถูกต้อง
+function normalizeDate(text) {
+  const m = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  if (!m) return text
+  const month = Math.min(Math.max(+m[2], 1), 12)
+  const day = Math.min(Math.max(+m[1], 1), 31)
+  return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${m[3]}`
+}
+
+// dd/mm/yyyy (พ.ศ. หรือ ค.ศ.) -> yyyy-mm-dd (ค.ศ.) สำหรับ native date picker
+function dateTextToIso(text, buddhist) {
+  const m = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  if (!m) return ''
+  let year = +m[3]
+  if (buddhist && year > 2400) year -= 543
+  return `${String(year).padStart(4, '0')}-${m[2]}-${m[1]}`
+}
+
+// yyyy-mm-dd (ค.ศ.) -> dd/mm/yyyy (พ.ศ. หรือ ค.ศ.)
+function isoToDateText(iso, buddhist) {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!m) return ''
+  const year = buddhist ? +m[1] + 543 : +m[1]
+  return `${m[3]}/${m[2]}/${year}`
+}
+
+// field.prefix   ข้อความนำหน้า เช่น "EXP." (เก็บในค่าด้วย เช่น "EXP.31/12/2570")
+// field.buddhist false = ใช้ ค.ศ. (ค่าเริ่มต้นคือ พ.ศ.)
+function DateFieldInput({ field, value, onChange }) {
+  const pickerRef = useRef(null)
+  const prefix = field.prefix || ''
+  const buddhist = field.buddhist !== false
+
+  // ตัด prefix ออก เหลือเฉพาะส่วนวันที่ไว้แสดงในช่อง
+  const raw = typeof value === 'string' ? value : ''
+  const dateText =
+    prefix && raw.toUpperCase().startsWith(prefix.toUpperCase())
+      ? raw.slice(prefix.length)
+      : raw
+
+  const emit = (text) => onChange(text ? `${prefix}${text}` : '')
+
+  const openPicker = () => {
+    const el = pickerRef.current
+    if (!el) return
+    if (typeof el.showPicker === 'function') el.showPicker()
+    else el.click()
+  }
+
+  return (
+    <div className="relative flex items-center rounded-md border border-line bg-white focus-within:border-blue-500">
+      {prefix && (
+        <span className="pl-3 text-[12.5px] font-semibold text-ink-soft">
+          {prefix}
+        </span>
+      )}
+
+      <input
+        type="text"
+        inputMode="numeric"
+        value={dateText}
+        onChange={(e) => emit(formatDateTyping(e.target.value))}
+        onBlur={(e) => emit(normalizeDate(e.target.value))}
+        placeholder={buddhist ? 'วว/ดด/ปปปป (พ.ศ.)' : 'วว/ดด/ปปปป'}
+        maxLength={10}
+        className={`min-w-0 flex-1 border-none bg-transparent py-2 pr-2 text-[12.5px] outline-none ${
+          prefix ? 'pl-1' : 'pl-3'
+        }`}
+      />
+
+      <button
+        type="button"
+        onClick={openPicker}
+        className="mr-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border-none bg-transparent text-ink-soft hover:bg-blue-50 hover:text-blue-600"
+        aria-label="เลือกวันที่จากปฏิทิน"
+        title="เลือกวันที่จากปฏิทิน"
+      >
+        <i className="ti ti-calendar text-[15px]" />
+      </button>
+
+      {/* native date picker ซ่อนไว้ ใช้เปิดปฏิทินของเบราว์เซอร์ */}
+      <input
+        ref={pickerRef}
+        type="date"
+        tabIndex={-1}
+        aria-hidden="true"
+        value={dateTextToIso(dateText, buddhist)}
+        onChange={(e) => emit(isoToDateText(e.target.value, buddhist))}
+        className="pointer-events-none absolute bottom-0 right-0 h-0 w-0 opacity-0"
+      />
+    </div>
+  )
+}
+
+// ============================================================
 // Field Input (dispatcher)
 // ============================================================
 
@@ -466,6 +572,11 @@ export function FieldInput({ field, value, onChange }) {
         />
       </div>
     )
+  }
+
+  // วันที่ — พิมพ์เอง (ใส่ "/" อัตโนมัติ) หรือเลือกจากปฏิทิน
+  if (field.type === 'date') {
+    return <DateFieldInput field={field} value={value} onChange={onChange} />
   }
 
   // วันที่อัปเดตล่าสุด — stamp อัตโนมัติทุกครั้งที่บันทึก, แก้ไขเองไม่ได้

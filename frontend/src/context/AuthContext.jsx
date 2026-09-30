@@ -38,6 +38,14 @@ export function AuthProvider({ children }) {
     try {
       const res = await api.login(usernameInput, password)
       setToken(res.token)
+
+      // เข้าด้วยรหัสผ่านชั่วคราวจากอีเมล: ยังไม่ถือว่า login สำเร็จ ต้องตั้งรหัสผ่านใหม่ก่อน
+      // token ชุดนี้ใช้ได้แค่เปลี่ยนรหัสผ่าน (ฝั่ง backend บล็อก API อื่นไว้)
+      if (res.mustChangePassword) {
+        setError('')
+        return 'must_change'
+      }
+
       setIsAuthenticated(true)
       setUsername(res.username)
       setRole(res.role)

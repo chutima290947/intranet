@@ -15,6 +15,7 @@ function getSiteUrl() {
 function CreateUserForm({ roles, onCreated }) {
   const [username, setUsername] = useState('')
   const [displayName, setDisplayName] = useState('')
+  const [email, setEmail] = useState('')
   const [roleId, setRoleId] = useState(roles[0]?.id || '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -25,11 +26,12 @@ function CreateUserForm({ roles, onCreated }) {
     setBusy(true)
     setError('')
     try {
-      const res = await api.createUser(username, displayName, roleId)
+      const res = await api.createUser(username, displayName, roleId, email)
       const fullLink = `${getSiteUrl()}${import.meta.env.BASE_URL}setup-password/${res.setupToken}`
       setCreatedLink(fullLink)
       setUsername('')
       setDisplayName('')
+      setEmail('')
       onCreated()
     } catch (err) {
       setError(err.message || 'สร้างบัญชีไม่สำเร็จ')
@@ -56,6 +58,16 @@ function CreateUserForm({ roles, onCreated }) {
           <input
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
+            className="w-full rounded-md border border-line px-2.5 py-1.5 text-[12px]"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-[10px] font-bold text-ink-soft">อีเมล (ใช้ส่งลิงก์ลืมรหัสผ่าน)</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="name@company.com"
             className="w-full rounded-md border border-line px-2.5 py-1.5 text-[12px]"
           />
         </div>
@@ -154,6 +166,71 @@ function ResetPasswordButton({ user }) {
   )
 }
 
+function EmailCell({ user, onChanged }) {
+  const [value, setValue] = useState(user.email || '')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [saved, setSaved] = useState(false)
+
+  // sync เมื่อข้อมูลจาก server เปลี่ยน (เช่น โหลดรายชื่อใหม่)
+  useEffect(() => {
+    setValue(user.email || '')
+  }, [user.email])
+
+  const dirty = value.trim() !== (user.email || '')
+
+  const save = async () => {
+    if (!dirty || busy) return
+    setBusy(true)
+    setError('')
+    setSaved(false)
+    try {
+      await api.updateUserEmail(user.id, value.trim())
+      setSaved(true)
+      setTimeout(() => setSaved(false), 1800)
+      onChanged()
+    } catch (err) {
+      setError(err.message || 'บันทึกอีเมลไม่สำเร็จ')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-1.5">
+        <input
+          type="email"
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value)
+            setError('')
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') save()
+          }}
+          placeholder="ยังไม่มีอีเมล"
+          className={`w-48 rounded-md border px-2 py-1 text-[11.5px] ${
+            !user.email && !value ? 'border-amber/60 bg-amber/5' : 'border-line'
+          }`}
+        />
+        {dirty && (
+          <button
+            type="button"
+            onClick={save}
+            disabled={busy}
+            className="rounded-md border-none bg-blue-600 px-2 py-1 text-[10.5px] font-bold text-white disabled:opacity-50"
+          >
+            {busy ? '...' : 'บันทึก'}
+          </button>
+        )}
+        {saved && <i className="ti ti-check text-[14px] text-teal" />}
+      </div>
+      {error && <p className="mt-1 text-[10px] font-semibold text-coral">{error}</p>}
+    </div>
+  )
+}
+
 function UsersTable({ users, roles, onChanged }) {
   const handleRoleChange = async (id, roleId) => {
     await api.updateUserRole(id, roleId)
@@ -176,6 +253,7 @@ function UsersTable({ users, roles, onChanged }) {
           <tr className="border-b border-line bg-paper/50 text-left text-[10.5px] font-bold text-ink-soft">
             <th className="px-3.5 py-2.5">Username</th>
             <th className="px-3.5 py-2.5">ชื่อที่แสดง</th>
+            <th className="px-3.5 py-2.5">อีเมล</th>
             <th className="px-3.5 py-2.5">Role</th>
             <th className="px-3.5 py-2.5">สถานะ</th>
             <th className="px-3.5 py-2.5">รหัสผ่าน</th>
@@ -187,6 +265,9 @@ function UsersTable({ users, roles, onChanged }) {
             <tr key={u.id} className="border-b border-line last:border-b-0">
               <td className="px-3.5 py-2.5 font-semibold text-navy-900">{u.username}</td>
               <td className="px-3.5 py-2.5 text-ink-soft">{u.display_name || '—'}</td>
+              <td className="px-3.5 py-2.5">
+                <EmailCell user={u} onChanged={onChanged} />
+              </td>
               <td className="px-3.5 py-2.5">
                 {u.role_name === 'super_admin' ? (
                   <span className="rounded-full bg-navy-900/10 px-2.5 py-1 text-[11.5px] font-semibold text-navy-900">
@@ -228,7 +309,7 @@ function UsersTable({ users, roles, onChanged }) {
           ))}
           {users.length === 0 && (
             <tr>
-              <td colSpan={6} className="py-6 text-center text-ink-soft">ยังไม่มีผู้ใช้</td>
+              <td colSpan={7} className="py-6 text-center text-ink-soft">ยังไม่มีผู้ใช้</td>
             </tr>
           )}
         </tbody>

@@ -122,10 +122,12 @@ export const api = {
 // ---- users & roles ----
   listUsers: () => request('/api/users'),
   getAssignableRoles: () => request('/api/users/roles-assignable'),
-  createUser: (username, displayName, roleId) =>
-    request('/api/users', { method: 'POST', body: JSON.stringify({ username, displayName, roleId }) }),
+  createUser: (username, displayName, roleId, email) =>
+    request('/api/users', { method: 'POST', body: JSON.stringify({ username, displayName, roleId, email }) }),
   updateUserRole: (id, roleId) =>
     request(`/api/users/${id}`, { method: 'PATCH', body: JSON.stringify({ roleId }) }),
+  updateUserEmail: (id, email) =>
+    request(`/api/users/${id}/email`, { method: 'PATCH', body: JSON.stringify({ email }) }),
   deleteUser: (id) => request(`/api/users/${id}`, { method: 'DELETE' }),
     resetUserPassword: (id) => request(`/api/users/${id}/reset-password`, { method: 'POST' }),
 
@@ -137,7 +139,11 @@ export const api = {
     request(`/api/roles/${roleId}/permissions`, { method: 'PUT', body: JSON.stringify({ permissions }) }),
   deleteRole: (id) => request(`/api/roles/${id}`, { method: 'DELETE' }),
 
-  // ---- setup password (ครั้งแรก) ----
+  // ---- ลืมรหัสผ่าน (ไม่ต้อง login) ----
+  forgotPassword: (identifier) =>
+    request('/api/auth/forgot-password', { method: 'POST', body: JSON.stringify({ identifier }) }),
+
+  // ---- setup password (ครั้งแรก / ตั้งใหม่จากลิงก์ในอีเมล) ----
   checkSetupToken: (token) => request(`/api/auth/setup-password/${token}`),
   setupPassword: (token, password) =>
     request('/api/auth/setup-password', { method: 'POST', body: JSON.stringify({ token, password }) }),
