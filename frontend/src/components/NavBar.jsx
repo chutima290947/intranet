@@ -4,6 +4,23 @@ import { useAuth } from '../context/AuthContext'
 import logo from '../assets/logo.png'
 import { api, setToken } from '../lib/api'
 
+// แปลง URL ของไฟล์ที่อัปโหลดให้เปิดจาก Frontend ได้ (relative path จาก backend -> absolute)
+// รูปแบบเดียวกับ getFileUrl ใน DivisionGrid.jsx
+function getFileUrl(url) {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+
+  const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`
+  return `${API_URL}${url}`
+}
+
+// เมนูย่อยอาจมี "href" (ลิงก์ภายนอก) หรือ "file" (ไฟล์ที่อัปโหลด) — href มาก่อนถ้ามีทั้งคู่ ไม่มีทั้งสองคืน null
+function resolveLink(item) {
+  if (item?.href) return item.href
+  if (item?.file?.url) return getFileUrl(item.file.url)
+  return null
+}
+
 export function NavBar({ page, onNavigate, onSearch, onLoginSuccess, loginNotice }) {
   const { content } = useContent()
   const { DIVISIONS, REPORTS, SITE } = content
@@ -190,10 +207,16 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess, loginNotice
     onNavigate('division', divisionId)
   }
 
-  const handleSubItemClick = (s) => {
+  // ปิดเมนูแบบไม่เปลี่ยนหน้า (ใช้ตอนกดลิงก์ที่เปิดแท็บใหม่ — ตัว <a> พาไปเองอยู่แล้ว)
+  const closeMenus = () => {
     setOpenMenu(null)
     setExpandedId(null)
-    // TODO: เมื่อมี link ของแต่ละทีมย่อยแล้ว ให้ใช้ s.href หรือ s.url ตรงนี้
+  }
+
+  // กดเมนูย่อยที่ "ยังไม่ได้ใส่ลิงก์" -> พาไปหน้ารวมของฝ่ายนั้น (แสดงรายละเอียดฝ่ายและทีมย่อย)
+  const handleSubItemWithoutLink = (division) => {
+    closeMenus()
+    onNavigate('division', division.id)
   }
 
   const toggleDivisionMenu = (e) => {
@@ -277,17 +300,40 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess, loginNotice
 
                       {hasSub && isExpanded && (
                         <div className="ml-[29px] mb-1 flex flex-col gap-0.5 border-l border-line pl-2.5">
-                          {d.subItems.map((s) => (
-                            <button
-                              key={s.label}
-                              type="button"
-                              onClick={() => handleSubItemClick(s)}
-                              className="flex items-center gap-1.5 rounded-md border-none bg-transparent px-2 py-1.5 text-left cursor-pointer text-[11.5px] text-ink-soft hover:bg-paper hover:text-blue-600"
-                            >
-                              <i className={`ti ${s.icon} text-[12px] shrink-0`} />
-                              {s.label}
-                            </button>
-                          ))}
+                          {d.subItems.map((s) => {
+                            const link = resolveLink(s)
+                            const subClass =
+                              'flex items-center gap-1.5 rounded-md border-none bg-transparent px-2 py-1.5 text-left cursor-pointer text-[11.5px] text-ink-soft no-underline hover:bg-paper hover:text-blue-600'
+                            const subContent = (
+                              <>
+                                <i className={`ti ${s.icon || 'ti-link'} text-[12px] shrink-0`} />
+                                {s.label}
+                              </>
+                            )
+                            // มีลิงก์ (href หรือไฟล์แนบ) -> กดแล้วเปิดแท็บใหม่ได้เลย
+                            // ไม่มี -> พาไปหน้ารวมของฝ่ายนั้นแทน
+                            return link ? (
+                              <a
+                                key={s.label}
+                                href={link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={closeMenus}
+                                className={subClass}
+                              >
+                                {subContent}
+                              </a>
+                            ) : (
+                              <button
+                                key={s.label}
+                                type="button"
+                                onClick={() => handleSubItemWithoutLink(d)}
+                                className={subClass}
+                              >
+                                {subContent}
+                              </button>
+                            )
+                          })}
                         </div>
                       )}
                     </div>
@@ -308,17 +354,33 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess, loginNotice
           {openMenu === 'report' && (
             <div className="absolute left-0 top-full z-40 w-[min(260px,calc(100vw-2rem))] rounded-md border border-line bg-white p-2 shadow-xl">
               <div className="flex flex-col gap-0.5">
-                {REPORTS.map((r) => (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() => handleReportClick(r.id)}
-                    className="flex w-full items-center gap-2 rounded-md border-none bg-transparent px-2 py-2 text-left cursor-pointer hover:bg-paper"
-                  >
-                    <i className={`ti ${r.icon} text-[15px] shrink-0`} style={{ color: r.from }} />
-                    <span className="text-[12.5px] font-bold text-ink">{r.name}</span>
-                  </button>
-                ))}
+                {REPORTS.map((r) => {
+                  const reportClass =
+                    'flex w-full items-center gap-2 rounded-md border-none bg-transparent px-2 py-2 text-left cursor-pointer no-underline hover:bg-paper'
+                  const reportContent = (
+                    <>
+                      <i className={`ti ${r.icon} text-[15px] shrink-0`} style={{ color: r.from }} />
+                      <span className="text-[12.5px] font-bold text-ink">{r.name}</span>
+                    </>
+                  )
+                  // มีลิงก์ -> เปิดแท็บใหม่ได้เลย / ไม่มี -> ไปหน้ารวม Report เหมือนเดิม
+                  return r.href ? (
+                    <a
+                      key={r.id}
+                      href={r.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={closeMenus}
+                      className={reportClass}
+                    >
+                      {reportContent}
+                    </a>
+                  ) : (
+                    <button key={r.id} type="button" onClick={() => handleReportClick(r.id)} className={reportClass}>
+                      {reportContent}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}
