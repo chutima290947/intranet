@@ -1,7 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 
-export function ChangePasswordModal({ onClose }) {
+// หลังเปลี่ยนรหัสผ่านสำเร็จ จะนับถอยหลังแล้วเรียก onPasswordChanged() เพื่อ Logout อัตโนมัติ
+// ให้ผู้ใช้ Login ใหม่ด้วยรหัสผ่านใหม่ (หรือกดปุ่ม/ปิดหน้าต่างเพื่อออกทันที)
+const AUTO_LOGOUT_SECONDS = 3
+
+export function ChangePasswordModal({ onClose, onPasswordChanged }) {
   const { changePassword } = useAuth()
   const [oldPassword, setOldPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -9,6 +13,26 @@ export function ChangePasswordModal({ onClose }) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [secondsLeft, setSecondsLeft] = useState(AUTO_LOGOUT_SECONDS)
+  const loggedOutRef = useRef(false)
+
+  const finishAndLogout = () => {
+    if (loggedOutRef.current) return // กันเรียกซ้ำ (ทั้งตัวนับเวลาและการกดปุ่มพร้อมกัน)
+    loggedOutRef.current = true
+    if (onPasswordChanged) onPasswordChanged()
+    else onClose()
+  }
+
+  useEffect(() => {
+    if (!success) return undefined
+    if (secondsLeft <= 0) {
+      finishAndLogout()
+      return undefined
+    }
+    const timer = setTimeout(() => setSecondsLeft((n) => n - 1), 1000)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [success, secondsLeft])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -18,8 +42,8 @@ export function ChangePasswordModal({ onClose }) {
       setError('กรุณากรอกข้อมูลให้ครบทุกช่อง')
       return
     }
-    if (newPassword.length < 6) {
-      setError('รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร')
+    if (newPassword.length < 8) {
+      setError('รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร')
       return
     }
     if (newPassword !== confirmPassword) {
@@ -52,7 +76,7 @@ export function ChangePasswordModal({ onClose }) {
           <h2 className="text-[15px] font-bold text-navy-900">เปลี่ยนรหัสผ่าน</h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={success ? finishAndLogout : onClose}
             className="rounded-xs border-none bg-transparent p-1 text-ink-soft hover:text-ink"
           >
             <i className="ti ti-x text-lg" />
@@ -63,12 +87,17 @@ export function ChangePasswordModal({ onClose }) {
           <div className="flex flex-col items-center gap-3 py-4 text-center">
             <i className="ti ti-circle-check text-3xl text-teal" />
             <p className="text-[13px] font-semibold text-ink">เปลี่ยนรหัสผ่านสำเร็จ</p>
+            <p className="text-[12px] leading-relaxed text-ink-soft">
+              เพื่อความปลอดภัย ระบบจะออกจากระบบให้อัตโนมัติใน {Math.max(secondsLeft, 0)} วินาที
+              <br />
+              กรุณาเข้าสู่ระบบอีกครั้งด้วยรหัสผ่านใหม่
+            </p>
             <button
               type="button"
-              onClick={onClose}
+              onClick={finishAndLogout}
               className="mt-2 w-full rounded-xs border-none bg-navy-900 p-[11px] text-[13px] font-bold text-white"
             >
-              ปิดหน้าต่างนี้
+              ออกจากระบบทันที
             </button>
           </div>
         ) : (

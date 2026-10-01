@@ -1,29 +1,10 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useContent } from '../context/ContentContext'
 import { useAuth } from '../context/AuthContext'
 import logo from '../assets/logo.png'
 import { api, setToken } from '../lib/api'
-import { guessIcon } from '../utils/guessIcon'
 
-// แปลง URL ของไฟล์ที่อัปโหลดให้เปิดจาก Frontend ได้ (relative path จาก backend -> absolute)
-// รูปแบบเดียวกับ getFileUrl ใน DivisionGrid.jsx / Announcement.jsx
-function getFileUrl(url) {
-  if (!url) return ''
-  if (url.startsWith('http://') || url.startsWith('https://')) return url
-
-  const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`
-  return `${API_URL}${url}`
-}
-
-// ทีมย่อยอาจมี "href" (ลิงก์ภายนอก) หรือ "file" (ไฟล์ที่อัปโหลด) — href มาก่อนถ้ามีทั้งคู่
-// เหมือน resolveLink ใน DivisionGrid.jsx
-function resolveLink(item) {
-  if (item?.href) return item.href
-  if (item?.file?.url) return getFileUrl(item.file.url)
-  return null
-}
-
-export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
+export function NavBar({ page, onNavigate, onSearch, onLoginSuccess, loginNotice }) {
   const { content } = useContent()
   const { DIVISIONS, REPORTS, SITE } = content
   const { login, logout, error, isAuthenticated } = useAuth()
@@ -38,6 +19,8 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // ข้อความแจ้งบนฟอร์ม Login (เช่น "เปลี่ยนรหัสผ่านสำเร็จ กรุณา Login ใหม่")
+  const [loginNoticeText, setLoginNoticeText] = useState('')
 
   // ---- ลืมรหัสผ่าน (สลับมุมมองในป๊อปอัพเดิม) ----
   const [forgotMode, setForgotMode] = useState(false)
@@ -75,6 +58,7 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
   const closeLoginModal = () => {
     // ปิดป๊อปอัพระหว่างบังคับตั้งรหัสใหม่ -> ทิ้ง token ชั่วคราวด้วย (ยังไม่ได้ login จริง)
     if (mustChangeMode) setToken(null)
+    setLoginNoticeText('')
     setLoginOpen(false)
     setUsername('')
     setPassword('')
@@ -100,17 +84,11 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
     setChangeBusy(true)
     try {
       await api.changePassword(tempPassword, newPassword)
-      // ตั้งรหัสใหม่สำเร็จ -> login ด้วยรหัสใหม่ทันที
-      const ok = await login(username, newPassword)
-      if (ok === true) {
-        resetMustChangeState()
-        setUsername('')
-        setPassword('')
-        setLoginOpen(false)
-        onLoginSuccess?.()
-      } else {
-        setChangeError('ตั้งรหัสผ่านสำเร็จแล้ว แต่เข้าสู่ระบบอัตโนมัติไม่สำเร็จ กรุณา Login ด้วยรหัสใหม่')
-      }
+      // ตั้งรหัสใหม่สำเร็จ -> ทิ้ง token ชั่วคราว แล้วกลับหน้า Login ให้ผู้ใช้เข้าสู่ระบบด้วยรหัสใหม่เอง
+      setToken(null)
+      resetMustChangeState()
+      setPassword('')
+      setLoginNoticeText('ตั้งรหัสผ่านใหม่สำเร็จ กรุณาเข้าสู่ระบบอีกครั้งด้วยรหัสผ่านใหม่')
     } catch (err) {
       setChangeError(err.message || 'ตั้งรหัสผ่านใหม่ไม่สำเร็จ กรุณาลองใหม่')
     } finally {
@@ -136,8 +114,20 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
     }
   }
 
+  useEffect(() => {
+    if (!loginNotice) return
+    setUsername(loginNotice.username || '') // เติมชื่อผู้ใช้เดิมให้ ผู้ใช้กรอกแค่รหัสผ่านใหม่
+    setPassword('')
+    resetForgotState()
+    resetMustChangeState()
+    setLoginNoticeText(loginNotice.message || '')
+    setLoginOpen(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loginNotice?.id])
+
   const handleLoginSubmit = async (e) => {
     e.preventDefault()
+    setLoginNoticeText('')
     setIsSubmitting(true)
     const ok = await login(username, password)
     setIsSubmitting(false)
@@ -200,10 +190,10 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
     onNavigate('division', divisionId)
   }
 
-  // ทีมย่อยที่ไม่มีลิงก์/ไฟล์ -> แค่ปิดเมนู (ทีมที่มีลิงก์ใช้ <a> เปิดแท็บใหม่แทน)
-  const closeDivisionMenu = () => {
+  const handleSubItemClick = (s) => {
     setOpenMenu(null)
     setExpandedId(null)
+    // TODO: เมื่อมี link ของแต่ละทีมย่อยแล้ว ให้ใช้ s.href หรือ s.url ตรงนี้
   }
 
   const toggleDivisionMenu = (e) => {
@@ -274,7 +264,7 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
                         onClick={() => handleHeaderClick(d)}
                         className="flex w-full items-center gap-2 rounded-md border-none bg-transparent px-2 py-2 text-left cursor-pointer hover:bg-paper"
                       >
-                        <i className={`ti ${d.icon || guessIcon(d.name)} text-[15px] text-blue-600 shrink-0`} />
+                        <i className={`ti ${d.icon} text-[15px] text-blue-600 shrink-0`} />
                         <span className="flex-1 text-[12.5px] font-bold text-ink">{d.name}</span>
                         {hasSub && (
                           <i
@@ -287,41 +277,17 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
 
                       {hasSub && isExpanded && (
                         <div className="ml-[29px] mb-1 flex flex-col gap-0.5 border-l border-line pl-2.5">
-                          {d.subItems.map((s) => {
-                            const link = resolveLink(s)
-                            const subClass =
-                              'flex w-full items-center gap-1.5 rounded-md border-none bg-transparent px-2 py-1.5 text-left no-underline cursor-pointer text-[11.5px] text-ink-soft hover:bg-paper hover:text-blue-600'
-                            const inner = (
-                              <>
-                                <i className={`ti ${s.icon || 'ti-point'} text-[12px] shrink-0`} />
-                                {s.label}
-                              </>
-                            )
-
-                            // มีลิงก์ (href หรือไฟล์แนบ) -> เปิดแท็บใหม่ทันที เหมือนในหน้า Division
-                            // ไม่มี -> แค่ปิดเมนู
-                            return link ? (
-                              <a
-                                key={s.label}
-                                href={link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={closeDivisionMenu}
-                                className={subClass}
-                              >
-                                {inner}
-                              </a>
-                            ) : (
-                              <button
-                                key={s.label}
-                                type="button"
-                                onClick={closeDivisionMenu}
-                                className={subClass}
-                              >
-                                {inner}
-                              </button>
-                            )
-                          })}
+                          {d.subItems.map((s) => (
+                            <button
+                              key={s.label}
+                              type="button"
+                              onClick={() => handleSubItemClick(s)}
+                              className="flex items-center gap-1.5 rounded-md border-none bg-transparent px-2 py-1.5 text-left cursor-pointer text-[11.5px] text-ink-soft hover:bg-paper hover:text-blue-600"
+                            >
+                              <i className={`ti ${s.icon} text-[12px] shrink-0`} />
+                              {s.label}
+                            </button>
+                          ))}
                         </div>
                       )}
                     </div>
@@ -342,43 +308,17 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
           {openMenu === 'report' && (
             <div className="absolute left-0 top-full z-40 w-[min(260px,calc(100vw-2rem))] rounded-md border border-line bg-white p-2 shadow-xl">
               <div className="flex flex-col gap-0.5">
-                {REPORTS.map((r) => {
-                  const itemClass =
-                    'flex w-full items-center gap-2 rounded-md border-none bg-transparent px-2 py-2 text-left no-underline cursor-pointer hover:bg-paper'
-                  const inner = (
-                    <>
-                      <i
-                        className={`ti ${r.icon || guessIcon(r.name)} text-[15px] shrink-0`}
-                        style={{ color: r.from }}
-                      />
-                      <span className="text-[12.5px] font-bold text-ink">{r.name}</span>
-                    </>
-                  )
-
-                  // มี href -> เปิดลิงก์ตรงๆ ในแท็บใหม่ (เหมือนไอคอนในหน้า Report)
-                  // ไม่มี href -> พาไปหน้า Report ตามเดิม
-                  return r.href ? (
-                    <a
-                      key={r.id}
-                      href={r.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => setOpenMenu(null)}
-                      className={itemClass}
-                    >
-                      {inner}
-                    </a>
-                  ) : (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => handleReportClick(r.id)}
-                      className={itemClass}
-                    >
-                      {inner}
-                    </button>
-                  )
-                })}
+                {REPORTS.map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => handleReportClick(r.id)}
+                    className="flex w-full items-center gap-2 rounded-md border-none bg-transparent px-2 py-2 text-left cursor-pointer hover:bg-paper"
+                  >
+                    <i className={`ti ${r.icon} text-[15px] shrink-0`} style={{ color: r.from }} />
+                    <span className="text-[12.5px] font-bold text-ink">{r.name}</span>
+                  </button>
+                ))}
               </div>
             </div>
           )}
@@ -526,7 +466,7 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
                     disabled={changeBusy}
                     className="w-full rounded-md border-none bg-coral p-3.5 text-[15px] font-bold text-white hover:bg-[#C13E27] disabled:opacity-60"
                   >
-                    {changeBusy ? 'กำลังบันทึก...' : 'บันทึกรหัสผ่านใหม่และเข้าสู่ระบบ'}
+                    {changeBusy ? 'กำลังบันทึก...' : 'บันทึกรหัสผ่านใหม่'}
                   </button>
                 </form>
               ) : forgotMode ? (
@@ -609,6 +549,12 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
                       <i className="ti ti-x text-lg" />
                     </button>
                   </div>
+                  {loginNoticeText && (
+                    <div className="flex items-start gap-2 rounded-md border border-teal/40 bg-teal/5 p-3 text-[12.5px] font-semibold leading-relaxed text-ink">
+                      <i className="ti ti-circle-check mt-0.5 text-base text-teal" />
+                      <span>{loginNoticeText}</span>
+                    </div>
+                  )}
                   {/* input ล่อ (ซ่อนไว้) ให้เบราว์เซอร์ autofill ไปเติมตรงนี้แทนช่องจริง */}
                   <input type="text" name="fake-username" autoComplete="username" className="hidden" tabIndex={-1} />
                   <input type="password" name="fake-password" autoComplete="new-password" className="hidden" tabIndex={-1} />
@@ -647,7 +593,7 @@ export function NavBar({ page, onNavigate, onSearch, onLoginSuccess }) {
                     }}
                     className="-mt-1 border-none bg-transparent p-0 text-center text-[12.5px] font-semibold text-blue-600 hover:underline"
                   >
-                    Forgot Password?
+                    ลืมรหัสผ่าน?
                   </button>
                   <div className="text-[11px] text-ink-soft/60">* สำหรับเจ้าหน้าที่ผู้ดูแลระบบเท่านั้น</div>
                 </form>
