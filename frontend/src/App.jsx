@@ -107,6 +107,8 @@ function AppInner() {
   const { isAuthenticated, checkingSession } = useAuth()
 
   const initial = loadStoredPage()
+  // ใช้สั่งให้ NavBar เปิดป๊อปอัพ Login พร้อมข้อความ (เช่น หลังเปลี่ยนรหัสผ่านสำเร็จ)
+  const [loginNotice, setLoginNotice] = useState(null)
   const [page, setPage] = useState(initial.page) // 'home' | 'division' | 'report' | 'doctor' | 'online' | 'request-item' | 'partner' | 'quality' | 'admin'
   const [activeSection, setActiveSection] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -293,7 +295,18 @@ function AppInner() {
   }
 
   if (page === 'admin' && isAuthenticated) {
-    return <AdminLayout onExit={() => goTo('home')} />
+    return (
+      <AdminLayout
+        onExit={() => goTo('home')}
+        onPasswordChanged={() => {
+          goTo('home')
+          setLoginNotice({
+            id: Date.now(),
+            message: 'เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบอีกครั้งด้วยรหัสผ่านใหม่',
+          })
+        }}
+      />
+    )
   }
 
   return (
@@ -303,7 +316,13 @@ function AppInner() {
       {page === 'home' && <PopupAd />}
 
       <TopBar />
-      <NavBar page={page} onNavigate={goTo} onSearch={handleSearch} onLoginSuccess={() => goTo('admin')} />
+      <NavBar
+        page={page}
+        onNavigate={goTo}
+        onSearch={handleSearch}
+        onLoginSuccess={() => goTo('admin')}
+        loginNotice={loginNotice}
+      />
       <Hero />
       <StatsBar />
 

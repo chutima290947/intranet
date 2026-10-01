@@ -20,7 +20,7 @@ function loadStoredAdminKey() {
   }
 }
 
-export function AdminLayout({ onExit }) {
+export function AdminLayout({ onExit, onPasswordChanged }) {
   const { logout, can, username, roleLabel } = useAuth()
   const [showChangePassword, setShowChangePassword] = useState(false)
 
@@ -48,6 +48,19 @@ export function AdminLayout({ onExit }) {
   const isCustomSectionsPage = activeKey === CUSTOM_SECTIONS_KEY
   const isUserRolePage = activeKey === USER_ROLE_KEY
 
+  // เปลี่ยนรหัสผ่านสำเร็จ -> ออกจากระบบ แล้วให้ App พาไปหน้า Login ใหม่
+  const handlePasswordChanged = () => {
+    try {
+      sessionStorage.removeItem(ADMIN_TAB_STORAGE_KEY)
+    } catch {
+      // ignore
+    }
+    const lastUsername = username // เก็บไว้ก่อน logout() จะล้างค่า เพื่อเติมชื่อผู้ใช้ให้ในหน้า Login
+    logout()
+    if (onPasswordChanged) onPasswordChanged(lastUsername)
+    else onExit()
+  }
+
   const handleLogout = () => {
     try {
       sessionStorage.removeItem(ADMIN_TAB_STORAGE_KEY)
@@ -64,7 +77,6 @@ export function AdminLayout({ onExit }) {
         <div className="border-b border-line px-5 py-4">
           <div className="text-[13px] font-bold text-navy-900">แผงควบคุมเนื้อหา</div>
           <div className="text-[10.5px] text-ink-soft">แก้ไขข้อมูลต่างๆ บนเว็บไซต์</div>
-
           {username && (
             <div className="mt-2 flex items-center gap-1.5 text-[11.5px] font-semibold text-blue-600">
               <i className="ti ti-user-circle text-[14px]" />
@@ -183,7 +195,7 @@ export function AdminLayout({ onExit }) {
         )}
       </main>
            {showChangePassword && (
-       <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
+       <ChangePasswordModal onClose={() => setShowChangePassword(false)} onPasswordChanged={handlePasswordChanged} />
      )}
     </div>
   )
