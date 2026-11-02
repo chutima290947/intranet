@@ -7,9 +7,9 @@ import { requireAuth } from '../middleware/auth.js'
 
 export const uploadsRouter = Router()
 
-// จำกัดขนาดไฟล์ทั่วไป (PDF ฯลฯ) 25 MB / รูปภาพ 5 MB
+// จำกัดขนาดไฟล์ทั่วไป (PDF ฯลฯ) 25 MB / รูปภาพ 25 MB
 const MAX_SIZE = 25 * 1024 * 1024
-const IMAGE_MAX_SIZE = 5 * 1024 * 1024
+const IMAGE_MAX_SIZE = 25 * 1024 * 1024
 
 // เก็บไฟล์ไว้ใน memory ก่อนบันทึกลง PostgreSQL
 const upload = multer({
@@ -51,6 +51,23 @@ const ALLOWED_FOLDERS = new Set([
 ])
 
 // ---------------------------------------------------------
+// แก้ชื่อไฟล์ภาษาไทยเพี้ยน: Multer/Busboy อ่านชื่อไฟล์เป็น latin1
+// จึงต้องแปลงกลับเป็น utf8 (ถ้าชื่อถูกต้องอยู่แล้วจะคืนค่าเดิม)
+// ---------------------------------------------------------
+export function fixFilename(name) {
+  if (!name) return name
+  // มีอักขระนอกช่วง latin1 = ถูก decode เป็น utf8 ถูกต้องอยู่แล้ว
+  if (/[^\u0000-\u00ff]/.test(name)) return name
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(
+      Buffer.from(name, 'latin1'),
+    )
+  } catch {
+    return name
+  }
+}
+
+// ---------------------------------------------------------
 // POST /api/uploads
 // multipart/form-data
 // field: file
@@ -75,15 +92,18 @@ uploadsRouter.post('/', uploadSingle, async (req, res) => {
       })
     }
 
-    // รูปภาพจำกัดขนาดแยกต่างหาก (5MB) เข้มกว่าไฟล์ทั่วไป (25MB)
+    // รูปภาพจำกัดขนาดแยกต่างหาก (25MB) เท่ากับไฟล์ทั่วไป (25MB)
     if (file.mimetype.startsWith('image/') && file.size > IMAGE_MAX_SIZE) {
       return res.status(400).json({
-        error: 'รูปภาพมีขนาดใหญ่เกินไป (สูงสุด 5MB)',
+        error: 'รูปภาพมีขนาดใหญ่เกินไป (สูงสุด 25MB)',
       })
     }
 
+    // แก้ชื่อไฟล์ภาษาไทยให้ถูกต้อง (latin1 -> utf8)
+    const originalName = fixFilename(file.originalname)
+
     // นามสกุลไฟล์เดิม
-    const ext = path.extname(file.originalname)
+    const ext = path.extname(originalName)
 
     // สร้างชื่อไฟล์ใหม่ไม่ซ้ำกัน
     const storedName = `${crypto.randomUUID()}${ext}`
@@ -110,7 +130,7 @@ uploadsRouter.post('/', uploadSingle, async (req, res) => {
       `,
       [
         folder,
-        file.originalname,
+        originalName,
         storedName,
         '',
         file.mimetype,
@@ -233,9 +253,15 @@ uploadsRouter.get('/:id/download', async (req, res) => {
       file.mime_type || 'application/octet-stream',
     )
 
+    // รองรับชื่อไฟล์ภาษาไทย (RFC 5987): filename = ASCII fallback, filename* = UTF-8
+    const asciiName = file.original_name.replace(/[^\x20-\x7e]|["\\]/g, '_')
+    const utf8Name = encodeURIComponent(file.original_name).replace(
+      /['()*]/g,
+      (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase(),
+    )
     res.setHeader(
       'Content-Disposition',
-      `inline; filename="${encodeURIComponent(file.original_name)}"`,
+      `inline; filename="${asciiName}"; filename*=UTF-8''${utf8Name}`,
     )
 
     return res.send(file.data)

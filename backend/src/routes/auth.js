@@ -111,7 +111,7 @@ const FORGOT_GENERIC_MESSAGE =
   'หากมีบัญชีนี้อยู่ในระบบและมีอีเมลที่ลงทะเบียนไว้ เราได้ส่งรหัสผ่านชั่วคราวไปให้แล้ว กรุณาตรวจสอบอีเมล (รวมถึงกล่องจดหมายขยะ)'
 
 // สุ่มรหัสผ่าน 10 ตัว ตัดตัวที่สับสนง่าย (0/O, 1/l/I) และรับประกันว่ามีตัวพิมพ์ใหญ่ ตัวเล็ก และตัวเลข
-function generateTempPassword(length = 10) {
+export function generateTempPassword(length = 10) {
   const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
   const lower = 'abcdefghijkmnopqrstuvwxyz'
   const digits = '23456789'

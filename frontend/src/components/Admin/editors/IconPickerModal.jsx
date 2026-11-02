@@ -3,6 +3,10 @@ import { createPortal } from 'react-dom'
 import { getFileUrl } from './FieldInputs'
 import { UPLOAD_FOLDERS } from '../../../config/uploadFolders'
 
+// ขนาดสูงสุดของรูปภาพ (ต้องตรงกับ IMAGE_MAX_SIZE ฝั่ง Backend)
+const IMAGE_MAX_MB = 25
+const IMAGE_MAX_SIZE = IMAGE_MAX_MB * 1024 * 1024
+
 // รายการไอคอน Tabler ยอดนิยม จัดหมวดหมู่ พร้อมคีย์เวิร์ดภาษาไทย/อังกฤษสำหรับค้นหา
 export const TABLER_ICON_CATEGORIES = [
   {
@@ -212,8 +216,8 @@ export function IconPickerModal({
       return
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setUploadError('ไฟล์รูปภาพใหญ่เกินไป (จำกัดไม่เกิน 5MB)')
+    if (file.size > IMAGE_MAX_SIZE) {
+      setUploadError(`ไฟล์รูปภาพใหญ่เกินไป (จำกัดไม่เกิน ${IMAGE_MAX_MB}MB)`)
       return
     }
 
@@ -399,7 +403,7 @@ export function IconPickerModal({
                       {uploading ? 'กำลังอัปโหลดรูปภาพ...' : 'คลิกเพื่อเลือกไฟล์รูปภาพไอคอน / โลโก้'}
                     </span>
                     <span className="mt-1 text-[11.5px] text-ink-soft">
-                      รองรับไฟล์ JPG, PNG, WEBP, SVG ขนาดไม่เกิน 5MB
+                      รองรับไฟล์ JPG, PNG, WEBP, SVG ขนาดไม่เกิน {IMAGE_MAX_MB}MB
                     </span>
                     <input
                       type="file"

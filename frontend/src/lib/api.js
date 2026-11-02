@@ -130,6 +130,8 @@ export const api = {
     request(`/api/users/${id}/email`, { method: 'PATCH', body: JSON.stringify({ email }) }),
   deleteUser: (id) => request(`/api/users/${id}`, { method: 'DELETE' }),
     resetUserPassword: (id) => request(`/api/users/${id}/reset-password`, { method: 'POST' }),
+  resetUserPasswordDirect: (id) =>
+    request(`/api/users/${id}/reset-password-direct`, { method: 'POST' }),
 
   listRoles: () => request('/api/roles'),
   getPermissionCatalog: () => request('/api/roles/permission-catalog'),

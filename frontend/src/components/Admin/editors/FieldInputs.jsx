@@ -72,6 +72,14 @@ export function stampAutoDatetime(item, fields) {
 // Upload File
 // ============================================================
 
+// ขนาดสูงสุดของรูปภาพ (ต้องตรงกับ IMAGE_MAX_SIZE ฝั่ง Backend)
+const IMAGE_MAX_MB = 25
+const IMAGE_MAX_SIZE = IMAGE_MAX_MB * 1024 * 1024
+
+// ขนาดสูงสุดของไฟล์ทั่วไป (ต้องตรงกับ MAX_SIZE ฝั่ง Backend)
+const FILE_MAX_MB = 25
+const FILE_MAX_SIZE = FILE_MAX_MB * 1024 * 1024
+
 async function uploadFile(file, folder) {
   const formData = new FormData()
 
@@ -171,8 +179,8 @@ function ImageFieldInput({ value, onChange }) {
       return
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setError('ไฟล์รูปใหญ่เกินไป (จำกัด 5MB)')
+    if (file.size > IMAGE_MAX_SIZE) {
+      setError(`ไฟล์รูปใหญ่เกินไป (จำกัด ${IMAGE_MAX_MB}MB)`)
       return
     }
 
@@ -294,13 +302,13 @@ export function FileFieldInput({ value, onChange }) {
     }
 
     const isImage = file.type.startsWith('image/')
-    const maxSize = isImage ? 5 * 1024 * 1024 : 10 * 1024 * 1024
+    const maxSize = isImage ? IMAGE_MAX_SIZE : FILE_MAX_SIZE
 
     if (file.size > maxSize) {
       setError(
         isImage
-          ? 'รูปภาพใหญ่เกินไป (จำกัด 5MB)'
-          : 'ไฟล์ใหญ่เกินไป (จำกัด 10MB)'
+          ? `รูปภาพใหญ่เกินไป (จำกัด ${IMAGE_MAX_MB}MB)`
+          : `ไฟล์ใหญ่เกินไป (จำกัด ${FILE_MAX_MB}MB)`
       )
       return
     }
@@ -334,7 +342,7 @@ export function FileFieldInput({ value, onChange }) {
 
           <div className="flex items-center gap-3">
             {fileInfo.url && (
-              <a 
+              <a
                 href={getFileUrl(fileInfo.url)}
                 target="_blank"
                 rel="noreferrer"

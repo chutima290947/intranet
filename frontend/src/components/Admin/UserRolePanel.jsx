@@ -117,17 +117,42 @@ function CreateUserForm({ roles, onCreated }) {
 
 function ResetPasswordButton({ user }) {
   const [link, setLink] = useState(null)
+  const [tempInfo, setTempInfo] = useState(null) // { tempPassword, expiresHours }
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [copied, setCopied] = useState('')
 
-  // ข้อความปุ่มเปลี่ยนตามสถานะ: ถ้ายังไม่เคยตั้งรหัสผ่านเลย = ลิงก์เดิมหมดอายุ (item 3)
-  // ถ้าเคยตั้งแล้ว = ลืมรหัสผ่าน อยากตั้งใหม่ (item 2) — แต่ backend endpoint ทำงานเหมือนกันทั้งคู่
-  const label = user.has_password ? 'รีเซ็ตรหัสผ่าน (ลืมรหัสผ่าน)' : 'ส่งลิงก์ตั้งรหัสผ่านใหม่'
+  const copy = (text, which) => {
+    navigator.clipboard.writeText(text)
+    setCopied(which)
+    setTimeout(() => setCopied(''), 1500)
+  }
 
-  const handleClick = async () => {
-    if (!window.confirm(`${label} สำหรับ "${user.username}"? รหัสผ่านเดิม (ถ้ามี) จะใช้ไม่ได้ทันที`)) return
+  // รีเซ็ตทันที: ระบบสุ่มรหัสผ่านชั่วคราวให้เห็นบนหน้าจอเลย (เห็นครั้งเดียว) แอดมินแจ้งผู้ใช้เอง
+  // ผู้ใช้ login ด้วยรหัสนี้แล้วระบบจะบังคับให้ตั้งรหัสใหม่ทันที — รหัสเดิมใช้ไม่ได้ตั้งแต่กดรีเซ็ต
+  const handleDirectReset = async () => {
+    if (!window.confirm(`รีเซ็ตรหัสผ่านของ "${user.username}" ทันที? รหัสผ่านเดิมจะใช้ไม่ได้ทันที`)) return
     setBusy(true)
     setError('')
+    setLink(null)
+    setTempInfo(null)
+    try {
+      const res = await api.resetUserPasswordDirect(user.id)
+      setTempInfo({ tempPassword: res.tempPassword, expiresHours: res.expiresHours })
+    } catch (err) {
+      setError(err.message || 'ทำรายการไม่สำเร็จ')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // ทางเลือก: สร้างลิงก์ให้ผู้ใช้ตั้งรหัสผ่านเอง (เหมาะกับบัญชีใหม่ / ผู้ใช้อยากตั้งรหัสเอง)
+  const handleLinkReset = async () => {
+    if (!window.confirm(`สร้างลิงก์ตั้งรหัสผ่านใหม่สำหรับ "${user.username}"? รหัสผ่านเดิม (ถ้ามี) จะใช้ไม่ได้ทันที`)) return
+    setBusy(true)
+    setError('')
+    setLink(null)
+    setTempInfo(null)
     try {
       const res = await api.resetUserPassword(user.id)
       const fullLink = `${getSiteUrl()}${import.meta.env.BASE_URL}setup-password/${res.setupToken}`
@@ -141,24 +166,52 @@ function ResetPasswordButton({ user }) {
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={handleClick}
-        disabled={busy}
-        className="text-[10.5px] font-semibold text-blue-600 disabled:opacity-50"
-      >
-        {busy ? 'กำลังสร้างลิงก์...' : label}
-      </button>
+      <div className="flex flex-col items-start gap-0.5">
+        <button
+          type="button"
+          onClick={handleDirectReset}
+          disabled={busy}
+          className="text-[10.5px] font-bold text-blue-600 disabled:opacity-50"
+        >
+          {busy ? 'กำลังดำเนินการ...' : 'รีเซ็ตรหัสผ่านทันที'}
+        </button>
+        
+      </div>
       {error && <p className="mt-1 text-[10px] font-semibold text-coral">{error}</p>}
+
+      {tempInfo && (
+        <div className="mt-1.5 w-56 rounded-md border border-teal bg-teal/5 p-2">
+          <p className="mb-1 text-[10px] font-semibold text-ink">
+            รหัสผ่านชั่วคราว (แสดงครั้งเดียว — แจ้งผู้ใช้ ใช้ได้ {tempInfo.expiresHours} ชม.):
+          </p>
+          <div className="flex items-center gap-1.5">
+            <input
+              readOnly
+              value={tempInfo.tempPassword}
+              onFocus={(e) => e.target.select()}
+              className="w-full rounded-md border border-line bg-white px-2 py-1 font-mono text-[12px] font-bold tracking-wide"
+            />
+            <button
+              type="button"
+              onClick={() => copy(tempInfo.tempPassword, 'temp')}
+              className="flex-shrink-0 rounded-md border-none bg-blue-600 px-2 py-1 text-[10px] font-bold text-white"
+            >
+              {copied === 'temp' ? '✓' : 'คัดลอก'}
+            </button>
+          </div>
+          <p className="mt-1 text-[9.5px] text-ink-soft">ผู้ใช้จะถูกบังคับตั้งรหัสผ่านใหม่ตอนเข้าสู่ระบบครั้งแรก</p>
+        </div>
+      )}
+
       {link && (
         <div className="mt-1.5 flex items-center gap-1.5">
           <input readOnly value={link} className="w-52 rounded-md border border-line bg-white px-2 py-1 text-[10px]" />
           <button
             type="button"
-            onClick={() => navigator.clipboard.writeText(link)}
+            onClick={() => copy(link, 'link')}
             className="rounded-md border-none bg-blue-600 px-2 py-1 text-[10px] font-bold text-white"
           >
-            คัดลอก
+            {copied === 'link' ? '✓' : 'คัดลอก'}
           </button>
         </div>
       )}

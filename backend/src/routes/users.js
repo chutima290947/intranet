@@ -1,8 +1,9 @@
 import { Router } from 'express'
+import bcrypt from 'bcryptjs'
 import { pool } from '../db.js'
 import { requireAuth } from '../middleware/auth.js'
 import { requirePermission } from '../middleware/requirePermission.js'
-import { generateSetupToken } from './auth.js'
+import { generateSetupToken, generateTempPassword } from './auth.js'
 
 export const usersRouter = Router()
 
@@ -209,6 +210,46 @@ usersRouter.post('/:id/reset-password', requirePermission('USERS', 'update'), as
   res.json({ username: rows[0].username, setupToken })
 })
 
+
+// POST /api/users/:id/reset-password-direct -> รีเซ็ตรหัสผ่านทันที (ไม่ต้องส่งลิงก์)
+// สุ่มรหัสผ่านชั่วคราวแล้วส่งกลับให้แอดมินเห็นครั้งเดียว ให้แอดมินแจ้งผู้ใช้เอง
+// - รหัสเดิมใช้ไม่ได้ทันที (password_hash = NULL) และลิงก์ตั้งรหัสเก่าถูกยกเลิก
+// - ผู้ใช้ login ด้วยรหัสชั่วคราวนี้ได้ แล้วระบบบังคับให้ตั้งรหัสใหม่ด้วยตัวเองทันที (mustChange)
+const DIRECT_RESET_HOURS = 24
+usersRouter.post('/:id/reset-password-direct', requirePermission('USERS', 'update'), async (req, res) => {
+  // กันรีเซ็ตบัญชีตัวเอง (จะล็อกตัวเองออก) — ใช้ปุ่ม "เปลี่ยนรหัสผ่าน" แทน
+  if (String(req.user.sub) === String(req.params.id)) {
+    return res.status(400).json({ error: 'ไม่สามารถรีเซ็ตรหัสผ่านของตัวเองได้ กรุณาใช้ปุ่ม "เปลี่ยนรหัสผ่าน" แทน' })
+  }
+
+  // กันไม่ให้ role อื่นที่ไม่ใช่ super_admin รีเซ็ตรหัสผ่านของ super_admin (ยึดอำนาจได้ถ้าไม่กัน)
+  if (req.user?.role !== 'super_admin') {
+    const { rows: targetCheck } = await pool.query(
+      `SELECT r.name FROM admin_users u LEFT JOIN roles r ON r.id = u.role_id WHERE u.id = $1`,
+      [req.params.id]
+    )
+    if (targetCheck[0]?.name === 'super_admin') {
+      return res.status(403).json({ error: 'เฉพาะผู้ดูแลระบบสูงสุดเท่านั้นที่รีเซ็ตรหัสผ่านนี้ได้' })
+    }
+  }
+
+  const tempPassword = generateTempPassword()
+  const hash = await bcrypt.hash(tempPassword, 10)
+  const expires = new Date(Date.now() + DIRECT_RESET_HOURS * 60 * 60 * 1000)
+
+  const { rows } = await pool.query(
+    `UPDATE admin_users
+     SET password_hash = NULL,
+         setup_token = NULL, setup_token_expires = NULL,
+         temp_password_hash = $1, temp_password_expires = $2
+     WHERE id = $3
+     RETURNING username`,
+    [hash, expires, req.params.id]
+  )
+  if (!rows[0]) return res.status(404).json({ error: 'ไม่พบผู้ใช้นี้' })
+
+  res.json({ username: rows[0].username, tempPassword, expiresHours: DIRECT_RESET_HOURS })
+})
 
 // DELETE /api/users/:id
 usersRouter.delete('/:id', requirePermission('USERS', 'delete'), async (req, res) => {
