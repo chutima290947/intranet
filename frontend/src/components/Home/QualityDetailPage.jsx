@@ -92,7 +92,7 @@ function TreeLeafGrid({ items }) {
     <div className={GRID_COLS}>
       {list.map((child, i) => {
         const link = resolveLink(child)
-        const imgUrl = resolveImageUrl(child.img)
+        const imgUrl = resolveImageUrl(child.img || child.iconImg)
         const CardTag = link ? 'a' : 'div'
 
         return (
@@ -345,9 +345,9 @@ function DiseaseDetail({ disease, onBack }) {
     <div className="mx-auto max-w-[1100px] px-8 pb-[60px] pt-[22px]">
       <button
         onClick={onBack}
-        className="mb-5 flex items-center gap-1.5 rounded-lg border-none bg-transparent text-[13px] font-medium text-blue-600"
+        className="mb-5 flex items-center gap-2 rounded-lg border-none bg-transparent text-base font-semibold text-blue-600 hover:text-blue-700"
       >
-        <i className="ti ti-arrow-left text-base" />
+        <i className="ti ti-arrow-left text-xl" />
         กลับ
       </button>
 
@@ -407,9 +407,9 @@ export function QualityDetailPage({ quality, onBack }) {
         <p className="text-[13px] text-ink-soft">ไม่พบเนื้อหานี้</p>
         <button
           onClick={onBack}
-          className="mt-3 flex items-center gap-1.5 rounded-lg border-none bg-transparent text-[13px] font-medium text-blue-600 mx-auto"
+          className="mt-3 flex items-center gap-2 rounded-lg border-none bg-transparent text-base font-semibold text-blue-600 hover:text-blue-700 mx-auto"
         >
-          <i className="ti ti-arrow-left text-base" />กลับหน้าหลัก
+          <i className="ti ti-arrow-left text-xl" />กลับหน้าหลัก
         </button>
       </div>
     )
@@ -446,9 +446,9 @@ export function QualityDetailPage({ quality, onBack }) {
     <div className="mx-auto max-w-[1100px] px-8 pb-[60px] pt-[22px]">
       <button
         onClick={onBack}
-        className="mb-5 flex items-center gap-1.5 rounded-lg border-none bg-transparent text-[13px] font-medium text-blue-600"
+        className="mb-5 flex items-center gap-2 rounded-lg border-none bg-transparent text-base font-semibold text-blue-600 hover:text-blue-700"
       >
-        <i className="ti ti-arrow-left text-base" />
+        <i className="ti ti-arrow-left text-xl" />
         กลับหน้าหลัก
       </button>
 
@@ -478,6 +478,20 @@ export function QualityDetailPage({ quality, onBack }) {
           <p className="mb-4 text-[13.5px] leading-relaxed text-ink">{quality.intro}</p>
         )}
 
+        {Array.isArray(quality.banners) && quality.banners.length > 0 && (
+          <DiseaseBanners banners={quality.banners} />
+        )}
+
+        {quality.img && (
+          <div className="mb-6 flex justify-center">
+            <img
+              src={getFileUrl(quality.img)}
+              alt={quality.label}
+              className="h-auto max-h-[500px] max-w-full rounded-lg border border-line object-contain"
+            />
+          </div>
+        )}
+
         {diseases.length > 0 && (
           <div className="mb-8">
             <DiseaseGrid diseases={diseases} onOpenDisease={setSelectedDisease} />
@@ -500,44 +514,61 @@ export function QualityDetailPage({ quality, onBack }) {
 
         {!hasTree && articleItems.length > 0 && (
           <ul className="flex flex-col gap-2.5">
-            {articleItems.map((item) => {
+            {articleItems.map((item, idx) => {
               const link = resolveLink(item)
               return (
-                <li key={item.label} className="flex items-start gap-2">
-                  <i className="ti ti-point-filled mt-[3px] flex-shrink-0 text-[10px] text-blue-500" />
-                  {link ? (
-                    <a
-                      href={link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex flex-1 items-center gap-2 text-[13.5px] text-blue-600 hover:underline"
-                    >
-                      <span>{item.label}</span>
-                      {item.isNew && (
-                        <span className="rounded bg-coral-tint px-1.5 py-0.5 text-[9.5px] font-bold text-coral">
-                          NEW
-                        </span>
-                      )}
-                    </a>
-                  ) : (
-                    <span className="flex flex-1 items-center gap-2 text-[13.5px] text-ink">
-                      <span>{item.label}</span>
-                      {item.isNew && (
-                        <span className="rounded bg-coral-tint px-1.5 py-0.5 text-[9.5px] font-bold text-coral">
-                          NEW
-                        </span>
-                      )}
-                    </span>
+                <li
+                  key={idx}
+                  className="flex items-center gap-3 rounded-lg border border-line/70 bg-white p-2.5 transition-colors hover:border-blue-400/50"
+                >
+                  {item.img && (
+                    <img
+                      src={getFileUrl(item.img)}
+                      alt=""
+                      className="h-12 w-12 flex-shrink-0 rounded-md border border-line object-cover"
+                    />
                   )}
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <i className="ti ti-point-filled flex-shrink-0 text-[10px] text-blue-500" />
+                    {link ? (
+                      <a
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-1 items-center gap-2 text-[13.5px] text-blue-600 hover:underline"
+                      >
+                        <span className="truncate">{item.label}</span>
+                        {item.isNew && (
+                          <span className="rounded bg-coral-tint px-1.5 py-0.5 text-[9.5px] font-bold text-coral">
+                            NEW
+                          </span>
+                        )}
+                      </a>
+                    ) : (
+                      <span className="flex flex-1 items-center gap-2 text-[13.5px] text-ink">
+                        <span className="truncate">{item.label}</span>
+                        {item.isNew && (
+                          <span className="rounded bg-coral-tint px-1.5 py-0.5 text-[9.5px] font-bold text-coral">
+                            NEW
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </div>
                 </li>
               )
             })}
           </ul>
         )}
 
-        {!hasTree && articleItems.length === 0 && !quality.intro && diseases.length === 0 && (
-          <p className="text-[13px] text-ink-soft">ยังไม่มีเนื้อหา</p>
-        )}
+        {!hasTree &&
+          articleItems.length === 0 &&
+          !quality.intro &&
+          diseases.length === 0 &&
+          !quality.img &&
+          (!quality.banners || quality.banners.length === 0) && (
+            <p className="text-[13px] text-ink-soft">ยังไม่มีเนื้อหา</p>
+          )}
       </div>
     </div>
   )

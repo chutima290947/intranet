@@ -96,6 +96,17 @@ export const ADMIN_SCHEMAS = [
             type: 'textarea',
           },
           {
+            key: 'icon',
+            label: 'ไอคอน (แสดงเมื่อไม่มีรูปภาพไอคอน)',
+            type: 'icon',
+          },
+          {
+            key: 'iconImg',
+            label: 'รูปภาพไอคอน/โลโก้ (ถ้ามี จะแสดงรูปนี้แทนไอคอน)',
+            type: 'image',
+            uploadFolder: 'marketing',
+          },
+          {
             key: 'img',
             label: 'รูปภาพ Banner (ใช้เมื่อปักหมุดข่าวนี้)',
             type: 'image',
@@ -329,8 +340,14 @@ export const ADMIN_SCHEMAS = [
           },
           {
             key: 'icon',
-            label: 'ไอคอน',
+            label: 'ไอคอน (แสดงเมื่อไม่มีรูปภาพไอคอน)',
             type: 'icon',
+          },
+          {
+            key: 'iconImg',
+            label: 'รูปภาพไอคอน/โลโก้ (ถ้ามี จะแสดงรูปนี้แทนไอคอนในหน้าหลัก)',
+            type: 'image',
+            uploadFolder: 'quality',
           },
           {
             key: 'kind',

@@ -156,10 +156,15 @@ export function Announcement({ onOpenNews }) {
             const c = ANN_COLORS[i % ANN_COLORS.length]
             const hasTree = n.tree && n.tree.length > 0
             const link = !hasTree ? resolveLink(n) : null
+            const iconImg = n.iconImg ? getFileUrl(n.iconImg) : null
             const rowContent = (
               <>
-                <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] ${c.bg}`}>
-                  <i className={`ti ${n.icon || 'ti-news'} text-lg ${c.text}`} />
+                <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] ${c.bg} overflow-hidden`}>
+                  {iconImg ? (
+                    <img src={iconImg} alt="" className="h-full w-full object-contain p-1" />
+                  ) : (
+                    <i className={`ti ${n.icon || 'ti-news'} text-lg ${c.text}`} />
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13.5px] font-medium text-navy-900">{n.title}</p>

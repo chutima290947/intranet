@@ -44,15 +44,23 @@ export function AnnouncementTreePage({ news, onBack }) {
     <div className="mx-auto max-w-[900px] px-8 pb-[60px] pt-[22px]">
       <button
         onClick={stack.length === 0 ? onBack : goBack}
-        className="mb-4 flex items-center gap-1.5 rounded-lg border-none bg-transparent text-[13px] font-medium text-blue-600"
+        className="mb-4 flex items-center gap-2 rounded-lg border-none bg-transparent text-base font-semibold text-blue-600 hover:text-blue-700"
       >
-        <i className="ti ti-arrow-left text-base" />
+        <i className="ti ti-arrow-left text-xl" />
         {stack.length === 0 ? 'กลับหน้าหลัก' : news.title}
       </button>
 
       <div className="mb-5 flex items-center gap-2.5">
-        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] bg-blue-tint">
-          <i className={`ti ${news.icon || 'ti-news'} text-lg text-blue-600`} />
+        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] bg-blue-tint overflow-hidden">
+          {news.iconImg ? (
+            <img
+              src={getFileUrl(news.iconImg)}
+              alt=""
+              className="h-full w-full rounded-md object-contain p-1"
+            />
+          ) : (
+            <i className={`ti ${news.icon || 'ti-news'} text-lg text-blue-600`} />
+          )}
         </div>
         <h2 className="font-display text-2xl font-semibold text-ink">
           {stack.length === 0 ? news.title : stack[stack.length - 1].label}
@@ -82,6 +90,8 @@ export function AnnouncementTreePage({ news, onBack }) {
       <div className="grid grid-cols-2 gap-3 max-[700px]:grid-cols-1">
         {currentItems.map((node, i) => {
           const hasChildren = node.children && node.children.length > 0
+          const iconImgUrl = node.iconImg || node.img ? getFileUrl(node.iconImg || node.img) : null
+
           if (hasChildren) {
             return (
               <button
@@ -90,8 +100,12 @@ export function AnnouncementTreePage({ news, onBack }) {
                 onClick={() => enter(node)}
                 className="flex items-center gap-3 rounded-lg border border-line bg-white px-4 py-3.5 text-left transition-colors hover:border-blue-500/40 hover:bg-blue-tint"
               >
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-blue-tint">
-                  <i className={`ti ${node.icon || 'ti-folder'} text-base text-blue-600`} />
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-blue-tint overflow-hidden">
+                  {iconImgUrl ? (
+                    <img src={iconImgUrl} alt="" className="h-full w-full object-contain p-1" />
+                  ) : (
+                    <i className={`ti ${node.icon || 'ti-folder'} text-base text-blue-600`} />
+                  )}
                 </div>
                 <span className="flex-1 text-[13px] leading-tight text-ink">{node.label}</span>
                 <i className="ti ti-chevron-right flex-shrink-0 text-sm text-ink-soft/60" />
@@ -106,8 +120,12 @@ export function AnnouncementTreePage({ news, onBack }) {
               {...(link && { target: '_blank', rel: 'noopener noreferrer' })}
               className="flex items-center gap-3 rounded-lg border border-line bg-white px-4 py-3.5 no-underline transition-colors hover:border-blue-500/40 hover:bg-blue-tint"
             >
-              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-blue-tint">
-                <i className={`ti ${node.icon || 'ti-file-text'} text-base text-blue-600`} />
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-blue-tint overflow-hidden">
+                {iconImgUrl ? (
+                  <img src={iconImgUrl} alt="" className="h-full w-full object-contain p-1" />
+                ) : (
+                  <i className={`ti ${node.icon || 'ti-file-text'} text-base text-blue-600`} />
+                )}
               </div>
               <span className="flex-1 text-[13px] leading-tight text-ink">{node.label}</span>
             </a>

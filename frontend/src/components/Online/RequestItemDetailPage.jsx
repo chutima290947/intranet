@@ -35,7 +35,7 @@ export function RequestItemDetailPage({ item, onBack }) {
           <button
             type="button"
             onClick={onBack}
-            className="mt-3 border-none bg-transparent text-sm font-medium text-blue-600"
+            className="mt-3 border-none bg-transparent text-base font-semibold text-blue-600"
           >
             กลับหน้าหลัก
           </button>
@@ -51,7 +51,7 @@ export function RequestItemDetailPage({ item, onBack }) {
         <button
           type="button"
           onClick={onBack}
-          className="mb-5 border-none bg-transparent p-0 text-sm font-medium text-slate-500 transition hover:text-blue-600"
+          className="mb-5 border-none bg-transparent p-0 text-base font-semibold text-slate-500 transition hover:text-blue-600"
         >
           กลับหน้าหลัก
         </button>

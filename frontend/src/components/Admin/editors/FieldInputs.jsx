@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { UPLOAD_FOLDERS } from '../../../config/uploadFolders'
+import { IconPickerModal } from './IconPickerModal'
 
 // ============================================================
 // Datetime formatting (ใช้ format แบบ "FRIDAY, 17 APRIL 2026 15:25")
@@ -499,10 +500,73 @@ function DateFieldInput({ field, value, onChange }) {
 }
 
 // ============================================================
+// Icon Field Input (พร้อมแผงเลือกไอคอน และรองรับใส่รูปภาพ)
+// ============================================================
+
+export function IconFieldInput({ value, onChange, currentImg = '', onSelectImg }) {
+  const [pickerOpen, setPickerOpen] = useState(false)
+
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setPickerOpen(true)}
+        className="group relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-line bg-paper transition-all hover:border-blue-500 hover:bg-blue-50"
+        title="คลิกเพื่อเลือกจากแผงไอคอน หรือใส่รูปภาพแทนไอคอน"
+      >
+        {currentImg ? (
+          <img
+            src={getFileUrl(currentImg)}
+            alt=""
+            className="h-full w-full rounded-md object-contain p-1"
+          />
+        ) : (
+          <i
+            className={`ti ${
+              value || 'ti-help-circle'
+            } text-[18px] text-navy-900 group-hover:text-blue-600`}
+          />
+        )}
+      </button>
+
+      <input
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="เช่น ti-shield-check หรือกดเลือกจากแผงไอคอน"
+        className="w-full rounded-md border border-line px-3 py-2 text-[12.5px] outline-none focus:border-blue-500"
+      />
+
+      <button
+        type="button"
+        onClick={() => setPickerOpen(true)}
+        className="flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-line bg-white px-3 py-2 text-[12px] font-semibold text-blue-600 transition-colors hover:border-blue-300 hover:bg-blue-50"
+      >
+        <i className="ti ti-grid-dots text-[14px]" />
+        <span>เลือกไอคอน</span>
+      </button>
+
+      <IconPickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        currentIcon={value}
+        currentImg={currentImg}
+        onSelectIcon={(ico) => {
+          onChange(ico)
+          setPickerOpen(false)
+        }}
+        onSelectImg={(imgUrl) => {
+          onSelectImg?.(imgUrl)
+        }}
+      />
+    </div>
+  )
+}
+
+// ============================================================
 // Field Input (dispatcher)
 // ============================================================
 
-export function FieldInput({ field, value, onChange }) {
+export function FieldInput({ field, value, onChange, currentImg = '', onSelectImg }) {
   if (field.type === 'textarea') {
     return (
       <textarea
@@ -533,22 +597,12 @@ export function FieldInput({ field, value, onChange }) {
 
   if (field.type === 'icon') {
     return (
-      <div className="flex items-center gap-2">
-        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md border border-line bg-paper">
-          <i
-            className={`ti ${
-              value || 'ti-help-circle'
-            } text-[18px] text-navy-900`}
-          />
-        </div>
-
-        <input
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="เช่น ti-home"
-          className="w-full rounded-md border border-line px-3 py-2 text-[12.5px] outline-none focus:border-blue-500"
-        />
-      </div>
+      <IconFieldInput
+        value={value}
+        onChange={onChange}
+        currentImg={currentImg}
+        onSelectImg={onSelectImg}
+      />
     )
   }
 

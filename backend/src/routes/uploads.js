@@ -47,6 +47,7 @@ const ALLOWED_FOLDERS = new Set([
   'marketing',
   'technician',
   'hr',
+  'quality',
 ])
 
 // ---------------------------------------------------------

@@ -8,7 +8,9 @@ import {
   FieldInput,
   FileFieldInput,
   RowActions,
+  getFileUrl,
 } from './FieldInputs'
+import { IconPickerModal } from './IconPickerModal'
 
 // ============================================================
 // Confirm Dialog (Popup ยืนยัน)
@@ -263,6 +265,8 @@ function SubListEditor({ field, items, onChange }) {
                         field={primaryField}
                         value={item[primaryField.key]}
                         onChange={(v) => updateItem(idx, primaryField.key, v)}
+                        currentImg={item.iconImg || item.img || ''}
+                        onSelectImg={(imgUrl) => updateItem(idx, 'iconImg', imgUrl)}
                       />
                     </div>
                   )}
@@ -304,6 +308,8 @@ function SubListEditor({ field, items, onChange }) {
                               field={f}
                               value={item[f.key]}
                               onChange={(v) => updateItem(idx, f.key, v)}
+                              currentImg={item.iconImg || item.img || ''}
+                              onSelectImg={(imgUrl) => updateItem(idx, 'iconImg', imgUrl)}
                             />
                           )}
                         </div>
@@ -376,11 +382,12 @@ function TreeNodeRow({
   openLinkPath,
   toggleLinkPath,
 }) {
+  const [pickerOpen, setPickerOpen] = useState(false)
   const showLink = openLinkPath === path
 
   const expanded = expandedPaths.has(path)
   // มีการแนบอย่างใดอย่างหนึ่ง (ลิงก์ / ไฟล์ / รูปภาพ) -> โชว์จุดเขียวบนปุ่ม paperclip
-  const hasLink = Boolean(node.href || node.file || node.img)
+  const hasLink = Boolean(node.href || node.file || node.img || node.iconImg)
   const hasChildren = Array.isArray(node.children) && node.children.length > 0
   const descendantCount = hasChildren ? countDescendants(node.children) : 0
 
@@ -448,14 +455,52 @@ function TreeNodeRow({
           </span>
         )}
 
-        {depth === 0 && (
-          <input
-            value={node.icon || ''}
-            onChange={(e) => updateNode(idx, { icon: e.target.value })}
-            placeholder="ti-icon"
-            className="w-24 flex-shrink-0 rounded-lg border border-line px-2 py-2 text-[11.5px] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                {/* ปุ่มเลือกไอคอน / ใส่รูปภาพแทนไอคอน (ปุ่มเดียว) — ถ้าเลือกแล้วจะโชว์ไอคอนหรือรูปเล็กๆ ในปุ่มนี้ */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            className={`flex items-center gap-1.5 rounded-md border bg-white px-2 py-1 text-[11px] font-semibold transition-colors ${
+              node.img || node.iconImg
+                ? 'border-emerald-500 text-emerald-700 hover:bg-emerald-50'
+                : 'border-line text-blue-600 hover:border-blue-300 hover:bg-blue-50'
+            }`}
+            title="เปิดแผงเลือกไอคอน / ใส่รูปภาพแทนไอคอน"
+          >
+            {node.img || node.iconImg ? (
+              <img
+                src={getFileUrl(node.img || node.iconImg)}
+                alt=""
+                className="h-4 w-4 rounded-sm object-contain"
+              />
+            ) : node.icon ? (
+              <i className={`ti ${node.icon} text-[13px]`} />
+            ) : (
+              <i className="ti ti-grid-dots text-[12px]" />
+            )}
+            <span>
+              {node.img || node.iconImg
+                ? 'เปลี่ยนรูป/ไอคอน'
+                : node.icon
+                  ? 'เปลี่ยนไอคอน'
+                  : 'เลือกไอคอน'}
+            </span>
+          </button>
+
+          <IconPickerModal
+            open={pickerOpen}
+            onClose={() => setPickerOpen(false)}
+            currentIcon={node.icon}
+            currentImg={node.img || node.iconImg}
+            title={`ไอคอน / รูปภาพ สำหรับ "${node.label || 'หัวข้อนี้'}"`}
+            onSelectIcon={(ico) => {
+              updateNode(idx, { icon: ico })
+            }}
+            onSelectImg={(imgUrl) => {
+              updateNode(idx, { img: imgUrl, iconImg: imgUrl })
+            }}
           />
-        )}
+        </div>
 
         <button
           type="button"
@@ -516,12 +561,12 @@ function TreeNodeRow({
 
           <div>
             <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-ink-soft/70">
-              รูปภาพประกอบ (แสดงเป็นการ์ด)
+              รูปภาพโลโก้ / ไอคอน (แสดงแทนไอคอน)
             </label>
             <FieldInput
-              field={{ type: 'image', uploadFolder: 'quality' }}
-              value={node.img}
-              onChange={(v) => updateNode(idx, { img: v })}
+              field={{ type: 'image', uploadFolder: 'med' }}
+              value={node.img || node.iconImg}
+              onChange={(v) => updateNode(idx, { img: v, iconImg: v })}
             />
           </div>
         </div>
@@ -1039,6 +1084,8 @@ export function CollectionEditor({ schema }) {
                             field={f}
                             value={item[f.key]}
                             onChange={(v) => updateItem(idx, f.key, v)}
+                            currentImg={item.iconImg || item.img || ''}
+                            onSelectImg={(imgUrl) => updateItem(idx, 'iconImg', imgUrl)}
                           />
                         )}
                       </div>

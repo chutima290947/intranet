@@ -222,9 +222,9 @@ export function PartnerDetailPage({ partner, onBack }) {
       <div className="mx-auto max-w-[900px] px-4 py-8 sm:px-6 sm:py-10">
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 text-sm font-semibold text-blue-600"
+          className="flex items-center gap-2 text-base font-semibold text-blue-600"
         >
-          <i className="ti ti-arrow-left" />
+          <i className="ti ti-arrow-left text-xl" />
           กลับหน้าแรก
         </button>
         <p className="mt-4 text-sm text-ink-soft">
@@ -238,9 +238,9 @@ export function PartnerDetailPage({ partner, onBack }) {
     <div className="mx-auto max-w-[900px] px-4 pb-16 pt-6 sm:px-6">
       <button
         onClick={onBack}
-        className="mb-4 flex items-center gap-1.5 text-[13px] font-semibold text-blue-600"
+        className="mb-5 flex items-center gap-2 text-base font-semibold text-blue-600 hover:text-blue-700"
       >
-        <i className="ti ti-arrow-left" />
+        <i className="ti ti-arrow-left text-xl" />
         กลับหน้าแรก
       </button>
 

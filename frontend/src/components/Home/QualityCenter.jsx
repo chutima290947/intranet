@@ -33,15 +33,33 @@ export function QualityCenter({ onOpenQuality }) {
             // มีหัวข้อบทความ หรือมีการ์ดโรคติดต่อ (diseases) -> ทั้งคู่ต้องพาไปหน้าเนื้อหาภายในเว็บ (QualityDetailPage)
             // ไม่ใช่แค่เช็ค articleTitle อย่างเดียว เพราะหมวด "โรคติดต่อ" อาจไม่มีการกรอกหัวข้อบทความไว้เลย
             const hasDiseases = Array.isArray(q.diseases) && q.diseases.length > 0
-            const hasArticle = Boolean(q.articleTitle) || hasDiseases
+            const hasTree = Array.isArray(q.tree) && q.tree.length > 0
+            const hasArticleItems = Array.isArray(q.articleItems) && q.articleItems.length > 0
+            const hasBanners = Array.isArray(q.banners) && q.banners.length > 0
+            const hasArticle =
+              Boolean(q.articleTitle) ||
+              Boolean(q.intro) ||
+              hasDiseases ||
+              hasTree ||
+              hasArticleItems ||
+              hasBanners ||
+              Boolean(q.img && !q.href && !q.file)
             const link = resolveLink(q)
+            const iconImg = q.iconImg || q.img ? getFileUrl(q.iconImg || q.img) : null
             const cellClasses =
-              'flex flex-col items-center gap-[7px] rounded-md border border-line bg-white px-2 py-3 text-center transition-colors hover:border-blue-500/40'
+              'flex flex-col items-center gap-2 rounded-md border border-line bg-white px-2 py-4 text-center transition-colors hover:border-blue-500/40'
             const cellContent = (
               <>
-                <div className={`flex h-[38px] w-[38px] items-center justify-center rounded-[10px] ${q.warn ? 'bg-coral-tint' : 'bg-teal-tint'}`}>
-                  <i className={`ti ${q.icon || guessIcon(q.label)} text-lg ${q.warn ? 'text-coral' : 'text-teal'}`} />
-                </div>
+                {/* ขนาด 56px (ปรับที่ h-[56px] w-[56px]) — ไอคอน: มีกรอบพื้นหลังสี / รูปภาพ: ไม่มีกรอบพื้นหลัง แสดงรูปเต็ม */}
+                {iconImg ? (
+                  <div className="flex h-[56px] w-[56px] items-center justify-center">
+                    <img src={iconImg} alt="" className="h-full w-full object-contain" />
+                  </div>
+                ) : (
+                  <div className={`flex h-[56px] w-[56px] items-center justify-center rounded-xl ${q.warn ? 'bg-coral-tint' : 'bg-teal-tint'}`}>
+                    <i className={`ti ${q.icon || guessIcon(q.label)} text-[26px] ${q.warn ? 'text-coral' : 'text-teal'}`} />
+                  </div>
+                )}
                 <span className="text-[10px] leading-[1.3] font-semibold">{q.label}</span>
               </>
             )

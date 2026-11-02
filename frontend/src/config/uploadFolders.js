@@ -11,4 +11,5 @@ export const UPLOAD_FOLDERS = [
   { value: 'marketing',  label: 'Marketing',              desc: 'ข้อมูลฝ่ายการตลาด' },
   { value: 'technician', label: 'Technician',             desc: 'ข้อมูลฝ่ายการช่าง' },
   { value: 'hr',         label: 'HR',                     desc: 'ข้อมูลฝ่ายบุคคล' },
+  { value: 'quality',    label: 'Quality & Safety',       desc: 'ข้อมูลศูนย์รวมระบบคุณภาพและความปลอดภัย' },
 ]

@@ -56,7 +56,7 @@ export function DoctorSchedulePage({ onBack }) {
         <button
           type="button"
           onClick={onBack}
-          className="mb-5 border-none bg-transparent p-0 text-sm font-medium text-slate-500 transition hover:text-blue-600"
+          className="mb-5 border-none bg-transparent p-0 text-base font-semibold text-slate-500 transition hover:text-blue-600"
         >
           กลับหน้าหลัก
         </button>

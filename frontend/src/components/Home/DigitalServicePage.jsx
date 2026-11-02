@@ -58,9 +58,9 @@ export function DigitalServicePage({ service, onBack }) {
     <div className="mx-auto max-w-[900px] px-8 pb-[60px] pt-[22px]">
       <button
         onClick={handleTopBack}
-        className="mb-4 flex items-center gap-1.5 rounded-lg border-none bg-transparent text-[13px] font-medium text-blue-600"
+        className="mb-4 flex items-center gap-2 rounded-lg border-none bg-transparent text-base font-semibold text-blue-600 hover:text-blue-700"
       >
-        <i className="ti ti-arrow-left text-base" />
+        <i className="ti ti-arrow-left text-xl" />
         {selectedGroup ? service.label : 'กลับหน้าหลัก'}
       </button>
 

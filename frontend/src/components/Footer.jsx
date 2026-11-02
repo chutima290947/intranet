@@ -7,7 +7,7 @@ export function Footer() {
           <div>
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-sm font-bold text-navy-900">
-                BSR
+                BSI
               </div>
               <div>
                 <div className="text-base font-semibold">โรงพยาบาลกรุงเทพสิริโรจน์</div>

@@ -56,7 +56,6 @@ export const DEFAULT_CONTENT = {
     { id: 'sec-partner', label: 'รายชื่อลูกค้าบริษัทคู่สัญญา', icon: 'ti-building', color: 'var(--color-blue-600)' },
     { id: 'sec-template', label: 'Template PowerPoint', icon: 'ti-presentation', color: 'var(--color-ink-soft)' },
     { id: 'sec-finance', label: 'การมอบหมายอำนาจดำเนินการทางการเงิน กลุ่ม 6', icon: 'ti-cash', color: 'var(--color-ink-soft)' },
-    { id: 'sec-upload', label: 'Upload เอกสาร', icon: 'ti-upload', color: 'var(--color-ink-soft)' },
   ],
 
   CONTACT_LINKS: [
@@ -313,7 +312,7 @@ DIGITAL_SERVICES: [
       ],
     },
     {
-      icon: 'ti-first-aid-kit', title: 'Trauma Center', sub: 'แนวทางการปฏิบัติอุบัติเหตุ',
+      icon: 'ti-flask', title: 'Trauma Center', sub: 'แนวทางการปฏิบัติอุบัติเหตุ',
       subItems: [
         { label: 'การส่งต่อผู้ป่วยไปรับการรักษาที่สถานพยาบาลอื่นๆ', href: '#' },
         { label: 'การคัดกรองผู้ป่วย (Triage + Policy)', href: '#' },
