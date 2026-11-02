@@ -3,3 +3,6 @@ frontend/dist/
 backend/node_modules/
 .env
 backend/uploads/
+# Database backup
+backend/data.sql
+*.sql
