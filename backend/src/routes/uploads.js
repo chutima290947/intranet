@@ -56,15 +56,13 @@ const ALLOWED_FOLDERS = new Set([
 // ---------------------------------------------------------
 export function fixFilename(name) {
   if (!name) return name
-  // มีอักขระนอกช่วง latin1 = ถูก decode เป็น utf8 ถูกต้องอยู่แล้ว
-  if (/[^\u0000-\u00ff]/.test(name)) return name
   try {
-    return new TextDecoder('utf-8', { fatal: true }).decode(
-      Buffer.from(name, 'latin1'),
-    )
-  } catch {
-    return name
-  }
+    const decoded = Buffer.from(name, 'latin1').toString('utf8')
+    if (/[\u0E00-\u0E7F]/.test(decoded)) {
+      return decoded
+    }
+  } catch {}
+  return name
 }
 
 // ---------------------------------------------------------
@@ -253,15 +251,27 @@ uploadsRouter.get('/:id/download', async (req, res) => {
       file.mime_type || 'application/octet-stream',
     )
 
-    // รองรับชื่อไฟล์ภาษาไทย (RFC 5987): filename = ASCII fallback, filename* = UTF-8
-    const asciiName = file.original_name.replace(/[^\x20-\x7e]|["\\]/g, '_')
-    const utf8Name = encodeURIComponent(file.original_name).replace(
+    if (file.data) {
+      res.setHeader('Content-Length', Buffer.byteLength(file.data))
+    }
+
+    // ป้องกัน ERR_CACHE_READ_FAILURE บน Server รพ. / เครื่องลูกข่าย
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+    res.setHeader('Pragma', 'no-cache')
+    res.setHeader('Expires', '0')
+
+    // รองรับชื่อไฟล์ภาษาไทย (RFC 5987 / RFC 6266)
+    const rawName = file.original_name || 'download'
+    const ext = path.extname(rawName)
+    const baseAscii = path.basename(rawName, ext).replace(/[^\x20-\x7e]|["\\]/g, '_') || 'file'
+    const utf8Name = encodeURIComponent(rawName).replace(
       /['()*]/g,
       (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase(),
     )
+
     res.setHeader(
       'Content-Disposition',
-      `inline; filename="${asciiName}"; filename*=UTF-8''${utf8Name}`,
+      `inline; filename="${baseAscii}${ext}"; filename*=UTF-8''${utf8Name}`,
     )
 
     return res.send(file.data)
