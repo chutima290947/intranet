@@ -77,8 +77,12 @@ export async function sendTempPasswordEmail({ to, username, displayName, tempPas
     `เว็บไซต์: <a href="${siteUrl}">${siteUrl}</a></p>` +
     `<p style="color:#666;font-size:12px">หากคุณไม่ได้เป็นผู้ขอ ให้ละเว้นอีเมลนี้ รหัสผ่านเดิมของคุณยังใช้งานได้ตามปกติ</p>`
 
+  // log บอกว่าใช้โหมดไหน และส่งสำเร็จหรือไม่ — ดูได้ที่แท็บ Logs ของ Render
+  // (ไม่ log อีเมลผู้รับหรือรหัสผ่าน ยกเว้นโหมดที่ 3 ที่ตั้งใจพิมพ์รหัสไว้ทดสอบ)
   if (process.env.BREVO_API_KEY) {
+    console.log(`[mailer] โหมด Brevo API: กำลังส่งให้ผู้ใช้ "${username}"`)
     await sendViaBrevoApi({ to, subject, text, html })
+    console.log(`[mailer] ส่งผ่าน Brevo สำเร็จ (ผู้ใช้ "${username}")`)
     return
   }
 
@@ -88,7 +92,9 @@ export async function sendTempPasswordEmail({ to, username, displayName, tempPas
     return
   }
 
+  console.log(`[mailer] โหมด SMTP (${process.env.SMTP_HOST}:${process.env.SMTP_PORT || 587}): กำลังส่งให้ผู้ใช้ "${username}"`)
   await t.sendMail({ from: process.env.MAIL_FROM || process.env.SMTP_USER, to, subject, text, html })
+  console.log(`[mailer] ส่งผ่าน SMTP สำเร็จ (ผู้ใช้ "${username}")`)
 }
 
 function escapeHtml(s) {
