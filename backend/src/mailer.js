@@ -15,6 +15,48 @@ function getTransporter() {
   return transporter
 }
 
+// ส่งผ่าน Google Apps Script Web App (HTTPS พอร์ต 443)
+// เหมาะกับโฮสต์อย่าง Render ที่บล็อกพอร์ต SMTP (25, 465, 587)
+async function sendViaGoogleAppsScript({ to, subject, text, html }) {
+  const url = process.env.GAS_MAIL_URL
+  const secretKey = process.env.GAS_MAIL_KEY || ''
+  const sender = parseFrom()
+
+  if (!url) throw new Error('ยังไม่ได้ตั้งค่า GAS_MAIL_URL')
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    // Google Apps Script Web App จะ 302 redirect เสมอเมื่อ doPost สำเร็จ
+    redirect: 'follow',
+    body: JSON.stringify({
+      key: secretKey,
+      senderName: sender.name || 'Intranet',
+      to,
+      subject,
+      text,
+      html,
+    }),
+  })
+
+  if (!res.ok) {
+    throw new Error(`Google Apps Script ตอบกลับสถานะ HTTP ${res.status}`)
+  }
+
+  let result = null
+  try {
+    result = await res.json()
+  } catch {
+    // ถ้า GAS ไม่ได้ตอบ JSON กลับมา
+  }
+
+  if (result && result.status === 'error') {
+    throw new Error(`Google Apps Script ส่งเมลไม่สำเร็จ: ${result.message || 'Unknown error'}`)
+  }
+}
+
 // แยก "ชื่อ <email>" จาก MAIL_FROM เช่น "Intranet <a@gmail.com>" -> { name: 'Intranet', email: 'a@gmail.com' }
 function parseFrom() {
   const raw = (process.env.MAIL_FROM || process.env.SMTP_USER || '').trim()
@@ -56,9 +98,10 @@ async function sendViaBrevoApi({ to, subject, text, html }) {
 }
 
 // ส่งอีเมลรหัสผ่านชั่วคราว ลำดับการเลือกวิธีส่ง:
-//  1) มี BREVO_API_KEY -> ส่งผ่าน Brevo HTTP API (เหมาะกับ Render แพ็กเกจฟรี ที่บล็อกพอร์ต SMTP)
-//  2) มี SMTP_HOST      -> ส่งผ่าน SMTP (nodemailer)
-//  3) ไม่มีทั้งสอง      -> พิมพ์รหัสลง console/log ของ backend แทน (ใช้ทดสอบ flow ได้โดยไม่ต้องมีเมล)
+//  1) มี GAS_MAIL_URL   -> ส่งผ่าน Google Apps Script Web App (HTTPS พอร์ต 443 — แนะนำบน Render/Cloud)
+//  2) มี BREVO_API_KEY  -> ส่งผ่าน Brevo HTTP API (HTTPS พอร์ต 443)
+//  3) มี SMTP_HOST      -> ส่งผ่าน SMTP (nodemailer)
+//  4) ไม่มีทั้งหมด      -> พิมพ์รหัสลง console/log ของ backend แทน (ใช้ทดสอบ flow ได้โดยไม่ต้องมีเมล)
 export async function sendTempPasswordEmail({ to, username, displayName, tempPassword, expiresMinutes, siteUrl }) {
   const name = displayName || username || 'ผู้ใช้งาน'
   const subject = 'รหัสผ่านชั่วคราวสำหรับเข้าสู่ระบบ — Intranet'
@@ -78,7 +121,14 @@ export async function sendTempPasswordEmail({ to, username, displayName, tempPas
     `<p style="color:#666;font-size:12px">หากคุณไม่ได้เป็นผู้ขอ ให้ละเว้นอีเมลนี้ รหัสผ่านเดิมของคุณยังใช้งานได้ตามปกติ</p>`
 
   // log บอกว่าใช้โหมดไหน และส่งสำเร็จหรือไม่ — ดูได้ที่แท็บ Logs ของ Render
-  // (ไม่ log อีเมลผู้รับหรือรหัสผ่าน ยกเว้นโหมดที่ 3 ที่ตั้งใจพิมพ์รหัสไว้ทดสอบ)
+  // (ไม่ log อีเมลผู้รับหรือรหัสผ่าน ยกเว้นโหมดที่ 4 ที่ตั้งใจพิมพ์รหัสไว้ทดสอบ)
+  if (process.env.GAS_MAIL_URL) {
+    console.log(`[mailer] โหมด Google Apps Script: กำลังส่งให้ผู้ใช้ "${username}"`)
+    await sendViaGoogleAppsScript({ to, subject, text, html })
+    console.log(`[mailer] ส่งผ่าน Google Apps Script สำเร็จ (ผู้ใช้ "${username}")`)
+    return
+  }
+
   if (process.env.BREVO_API_KEY) {
     console.log(`[mailer] โหมด Brevo API: กำลังส่งให้ผู้ใช้ "${username}"`)
     await sendViaBrevoApi({ to, subject, text, html })
