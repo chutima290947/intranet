@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useContent } from '../../context/ContentContext'
 import { useAuth } from '../../context/AuthContext'
+import { IconPickerModal } from './editors/IconPickerModal'
+import { FieldInput, getFileUrl } from './editors/FieldInputs'
 
 const TEMPLATES = [
   { value: 'list', label: 'รายการ (แบบข่าว/ลิสต์ยาว)' },
@@ -9,9 +11,70 @@ const TEMPLATES = [
 ]
 
 function emptyItem(template) {
-  if (template === 'grid') return { label: '', icon: '', warn: false, href: '' }
+  if (template === 'grid') return { label: '', icon: '', img: '', warn: false, href: '' }
   if (template === 'expandable') return { text: '', icon: '', href: '' }
   return { title: '', sub: '', icon: '', href: '', file: '' }
+}
+
+// ช่องเลือกไอคอน: พรีวิว + ช่องพิมพ์ + ปุ่ม "เลือกไอคอน" (เปิดหน้าต่างเลือกไอคอนเหมือนส่วนอื่นของแผงควบคุม)
+// color (ไม่บังคับ) = สีพื้นของพรีวิว ใช้กับ Section เพื่อให้เห็นหน้าตาจริง
+// allowImage = เปิดให้ใส่รูปแทนไอคอนได้ (ใช้เฉพาะเทมเพลตกริด) — อัปโหลดผ่านระบบเดิมของ FieldInput (เลือกโฟลเดอร์ → /api/uploads)
+// ถ้ามีรูป รูปจะแสดงแทนไอคอน ถ้าไม่มีรูปจึงแสดงไอคอน
+function IconField({ label, value, onChange, placeholder = 'ti-file-text', color, allowImage = false, img = '', onImgChange }) {
+  const [open, setOpen] = useState(false)
+  const hasImg = allowImage && !!img
+
+  return (
+    <div className="w-full max-w-[520px]">
+      <label className="mb-1 block text-[10px] font-bold text-ink-soft">{label}</label>
+      <div className="flex items-center gap-2">
+        <span
+          className={`flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg text-[16px] ${color ? 'text-white' : 'border border-line bg-white text-navy-900'}`}
+          style={color ? { background: color } : undefined}
+        >
+          {hasImg ? (
+            <img src={getFileUrl(img)} alt="" className="max-h-full max-w-full object-contain p-0.5" />
+          ) : value ? (
+            <i className={`ti ${value}`} />
+          ) : (
+            <i className="ti ti-photo-off opacity-40" />
+          )}
+        </span>
+        <input
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={`min-w-0 flex-1 rounded-md border border-line bg-white px-2.5 py-1.5 font-mono text-[12px] ${hasImg ? 'opacity-50' : ''}`}
+        />
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex flex-shrink-0 items-center gap-1.5 rounded-md border border-line bg-white px-2.5 py-1.5 text-[11.5px] font-semibold text-blue-600 hover:bg-paper disabled:cursor-not-allowed"
+        >
+          <i className="ti ti-grid-dots text-[13px]" />
+          เลือกไอคอน
+        </button>
+      </div>
+
+      {allowImage && (
+        <div className="mt-2.5">
+          <label className="mb-1 block text-[10px] font-bold text-ink-soft">
+            รูปภาพ (ถ้าใส่รูป จะแสดงรูปแทนไอคอน)
+          </label>
+          <FieldInput field={{ type: 'image' }} value={img} onChange={onImgChange} />
+        </div>
+      )}
+
+      <IconPickerModal
+        open={open}
+        onClose={() => setOpen(false)}
+        currentIcon={value || ''}
+        currentImg={hasImg ? img : ''}
+        onSelectIcon={onChange}
+        onSelectImg={allowImage ? onImgChange : undefined}
+      />
+    </div>
+  )
 }
 
 // ฟอร์มแก้รายการข้างในของ 1 custom section — ฟิลด์ที่โชว์เปลี่ยนไปตาม section.template
@@ -20,11 +83,19 @@ function ItemsEditor({ section, canCreate, canUpdate, canDelete }) {
   const { updateCustomSectionItems } = useContent()
   const [draft, setDraft] = useState(section.items || [])
   const [openIdx, setOpenIdx] = useState(null)
+  const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     setDraft(section.items || [])
     setOpenIdx(null)
+    setSaved(false)
   }, [section.id])
+
+  useEffect(() => {
+    if (!saved) return
+    const t = setTimeout(() => setSaved(false), 2500)
+    return () => clearTimeout(t)
+  }, [saved])
 
   const isDirty = JSON.stringify(draft) !== JSON.stringify(section.items || [])
   const template = section.template || 'list'
@@ -50,7 +121,10 @@ function ItemsEditor({ section, canCreate, canUpdate, canDelete }) {
       return next
     })
   }
-  const handleSave = () => updateCustomSectionItems(section.id, draft)
+  const handleSave = () => {
+    updateCustomSectionItems(section.id, draft)
+    setSaved(true)
+  }
   const handleDiscard = () => setDraft(section.items || [])
 
   const titleOf = (item) => item.title || item.label || item.text || '(ยังไม่ตั้งชื่อ)'
@@ -60,24 +134,15 @@ function ItemsEditor({ section, canCreate, canUpdate, canDelete }) {
       <div className="mb-2.5 flex items-center justify-between">
         <span className="text-[12px] font-bold text-navy-900">รายการในหัวข้อนี้</span>
         <div className="flex items-center gap-2">
-          {isDirty && canUpdate && (
-            <button type="button" onClick={handleDiscard} className="rounded-md border border-line bg-white px-2.5 py-1.5 text-[10.5px] font-semibold text-ink-soft">
-              ยกเลิก
-            </button>
+          {saved && !isDirty && (
+            <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+              <i className="ti ti-circle-check text-[13px]" />
+              บันทึกแล้ว
+            </span>
           )}
           {canCreate && (
             <button type="button" onClick={addItem} className="rounded-md border-none bg-blue-600 px-2.5 py-1.5 text-[10.5px] font-bold text-white">
               + เพิ่มรายการ
-            </button>
-          )}
-          {canUpdate && (
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={!isDirty}
-              className={`rounded-md border-none px-2.5 py-1.5 text-[10.5px] font-bold text-white ${isDirty ? 'bg-navy-900' : 'cursor-not-allowed bg-navy-900/40'}`}
-            >
-              บันทึก
             </button>
           )}
         </div>
@@ -91,6 +156,11 @@ function ItemsEditor({ section, canCreate, canUpdate, canDelete }) {
               <div className="flex items-center gap-2 px-2.5 py-2">
                 <button type="button" onClick={() => setOpenIdx(isOpen ? null : idx)} className="flex flex-1 items-center gap-1.5 border-none bg-transparent text-left">
                   <i className={`ti ${isOpen ? 'ti-chevron-down' : 'ti-chevron-right'} text-[12px] text-ink-soft`} />
+                  {template === 'grid' && item.img ? (
+                    <img src={getFileUrl(item.img)} alt="" className="h-4 w-4 object-contain" />
+                  ) : (
+                    item.icon && <i className={`ti ${item.icon} text-[13px] text-navy-900`} />
+                  )}
                   <span className="truncate text-[12px] font-semibold text-ink">{titleOf(item)}</span>
                 </button>
                 {canUpdate && (
@@ -116,29 +186,34 @@ function ItemsEditor({ section, canCreate, canUpdate, canDelete }) {
                         <label className="mb-1 block text-[10px] font-bold text-ink-soft">คำอธิบายย่อ</label>
                         <input value={item.sub} onChange={(e) => updateItem(idx, 'sub', e.target.value)} className="w-full rounded-md border border-line px-2.5 py-1.5 text-[12px]" />
                       </div>
-                      <div>
-                        <label className="mb-1 block text-[10px] font-bold text-ink-soft">ไอคอน (เว้นว่างได้)</label>
-                        <input value={item.icon} onChange={(e) => updateItem(idx, 'icon', e.target.value)} placeholder="ti-file-text" className="w-full rounded-md border border-line px-2.5 py-1.5 text-[12px]" />
+                      <div className="col-span-2">
+                        <IconField label="ไอคอน (เว้นว่างได้)" value={item.icon} onChange={(v) => updateItem(idx, 'icon', v)} />
                       </div>
-                      <div>
+                      <div className="col-span-2">
                         <label className="mb-1 block text-[10px] font-bold text-ink-soft">ลิงก์ (URL)</label>
                         <input value={item.href} onChange={(e) => updateItem(idx, 'href', e.target.value)} placeholder="https://..." className="w-full rounded-md border border-line px-2.5 py-1.5 text-[12px]" />
                       </div>
                     </>
                   )}
 
-                  {/* ---------- แบบ grid ---------- */}
+                  {/* ---------- แบบ grid (ใส่รูปแทนไอคอนได้) ---------- */}
                   {template === 'grid' && (
                     <>
                       <div className="col-span-2">
                         <label className="mb-1 block text-[10px] font-bold text-ink-soft">ชื่อรายการ</label>
                         <input value={item.label} onChange={(e) => updateItem(idx, 'label', e.target.value)} className="w-full rounded-md border border-line px-2.5 py-1.5 text-[12px]" />
                       </div>
-                      <div>
-                        <label className="mb-1 block text-[10px] font-bold text-ink-soft">ไอคอน (เว้นว่างได้)</label>
-                        <input value={item.icon} onChange={(e) => updateItem(idx, 'icon', e.target.value)} placeholder="ti-file-text" className="w-full rounded-md border border-line px-2.5 py-1.5 text-[12px]" />
+                      <div className="col-span-2">
+                        <IconField
+                          label="ไอคอน (แสดงเมื่อไม่มีรูปภาพ)"
+                          value={item.icon}
+                          onChange={(v) => updateItem(idx, 'icon', v)}
+                          allowImage
+                          img={item.img || ''}
+                          onImgChange={(v) => updateItem(idx, 'img', v)}
+                        />
                       </div>
-                      <div>
+                      <div className="col-span-2">
                         <label className="mb-1 block text-[10px] font-bold text-ink-soft">ลิงก์ (URL, ถ้ามี)</label>
                         <input value={item.href} onChange={(e) => updateItem(idx, 'href', e.target.value)} placeholder="https://..." className="w-full rounded-md border border-line px-2.5 py-1.5 text-[12px]" />
                       </div>
@@ -158,11 +233,10 @@ function ItemsEditor({ section, canCreate, canUpdate, canDelete }) {
                         <label className="mb-1 block text-[10px] font-bold text-ink-soft">ข้อความ</label>
                         <input value={item.text} onChange={(e) => updateItem(idx, 'text', e.target.value)} className="w-full rounded-md border border-line px-2.5 py-1.5 text-[12px]" />
                       </div>
-                      <div>
-                        <label className="mb-1 block text-[10px] font-bold text-ink-soft">ไอคอน (เว้นว่างได้)</label>
-                        <input value={item.icon} onChange={(e) => updateItem(idx, 'icon', e.target.value)} placeholder="ti-file-text" className="w-full rounded-md border border-line px-2.5 py-1.5 text-[12px]" />
+                      <div className="col-span-2">
+                        <IconField label="ไอคอน (เว้นว่างได้)" value={item.icon} onChange={(v) => updateItem(idx, 'icon', v)} />
                       </div>
-                      <div>
+                      <div className="col-span-2">
                         <label className="mb-1 block text-[10px] font-bold text-ink-soft">ลิงก์ (URL, ถ้ามี)</label>
                         <input value={item.href} onChange={(e) => updateItem(idx, 'href', e.target.value)} placeholder="https://..." className="w-full rounded-md border border-line px-2.5 py-1.5 text-[12px]" />
                       </div>
@@ -175,6 +249,25 @@ function ItemsEditor({ section, canCreate, canUpdate, canDelete }) {
         })}
         {draft.length === 0 && <p className="py-3 text-center text-[11px] text-ink-soft">ยังไม่มีรายการ{canCreate ? ' กด "+ เพิ่มรายการ"' : ''}</p>}
       </div>
+
+      {/* แถบบันทึกด้านล่าง: ลอยติดขอบล่างเมื่อมีการแก้ไขที่ยังไม่บันทึก */}
+      {canUpdate && isDirty && (
+        <div className="sticky bottom-3 z-10 mt-3 flex items-center justify-between gap-3 rounded-xl border border-blue-100 bg-white px-3.5 py-2.5 shadow-[0_6px_20px_rgba(11,40,80,.12)]">
+          <span className="flex items-center gap-1.5 text-[11.5px] font-semibold text-ink-soft">
+            <i className="ti ti-alert-circle text-[14px] text-coral" />
+            มีการแก้ไขที่ยังไม่ได้บันทึก
+          </span>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={handleDiscard} className="rounded-md border border-line bg-white px-3 py-1.5 text-[11.5px] font-semibold text-ink-soft">
+              ยกเลิก
+            </button>
+            <button type="button" onClick={handleSave} className="flex items-center gap-1.5 rounded-md border-none bg-navy-900 px-3.5 py-1.5 text-[11.5px] font-bold text-white">
+              <i className="ti ti-device-floppy text-[13px]" />
+              บันทึก
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -190,11 +283,14 @@ export function CustomSectionsPanel() {
   const [newLabel, setNewLabel] = useState('')
   const [newColumn, setNewColumn] = useState('left')
   const [newTemplate, setNewTemplate] = useState('list')
+  const [newIcon, setNewIcon] = useState('ti-list')
+  const [showNewIconPicker, setShowNewIconPicker] = useState(false)
 
   const handleAdd = () => {
     const label = newLabel.trim() || 'Section ใหม่'
-    const id = addCustomSection({ label, icon: 'ti-list', color: '#1B3A6B', column: newColumn, template: newTemplate })
+    const id = addCustomSection({ label, icon: newIcon || 'ti-list', color: '#1B3A6B', column: newColumn, template: newTemplate })
     setNewLabel('')
+    setNewIcon('ti-list')
     setOpenId(id)
   }
 
@@ -215,11 +311,19 @@ export function CustomSectionsPanel() {
 
       {canCreate && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowNewIconPicker(true)}
+            title="เลือกไอคอน"
+            className="flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center rounded-lg border border-line bg-white text-[17px] text-navy-900 hover:bg-paper"
+          >
+            <i className={`ti ${newIcon || 'ti-list'}`} />
+          </button>
           <input
             value={newLabel}
             onChange={(e) => setNewLabel(e.target.value)}
             placeholder="ชื่อ Section ใหม่ เช่น ประกาศฉุกเฉิน"
-            className="flex-1 rounded-lg border border-line px-3 py-2 text-[12.5px]"
+            className="min-w-[200px] flex-1 rounded-lg border border-line px-3 py-2 text-[12.5px]"
           />
           <select value={newTemplate} onChange={(e) => setNewTemplate(e.target.value)} className="rounded-lg border border-line px-2.5 py-2 text-[12.5px]">
             {TEMPLATES.map((t) => (
@@ -234,6 +338,14 @@ export function CustomSectionsPanel() {
             <i className="ti ti-plus text-[13px]" />
             เพิ่ม Section ใหม่
           </button>
+          <IconPickerModal
+            open={showNewIconPicker}
+            onClose={() => setShowNewIconPicker(false)}
+            currentIcon={newIcon}
+            currentImg=""
+            onSelectIcon={setNewIcon}
+            title="เลือกไอคอนของ Section"
+          />
         </div>
       )}
 
@@ -264,30 +376,37 @@ export function CustomSectionsPanel() {
 
               {isOpen && (
                 <div className="border-t border-line bg-paper/30 px-4 py-4">
-                  <fieldset disabled={!canUpdate} className="grid grid-cols-2 gap-2.5 disabled:opacity-60 sm:grid-cols-4">
-                    <div>
-                      <label className="mb-1 block text-[10px] font-bold text-ink-soft">ชื่อ Section</label>
-                      <input value={s.label} onChange={(e) => updateCustomSectionMeta(s.id, { label: e.target.value })} className="w-full rounded-md border border-line px-2.5 py-1.5 text-[12px]" />
+                  <fieldset disabled={!canUpdate} className="flex flex-col gap-3 disabled:opacity-60">
+                    <div className="flex flex-wrap items-end gap-3">
+                      <div className="min-w-[220px] flex-1">
+                        <label className="mb-1 block text-[10px] font-bold text-ink-soft">ชื่อ Section</label>
+                        <input value={s.label} onChange={(e) => updateCustomSectionMeta(s.id, { label: e.target.value })} className="w-full rounded-md border border-line bg-white px-2.5 py-1.5 text-[12px]" />
+                      </div>
+                      <div className="w-[130px]">
+                        <label className="mb-1 block text-[10px] font-bold text-ink-soft">ตำแหน่ง</label>
+                        <select value={s.column || 'left'} onChange={(e) => updateCustomSectionMeta(s.id, { column: e.target.value })} className="w-full rounded-md border border-line bg-white px-2.5 py-1.5 text-[12px]">
+                          <option value="left">ซ้าย</option>
+                          <option value="right">ขวา</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[10px] font-bold text-ink-soft">สี</label>
+                        <input type="color" value={/^#/.test(s.color) ? s.color : '#1B3A6B'} onChange={(e) => updateCustomSectionMeta(s.id, { color: e.target.value })} className="block h-[32px] w-[56px] cursor-pointer rounded-md border border-line bg-white p-0.5" />
+                      </div>
                     </div>
-                    <div>
-                      <label className="mb-1 block text-[10px] font-bold text-ink-soft">ไอคอน</label>
-                      <input value={s.icon} onChange={(e) => updateCustomSectionMeta(s.id, { icon: e.target.value })} placeholder="ti-list" className="w-full rounded-md border border-line px-2.5 py-1.5 text-[12px]" />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-[10px] font-bold text-ink-soft">สี</label>
-                      <input type="color" value={/^#/.test(s.color) ? s.color : '#1B3A6B'} onChange={(e) => updateCustomSectionMeta(s.id, { color: e.target.value })} className="h-9 w-full cursor-pointer rounded-md border border-line" />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-[10px] font-bold text-ink-soft">ตำแหน่ง</label>
-                      <select value={s.column || 'left'} onChange={(e) => updateCustomSectionMeta(s.id, { column: e.target.value })} className="w-full rounded-md border border-line px-2.5 py-1.5 text-[12px]">
-                        <option value="left">ซ้าย</option>
-                        <option value="right">ขวา</option>
-                      </select>
-                    </div>
+
+                    <IconField
+                      label="ไอคอน"
+                      value={s.icon}
+                      placeholder="ti-list"
+                      color={/^#/.test(s.color) ? s.color : '#1B3A6B'}
+                      onChange={(v) => updateCustomSectionMeta(s.id, { icon: v })}
+                    />
+
                     {(s.template || 'list') === 'expandable' && (
-                      <div className="col-span-4">
+                      <div>
                         <label className="mb-1 block text-[10px] font-bold text-ink-soft">คำอธิบายรอง (ใต้ชื่อ Section เช่น "กลุ่ม 6")</label>
-                        <input value={s.sub || ''} onChange={(e) => updateCustomSectionMeta(s.id, { sub: e.target.value })} className="w-full rounded-md border border-line px-2.5 py-1.5 text-[12px]" />
+                        <input value={s.sub || ''} onChange={(e) => updateCustomSectionMeta(s.id, { sub: e.target.value })} className="w-full rounded-md border border-line bg-white px-2.5 py-1.5 text-[12px]" />
                       </div>
                     )}
                   </fieldset>
